@@ -4,12 +4,12 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup(
-    name='water_quality',
+    name='bio_optics',
     version='0.0.1',
-    description='Bio-optical modelling for Carbon Mapper water quality applications.',
+    description='Bio-optical modelling for spectroscopy applications.',
     author='Marcel König',
     author_email='mkoenig3@asu.edu',
-    url = 'https://github.com/CMLandOcean/WaterQuality',
+    url = 'https://github.com/CMLandOcean/bio_optics',
     keywords=['water', 'optics', 'bio-optical modelling', 'spectroscopy'],
     long_description=long_description,
     packages=find_packages(),
