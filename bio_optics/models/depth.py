@@ -68,6 +68,7 @@ def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1
     m0 = 50.156 * np.exp(0.957 * chl_a)
     m1 = 52.083 * np.exp(0.957 * chl_a)
 
+    # Note that depth is computed with subsurface r_rs in [1] instead of R_w as in stumpf()
     return stumpf(above2below(R_rs), wavelengths=wavelengths, m1=m1, m0=m0, n=n, normalized=normalized)
 
     
