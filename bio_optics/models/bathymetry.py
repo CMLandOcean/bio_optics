@@ -27,8 +27,8 @@ def stumpf(R_w,
     :return: relative bathymetry
     """
 
-    band1 = R_w[find_closest(wavelengths, lambda1)]
-    band2 = R_w[find_closest(wavelengths, lambda2)]
+    band1 = R_w[find_closest(wavelengths, lambda1)[1]]
+    band2 = R_w[find_closest(wavelengths, lambda2)[1]]
     
     # Eq. 9
     Z = m1 * (np.log(n * band1) / np.log(n * band2)) - m0
