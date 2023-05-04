@@ -5,12 +5,12 @@ from .. surface.air_water import above2below
 
 def stumpf(R_w,
            wavelengths,
-           lambda1: int = 466,
-           lambda2: int = 536,
-           m1: float = 1,
-           m0: float = 0,
-           n: float = 1,
-           normalized: bool = True):
+           lambda1 = 466,
+           lambda2 = 536,
+           m1 = 1,
+           m0 = 0,
+           n = 1,
+           normalized = True):
     """
     Relative water depth [1] 
     
