@@ -1,3 +1,3 @@
-__all__ = ["model","cdom","spm","turbidity","chl","depth"]
+__all__ = ["model","cdom","spm","turbidity","chl","bathymetry"]
 
-from . import model, cdom, spm, turbidity, chl, depth
+from . import bathymetry, model, cdom, spm, turbidity, chl
