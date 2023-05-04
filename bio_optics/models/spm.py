@@ -63,9 +63,9 @@ def novoa(R_w, wavelengths, a=130.1 , b=531.5, c=37150, d=1751, lambda1=561, lam
     Returns:
         spm: concentration of SPM [mg L-1]
     """
-    band1 = R_w[find_closest(wavelengths, lambda1)]
-    band2 = R_w[find_closest(wavelengths, lambda2)]
-    band3 = R_w[find_closest(wavelengths, lambda3)]
+    band1 = R_w[find_closest(wavelengths, lambda1)[1]]
+    band2 = R_w[find_closest(wavelengths, lambda2)[1]]
+    band3 = R_w[find_closest(wavelengths, lambda3)[1]]
 
     # Models described in Table 2
     linear_green = a * band1
@@ -97,11 +97,11 @@ def novoa(R_w, wavelengths, a=130.1 , b=531.5, c=37150, d=1751, lambda1=561, lam
     spm[:] = np.nan
 
     # Select appropriate model based on decision tree (Table 3, Column 3)
-    spm[type0] = linear_green[type0]
-    spm[type1] = (alpha1 * linear_green + beta1 * linear_red)[type1]
-    spm[type2] = linear_red[type2]
-    spm[type3] = (alpha2 * linear_red + beta2 * poly_nir)[type3]
-    spm[type4] = poly_nir[type4]
+    spm = np.where(type0, linear_green,
+                   np.where(type1, (alpha1 * linear_green + beta1 * linear_red),
+                            np.where(type2, linear_red,
+                                     np.where(type3, (alpha2 * linear_red + beta2 * poly_nir),
+                                              np.where(type4, poly_nir, np.nan)))))
 
     return spm
 
