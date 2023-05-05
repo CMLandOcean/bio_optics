@@ -88,7 +88,7 @@ def flh(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     L2 = R_rs[find_closest(wavelengths, lambda2)[1]]
     L3 = R_rs[find_closest(wavelengths, lambda3)[1]]
 
-    k = ((R_rs[find_closest(wavelengths, lambda3)[0]]-R_rs[find_closest(wavelengths, lambda2)[1]]) / (R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda1)[1]]))
+    k = ((R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda2)[1]]) / (R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda1)[1]]))
 
     return L2 - (L3 + (L1 - L3) * k)
 
