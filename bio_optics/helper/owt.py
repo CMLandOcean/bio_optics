@@ -69,7 +69,7 @@ def qwip_score(R_rs, wavelengths):
     return qwip_score
 
 
-def balasubramanian(spectrum, wavelengths):
+def balasubramanian(R_rs, wavelengths):
     """
     Optical water type classification [1].
 
@@ -81,10 +81,10 @@ def balasubramanian(spectrum, wavelengths):
     Return:
         One of three water types (1: Blue-green water, 2: Green water, 3: Brown water)
     """
-    Rrs_665 = spectrum[find_closest(wavelengths, 665)[1]]
-    Rrs_492 = spectrum[find_closest(wavelengths, 492)[1]]
-    Rrs_560 = spectrum[find_closest(wavelengths, 560)[1]]
-    Rrs_740 = spectrum[find_closest(wavelengths, 740)[1]]
+    Rrs_665 = R_rs[find_closest(wavelengths, 665)[1]]
+    Rrs_492 = R_rs[find_closest(wavelengths, 492)[1]]
+    Rrs_560 = R_rs[find_closest(wavelengths, 560)[1]]
+    Rrs_740 = R_rs[find_closest(wavelengths, 740)[1]]
 
     return np.where(((Rrs_665 < Rrs_560) & (Rrs_665 > Rrs_492)), 2,
                 np.where(((Rrs_665 > Rrs_560) & (Rrs_740 > 0.01)), 3,
@@ -92,26 +92,26 @@ def balasubramanian(spectrum, wavelengths):
                         np.where(np.isnan(Rrs_665), np.nan, 2))))
 
 
-def jiang(spectrum: np.array, wavelengths: np.array):
+def jiang(R_rs: np.array, wavelengths: np.array):
     """
     Optical water type classification [1]. 
     
     [1] Jiang et al. (2021) [10.1016/j.rse.2021.112386].
 
     Args:
-        spectrum: spectrum as np.array in units of R_rs [1/sr]
+        R_rs: spectrum as np.array in units of R_rs [1/sr]
         wavelengths: wavelengths of spectrum [nm]
     Return:
         One of four water types as int (1: clear waters, 2: moderately turbid waters, 3: highly turbid waters, 4: extremely turbid waters)
     """
 
     # Find the closest wavelengths to the wavelengths suggested in Jiang et al. (2021)
-    Rrs_490 = spectrum[find_closest(wavelengths, 490)[1]]
-    Rrs_560 = spectrum[find_closest(wavelengths, 560)[1]]
-    Rrs_620 = spectrum[find_closest(wavelengths, 620)[1]]
-    Rrs_754 = spectrum[find_closest(wavelengths, 754)[1]]
+    Rrs_490 = R_rs[find_closest(wavelengths, 490)[1]]
+    Rrs_560 = R_rs[find_closest(wavelengths, 560)[1]]
+    Rrs_620 = R_rs[find_closest(wavelengths, 620)[1]]
+    Rrs_754 = R_rs[find_closest(wavelengths, 754)[1]]
     
     return np.where((Rrs_490 > Rrs_560), 1,
                     np.where((Rrs_490 > Rrs_620), 2,
-                             np.where(((Rrs_754 > Rrs_490) & (Rrs_754 > 0.01)), 3,
-                                      np.where(np.isnan(Rrs_490), np.nan, 4))))
+                             np.where(((Rrs_754 > Rrs_490) & (Rrs_754 > 0.01)), 4, 
+                                      np.where(np.isnan(Rrs_490), np.nan, 3))))
