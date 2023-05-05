@@ -177,7 +177,7 @@ def jiang(R_rs, wavelengths, lambda1=443, lambda2=490, lambda3=560, lambda4=620,
     ## Step 2: Model preparation 
     # Compute r_rs and u for selected wavelengths
     r_rs = above2below(R_rs[idx])
-    u = (-0.089 + np.sqrt(0.089**2 + 4 * 0.125 * r_rs)) / (2 * 0.0125)   
+    u = (-0.089 + np.sqrt(0.089**2 + 4 * 0.125 * r_rs)) / (2 * 0.125)   
     
     # Type 1:
     x = np.log((r_rs[lambdas.index(443)] + r_rs[lambdas.index(490)]) / (r_rs[lambdas.index(560)] + 5 * (r_rs[lambdas.index(665)]/r_rs[lambdas.index(490)]) * r_rs[lambdas.index(665)])) 
