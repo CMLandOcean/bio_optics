@@ -15,7 +15,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        'water_quality': ['data/*.txt']
+        'bio_optics': ['data/*.txt']
     },
     license='Apache-2.0',
     install_requires=[
