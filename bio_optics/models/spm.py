@@ -1,6 +1,8 @@
 import numpy as np
 from .. helper.utils import find_closest
-
+from .. helper.resampling import resample_a_w, resample_b_bw
+from .. helper import owt
+from .. surface.air_water import above2below
 
 def petus(R_rs, wavelengths, a=12450, b=666.1, c=0.48, lambda0=860):
     """
@@ -149,3 +151,54 @@ def dsa(R_rs, wavelengths, lambda1=671, lambda2=551, a=1.25, b=1.11):
     """
     X = R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]]
     return 10**(a + b * np.log(X))
+
+
+def jiang(R_rs, wavelengths, lambda1=443, lambda2=490, lambda3=560, lambda4=620, lambda5=665, lambda6=754, lambda7=865):
+    """"
+    Total suspended solid (TSS) estimation as described in Jiang et al. (2021) [10.1016/j.rse.2021.112386].
+    
+
+    :return: np.arrays of TSS and optical water types
+    """
+    # get wl and idx of relevant bands
+    lambdas = [lambda1, lambda2, lambda3, lambda4, lambda5, lambda6, lambda7]
+    wl, idx = np.array([find_closest(wavelengths, wl) for wl in lambdas]).T
+    # convert from idx from float to int to use them for indexing
+    idx = idx.astype(int)
+    
+    # get pure water absorption 
+    a_w = resample_a_w(wavelengths=wl)
+    # compute backscattering coefficient of pure water
+    b_bw = resample_b_bw(wavelengths=wl, fresh=False)
+
+    ## Step 1: Compute optical water type classification
+    water_type = owt.jiang(R_rs, wavelengths)
+
+    ## Step 2: Model preparation 
+    # Compute r_rs and u for selected wavelengths
+    r_rs = above2below(R_rs[idx])
+    u = (-0.089 + np.sqrt(0.089**2 + 4 * 0.125 * r_rs)) / (2 * 0.0125)   
+    
+    # Type 1:
+    x = np.log((r_rs[lambdas.index(443)] + r_rs[lambdas.index(490)]) / (r_rs[lambdas.index(560)] + 5 * (r_rs[lambdas.index(665)]/r_rs[lambdas.index(490)]) * r_rs[lambdas.index(665)])) 
+    a_560 = a_w[lambdas.index(560)] + 10**(-1.146 - 1.366 * x - 0.469 * x**2)                                                                   
+    tss_type1 = 94.607 * ((u[lambdas.index(560)] * a_560) / (1 - u[lambdas.index(560)]) - b_bw[lambdas.index(560)])
+
+    # Type 2:
+    a_665 = a_w[lambdas.index(665)] + 0.39 * (R_rs[idx[lambdas.index(665)]] / (R_rs[idx[lambdas.index(443)]] + R_rs[idx[lambdas.index(490)]]))**1.14
+    tss_type2 = 114.012 * ((u[lambdas.index(665)] * a_665) / (1 - u[lambdas.index(665)]) - b_bw[lambdas.index(665)])
+    
+    # Type 3:
+    tss_type3 = 137.665 * ((u[lambdas.index(754)] * a_w[lambdas.index(754)]) / (1 - u[lambdas.index(754)]) - b_bw[lambdas.index(754)])
+
+    # Type 4:
+    tss_type4 = 166.168 * ((u[lambdas.index(865)] * a_w[lambdas.index(865)]) / (1 - u[lambdas.index(865)]) - b_bw[lambdas.index(865)])
+
+    ## Step 5:          
+    tss = np.where(water_type==1, tss_type1,
+                np.where(water_type==2, tss_type2,
+                        np.where(water_type==3, tss_type3,
+                                    np.where(water_type==4, tss_type4, np.nan))))
+    
+    
+    return tss
