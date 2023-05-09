@@ -4,7 +4,7 @@ from .. helper import resampling, utils
 from . import air_water
 
 
-def gao2021(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=[]):
+def gao(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=[]):
     """
     Sun glint correction considering the spectral variation of the refractive index of water [1].
     Assumes zero reflectance of water in the infrared.
