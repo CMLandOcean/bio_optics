@@ -252,3 +252,26 @@ def resample_E_0(wavelengths = np.arange(400,800)):
     
     E_0_res = band_resampler(E_0_db["E_0"])    
     return E_0_res
+
+
+def resample_n(wavelengths = np.arange(400,800)):
+    """
+    Real part of the refractive index of liquid water at a reference temperature of 25 degC after Segelstein [1] from the refractiveindex.info database.
+
+    [1] Segelstein (1981): The complex refractive index of water. Master thesis. University of Missouri. Kansas City, MO. 
+
+    Args:
+        wavelengths: wavelengths to compute real part of the refractive index of water for
+    Returns:
+        real part of the refractive index of water for input wavelengths
+    """
+    n_db = pd.read_csv(os.path.join(data_dir, 'water_complex_refractive_index.txt'), sep=" ", skiprows=8, skipinitialspace=True).iloc[:-4].reset_index()
+    n_db.columns = ['lambda', 'n', 'k']
+    n_db = n_db.astype("float")
+    # select wavelength region between 340 nm and 2500 nm
+    n_db = n_db[(n_db["lambda"]>0.34) & (n_db["lambda"]<2.5)]
+    # resample to target wavelengths
+    band_resampler = BandResampler(n_db["lambda"].values*1000, wavelengths)   
+
+    n_res = band_resampler(n_db["n"])
+    return n_res
