@@ -16,8 +16,9 @@ def gao2021(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=[]):
         wavelengths: corresponding wavelengths [nm]
         theta_sun: solar zenith angle [radians]. Defaults to 0.001.
         lambda_nir: wavelength [nm] of infrared band where reflectance is assumed to be negligible. Defaults to 1640.
-        n1 (int, optional): Refrective index of origin medium, default: 1 for air
-        n2 (float, optional): Refrective index of origin medium, should be pre-resampled and passed to this function, default: [].
+        n1 (int, optional): Refractive index of origin medium, default: 1 for air
+        n2 (float, optional): Refractive index of destination medium (water), should be pre-resampled using resample_n() from the resampling module and passed to this function. 
+                              If a constant value (e.g., 1.33) is used, glint is considered to be spectrally uniform and this function becomes similar to other glint correction methods (e.g., Hedley), default: [].
 
     Returns:
         glint reflectance [-]
