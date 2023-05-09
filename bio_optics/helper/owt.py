@@ -92,7 +92,7 @@ def balasubramanian(R_rs, wavelengths):
                         np.where(np.isnan(Rrs_665), np.nan, 2))))
 
 
-def jiang(R_rs: np.array, wavelengths: np.array):
+def jiang(R_rs, wavelengths):
     """
     Optical water type classification [1]. 
     
