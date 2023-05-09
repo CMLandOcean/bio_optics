@@ -1,5 +1,4 @@
-# WaterQuality
-[![DOI](https://zenodo.org/badge/629102462.svg)](https://zenodo.org/badge/latestdoi/629102462)
+# bio_optics
 
 The WaterQuality python package (v0.0.1) is an open-source framework for forward and inverse modelling of above-water multi- and hyperspectral observations of natural water bodies. It contains the bio-optical models of Albert & Mobley (2003)[^1] and couples them to the surface reflectance model of Gege (2012)[^2]. The intention of the authors was to build a modular and extendable software package that allows the combination and creation of different models to study optical properties of natural water bodies. It can be used for simulation and analysis of spectroscopy data through inversion of the above-mentioned models. Single parts of the models can also be run as single modules, e.g., for the analysis of spectral backscattering or absorption measurements, or the correction of sun and sky glint at the water surface. 
 
