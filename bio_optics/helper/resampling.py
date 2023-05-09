@@ -265,7 +265,7 @@ def resample_n(wavelengths = np.arange(400,800)):
     Returns:
         real part of the refractive index of water for input wavelengths
     """
-    n_db = pd.read_csv(os.path.join(data_dir, 'water_complex_refractive_index.txt'), sep=" ", skiprows=8, skipinitialspace=True).iloc[:-4].reset_index()
+    n_db = pd.read_csv(os.path.join(data_dir, 'water_complex_reflective_index.txt'), sep=" ", skiprows=8, skipinitialspace=True).iloc[:-4].reset_index()
     n_db.columns = ['lambda', 'n', 'k']
     n_db = n_db.astype("float")
     # select wavelength region between 340 nm and 2500 nm
