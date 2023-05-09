@@ -54,6 +54,3 @@ def constant_nir(R, wavelengths, lambda_nir=980):
         glint factor at lambda_nir [-]
     """
     return R[utils.find_closest(wavelengths, lambda_nir)[1]]
-
-
-def 
