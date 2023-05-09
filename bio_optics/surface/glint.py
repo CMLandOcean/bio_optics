@@ -35,7 +35,7 @@ def gao(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=[]):
     elif len(R.shape)==2:
          sun_glint = np.einsum('i,j->ij', fresnel_reflectance, RTO_B_Ref)
     elif len(R.shape)==1:
-         sun_glint = fresnel_reflectance * RTO_B_Ref
+         sun_glint = RTO_B_Ref
          
     return sun_glint
 
