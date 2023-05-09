@@ -72,8 +72,8 @@ def snell(theta_inc, n1=1, n2=1.33):
     Compute the refraction angle using Snell's Law.
 
     :param theta_inc: Incident angle [radians]
-    :param n1: Refrective index of origin medium, default: 1 for air
-    :param n2: Refrective index of destination medium, default: 1.33 for water
+    :param n1: Refractive index of origin medium, default: 1 for air
+    :param n2: Refractive index of destination medium, default: 1.33 for water
     :returns theta: refraction angle in radians.
     """
     return np.arcsin(n1 / n2 * np.sin(theta_inc))
@@ -84,8 +84,8 @@ def fresnel(theta_inc, n1=1, n2=1.33):
     Fresnel reflectance for unpolarized incoming light for a horizontally flat air-water interface.
 
     :param theta_inc: Incident angle [radians]
-    :param n1: Refrective index of origin medium, default: 1 for air
-    :param n2: Refrective index of destination medium, default: 1.33 for water
+    :param n1: Refractive index of origin medium, default: 1 for air
+    :param n2: Refractive index of destination medium, default: 1.33 for water
     :return: Fresnel reflectance for unpolarized incoming light
     """
     theta_inc_w = snell(theta_inc, n1, n2)
