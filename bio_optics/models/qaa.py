@@ -147,7 +147,7 @@ def qaa_cdom(R_rs,
         b_bw_res = resample_b_bw(wavelengths)
 
     # Step 0 [1]
-    r_rs = above2below(R_rs)
+    r_rs = above2below(R_rs, Gamma=[1.8, 2.0, 2.1, 2.2])
 
     # Step 1 [1]
     u = 1 - np.exp((-k0 * r_rs**k1)/(0.31 - r_rs))
@@ -160,8 +160,8 @@ def qaa_cdom(R_rs,
     b_bp_555 = ((u[idx[2]] * a_555) / (1-u[idx[2]])) - b_bw_res[idx[2]]
     
     # Step 4 [1]
-    y = 2.2 * (1 - 1.2 * np.exp(-0.9 * (r_rs[idx[0]]/r_rs[idx[2]])))
-    b_bp = np.asarray([b_bp_555 * (wavelengths[idx[2]] / lambda_i)**y for lambda_i in wavelengths])
+    eta = 2.2 * (1 - 1.2 * np.exp(-0.9 * (r_rs[idx[0]]/r_rs[idx[2]])))
+    b_bp = np.asarray([b_bp_555 * (wavelengths[idx[2]] / lambda_i)**eta for lambda_i in wavelengths])
     
     # Step 5 [1]
     a_440 = (1-u[idx[0]]) * (b_bw_res[idx[0]] + b_bp[idx[0]]) / u[idx[0]]
