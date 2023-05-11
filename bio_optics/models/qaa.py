@@ -121,7 +121,7 @@ def qaa_cdom(R_rs,
     [3] Lee et al. (no year): An Update of the Quasi-Analytical Algorithm (QAA_v5). Available online: https://www.ioccg.org/groups/Software_OCA/QAA_v5.pdf
 
     Args:
-        R_rs: remote sensing reflectance [sr-1]
+        R_rs: remote sensing reflectance [sr-1] for selected bands (lambdas)
         wavelengths: corresponding wavelengths [nm]
         lambdas: wavelengths used in QAAV5. Defaults to np.array([440, 490, 555, 640]).
         k0: Defaults to 6.807 [1].
