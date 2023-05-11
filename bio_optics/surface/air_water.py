@@ -50,6 +50,7 @@ def below2above(r_rs, zeta=0.52, Gamma=1.6):
     :param r_rs: subsurface radiance reflectance
     :return: remote sensing reflectance
     """
+    Gamma = np.broadcast_to(Gamma, r_rs.T.shape).T # Broadcasting enables using arrays instead of single numbers
     return (zeta * r_rs) / (1 - Gamma * r_rs)
     
 
@@ -64,6 +65,7 @@ def above2below(R_rs, zeta=0.52, Gamma=1.6):
     :param R_rs: remote sensing reflectance
     :return: subsurface radiance reflectance
     """
+    Gamma = np.broadcast_to(Gamma, R_rs.T.shape).T # Broadcasting enables using arrays instead of single numbers
     return R_rs / (zeta + Gamma * R_rs)
     
     
