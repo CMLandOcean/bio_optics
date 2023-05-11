@@ -19,7 +19,7 @@ def petus(R_rs, wavelengths, a=12450, b=666.1, c=0.48, lambda0=860):
         lambda0: wavelength for turbidity estimation. Defaults to 860.
     Returns: spm [mg L-1]
     """
-    x = R_rs[find_closest(wavelengths, 860)[1]]
+    x = R_rs[find_closest(wavelengths, lambda0)[1]]
     return a*x**2 + b*x + c
 
 
