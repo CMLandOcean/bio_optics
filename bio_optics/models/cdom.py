@@ -67,7 +67,7 @@ def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
-        lambda0: reference wavelength [nm] to compute a_cdom for. Defaults to 443.
+        lambda0: reference wavelength [nm] to compute a_cdom for. Defaults to 443. Alternatives are 355 and 412.
         lambda1: TBD
         lambda2: TBD      
     Returns: 
