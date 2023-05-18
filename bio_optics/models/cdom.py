@@ -55,7 +55,7 @@ def loisel(R_rs, wavelengths, lambda1=412, lambda2=555, sza=0):
 
 def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
     """
-    Empirical model to estimate CDOM absorption [m-1] at a reference wavelengths (lambda0).
+    Empirical model to estimate CDOM absorption [m-1] at a reference wavelengths (lambda0) at 443 nm, 412 nm or 355 nm.
     Coefficients are for MODIS-Aqua.
 
     "The form of the algorithm is the nonlinear one-phase exponential decay regression model. The non-linear function was
