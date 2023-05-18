@@ -111,7 +111,7 @@ def qaa_cdom(R_rs,
              b_bw_res=[]):
     """
     Quasi-Analytical Algorithm (QAA) to derive absorption of CDOM and particulate matter at a reference wavelength of 440 nm [1] based on the QAA_v5 algorithm [2,3]. 
-    Only valid for optically deep water.    
+    Only valid for optically deep water.
 
     Zhu & Yu made some empirical adjustments based on the NOMAD data set. These adjustments (e.g., computation of u in Step 1) are incorporated in this function,
     except for the Gamma adjustment in u(). 
