@@ -54,7 +54,7 @@ def K_d(a,
     :param a: spectral absorption coefficient of a water body
     :param b_b: spectral backscattering coefficient of a water body
     :param theta_sun: sun zenith angle in air in units of radians
-    :param n1: refrective index of origin medium, default: 1 for air
+    :param n1: refractive index of origin medium, default: 1 for air
     :param n2: refractive index of destination medium, default: 1.33 for water
     :param kappa_0: coefficient depending on scattering phase function, default: 1.0546 [2]
     :return: diffuse attenuation for downwelling irradiance
