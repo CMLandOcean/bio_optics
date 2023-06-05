@@ -250,6 +250,7 @@ def T_wv(wavelengths=np.arange(400,800), theta_sun=np.radians(30), WV=2.5, a_wv_
     :param wavelengths: wavelengths to compute T_aa for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
     :param WV: precipitable water [cm], default: 2.5
+    :param a_wv_res: optional, precomputing a_wv saves a lot of time.
     """
     T_wv = np.exp((-0.2385 * absorption.a_wv(wavelengths, a_wv_res=a_wv_res) * WV * M(theta_sun=theta_sun)) / (1 + 20.07 * absorption.a_wv(wavelengths, a_wv_res=a_wv_res) * WV * M(theta_sun=theta_sun))**0.45)
     return T_wv
