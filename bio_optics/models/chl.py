@@ -110,3 +110,22 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     band2 = R_rs[find_closest(wavelengths,lambda2)[1]]
 
     return a0 + a1 *  ndi(band2, band1) + a2 * ndi(band2, band1)**2
+
+
+def li(R_rs, wavelengths, blue=466.79, green=536.90, red=652.07, a=-0.4909, b=191.659):
+    """
+    Simple chl-a retrieval after Li et al. (2019) [1].
+    Part of adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters).
+
+    [1] Li et al. (2019): Adaptive bathymetry estimation for shallow coastal waters using Planet Dove satellites [10.1016/j.rse.2019.111302]
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        blue (float, optional): Wavelength of blue band [nm]. Defaults to 466.79.
+        green (float, optional): Wavelength of green band [nm]. Defaults to 536.90.
+        red (float, optional): Wavelength of red band [nm]. Defaults to 652.07.
+    """
+    omega = R_rs[find_closest(wavelengths, green)[1]] - 0.46 * R_rs[find_closest(wavelengths, red)[1]] - 0.54 * R_rs[find_closest(wavelengths, blue)[1]]
+    
+    return 10**(a + b * omega)
