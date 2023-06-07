@@ -174,4 +174,4 @@ def qaa_cdom(R_rs,
     # Step 7 [1]
     a_g_440 = a_440 - a_w_res[idx[0]] - a_p_440
 
-    return a_p_440, a_g_440
+    return [a_p_440, a_g_440]
