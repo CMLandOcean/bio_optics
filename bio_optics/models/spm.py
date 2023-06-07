@@ -96,7 +96,7 @@ def novoa(R_w, wavelengths, a=130.1 , b=531.5, c=37150, d=1751, lambda1=561, lam
 
     # Create empty array to fill
     spm = np.empty(type1.shape)
-    spm[:] = np.nan
+    spm = np.nan
 
     # Select appropriate model based on decision tree (Table 3, Column 3)
     spm = np.where(type0, linear_green,
