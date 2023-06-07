@@ -333,3 +333,5 @@ def forward(params,
                                     A_res=A_res,
                                     b_bw_res=b_bw_res,
                                     R_i_b_res=R_i_b_res) + params['offset'])
+    
+    return R_rs_sim
