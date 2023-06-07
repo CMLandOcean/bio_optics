@@ -292,7 +292,7 @@ def resample_A(wavelengths = np.arange(400,800)):
     """
  
     # read file
-    a = pd.read_csv(os.path.join(data_dir, 'E0_sun.txt'), sep='\t', skiprows=7)
+    a = pd.read_csv(os.path.join(data_dir, 'a_phy_empirical_factors.txt'), sep='\t', skiprows=7)
     # resample to sensor bands
     band_resampler = BandResampler(a["wavelength_nm"].values, wavelengths)    
     a_0 = band_resampler(np.asarray(a["a_0"]))
