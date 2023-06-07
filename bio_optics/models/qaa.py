@@ -116,6 +116,8 @@ def qaa_cdom(R_rs,
     Zhu & Yu made some empirical adjustments based on the NOMAD data set. These adjustments (e.g., computation of u in Step 1) are incorporated in this function,
     except for the Gamma adjustment in u(). 
 
+    !!! Note that this implementation requires R_rs and wavelengths to contain only the relevant bands !!!
+
     [1] Zhu & Yu (2013): Inversion of chromophoric dissolved organic matter from EO-1 hyperion imagery for turbid estuarine and coastal waters [10.1109/TGRS.2012.2224117]
     [2] Lee et al. (2002): Deriving inherent optical properties from water color: A multiband quasi-analytical algorithm for optically deep waters [10.1364/ao.41.005755]
     [3] Lee et al. (no year): An Update of the Quasi-Analytical Algorithm (QAA_v5). Available online: https://www.ioccg.org/groups/Software_OCA/QAA_v5.pdf
