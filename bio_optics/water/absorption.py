@@ -263,3 +263,29 @@ def a(C_0 = 0,
     a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * temperature_gradient.da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res) + a_wc
     
     return a
+
+
+def a_Phi(a_phy_440 = 0.01,
+          wavelengths=np.arange(400,800),
+          A_res=[]):
+    """
+    Phytoplankton pigment absorption coefficient based on the empirical parameters A0 and A1 (Phi0 and Phi1 in some publications) first described in Lee (1994) [1]
+    according to the Eq. 12 and the values for A0 and A1 provided in Tab. 2 in Lee et al. (1998) [2].    
+    In most of Lee's work the phytoplankton absorption coefficient at 440 nm (here: a_phy_440) is called P (e.g., [2]).
+        
+    [1] Lee (1994): Visible-Infrared Remote-Sensing Model and Applications for Ocean Waters. Dissertation.
+    [2] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1 A semianalytical model [10.1364/ao.37.006329]
+    
+    :param a_phy_440: Phytoplankton absorption coefficient at 440 nm, usually called P in Lee's work; default: 0.01.
+    :param wavelengths: wavelength range to compute a_phy for; default: 400 nm - 800 nm.
+    :param A_res: empirical factors A0 and A1 resampled to the band setting of the used sensor; saves a lot of time during inversion.
+    :return: phytoplankton pigment absorption coefficient for the provided wavelengths and a given chlorophyll a concentration.
+    """    
+    if len(A_res)==0:
+        A0, A1 = resampling.resample_A(wavelengths=wavelengths)
+    else:
+        A0, A1 = A_res[0], A_res[1]
+        
+    a_phy = (A0 + A1 * np.log(a_phy_440)) * a_phy_440
+    
+    return a_phy
