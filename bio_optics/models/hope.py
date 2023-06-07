@@ -216,10 +216,10 @@ def func2opt(params,
                        g_0 = params['g_0'],
                        g_1 = params['g_1'],
                        theta_sun = params['theta_sun'],
-                       a_w_res=[],
-                       A_res=[],
-                       b_bw_res=[],
-                       R_i_b_res=[]) + params['offset']
+                       a_w_res=a_w_res,
+                       A_res=A_res,
+                       b_bw_res=b_bw_res,
+                       R_i_b_res=R_i_b_res) + params['offset']
     
     error_method = params['error_method']    
     
@@ -228,7 +228,7 @@ def func2opt(params,
         err = (np.abs(r_rs-r_rs_sim))**2
     elif error_method == 2:
         # absolute differences
-        err = np.abs(r_rs-r_rs_sim)
+        err = np.abs(r_rs-r_rs_sim) * weights
     elif error_method == 3:
         # relative differences
         err = np.abs(1 - r_rs_sim/r_rs)
