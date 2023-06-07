@@ -161,3 +161,175 @@ def r_rs_sh(C_Mie = 1,              # represents X from Eq. 19 [2]
               np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_B(u=u)))
                 
     return r_rs_sh
+
+
+def func2opt(params, 
+             R_rs,
+             wavelengths, 
+             weights = [],
+             a_w_res=[],
+             A_res=[],
+             b_bw_res=[],
+             R_i_b_res=[]):
+    """_summary_
+
+    Args:
+        params (_type_): _description_
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        weights (list, optional): _description_. Defaults to [].
+        a_w_res (list, optional): _description_. Defaults to [].
+        A_res (list, optional): _description_. Defaults to [].
+        b_bw_res (list, optional): _description_. Defaults to [].
+        R_i_b_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        _type_: _description_
+    """
+    r_rs = air_water.above2below(R_rs)
+    
+    r_rs_sim = r_rs_sh(wavelengths = wavelengths,
+                       C_Mie = params['C_Mie'],    
+                       C_Y = params['C_Y'], 
+                       a_phy_440 = params['a_phy_440'], 
+                       zB = params['zB'], 
+                       f_0 = params['f_0'],
+                       f_1 = params['f_1'],
+                       f_2 = params['f_2'],
+                       f_3 = params['f_3'],
+                       f_4 = params['f_4'],
+                       f_5 = params['f_5'],
+                       B_0 = params['B_0'],
+                       B_1 = params['B_1'],
+                       B_2 = params['B_2'],
+                       B_3 = params['B_3'],
+                       B_4 = params['B_4'],
+                       B_5 = params['B_5'],
+                       lambda_0 = params['lambda_0'],
+                       lambda_S = params['lambda_S'],
+                       S = params['S'],
+                       b_bMie_spec = params['b_bMie_spec'],
+                       n = params['n'],
+                       fresh = params['fresh'],
+                       n1 = params['n1'],
+                       n2 = params['n2'],
+                       g_0 = params['g_0'],
+                       g_1 = params['g_1'],
+                       theta_sun = params['theta_sun'],
+                       a_w_res=[],
+                       A_res=[],
+                       b_bw_res=[],
+                       R_i_b_res=[]) + params['offset']
+    
+    error_method = params['error_method']    
+    
+    if error_method == 1:
+        # least squares
+        err = (np.abs(r_rs-r_rs_sim))**2
+    elif error_method == 2:
+        # absolute differences
+        err = np.abs(r_rs-r_rs_sim)
+    elif error_method == 3:
+        # relative differences
+        err = np.abs(1 - r_rs_sim/r_rs)
+    elif error_method == 4:
+        # the one described in Li et al. (2017)
+        err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sqrt(np.sum(r_rs))
+    elif error_method == 5:
+        # absolute percentage difference
+        err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sum(r_rs)
+
+    return err
+
+
+def invert(params, 
+           R_rs, 
+           wavelengths,
+           weights = [],
+           a_w_res=[],
+           A_res=[],
+           b_bw_res=[],
+           R_i_b_res=[],
+           method="least-squares", 
+           max_nfev=400
+           ):
+    """
+    Function to inversely fit a modeled spectrum to a measurement spectrum.
+    
+    :param params: lmfit Parameters object containing all Parameter objects that are required to specify the model
+    :param R_rs: Remote sensing reflectance spectrum [sr-1]
+    :param wavelengths: wavelengths of R_rs bands [nm]
+    :param weights: spectral weighing coefficients
+    :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
+    :param A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
+    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
+    :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
+    :param method: name of the fitting method to use by lmfit, default: 'least-squares'
+    :param max_nfev: maximum number of function evaluations, default: 400
+    :return: object containing the optimized parameters and several goodness-of-fit statistics.
+    """ 
+
+    res = minimize(func2opt,
+                   params, 
+                   args=(R_rs,
+                         wavelengths, 
+                         weights,
+                         a_w_res, 
+                         A_res,
+                         b_bw_res, 
+                         R_i_b_res), 
+                   method=method, 
+                   max_nfev=max_nfev) 
+    return res
+        
+
+def forward(params,
+            wavelengths,
+            a_w_res=[],
+            A_res = [],
+            b_bw_res = [],
+            R_i_b_res = [],):
+    """
+    Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
+    
+    :param params: lmfit Parameters object containing all Parameter objects that are required to specify the model
+    :param wavelengths: wavelengths of R_rs bands [nm]
+    :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
+    :param A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
+    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time . Will be computed within function if not provided.
+    :param R_i_b_res: optional, preresampling R_i_b saves a lot of time. Will be computed within function if not provided.
+    :return: R_rs: simulated remote sensing reflectance spectrum [sr-1]
+    """
+    R_rs_sim = air_water.below2above(
+                            r_rs_sh(wavelengths = wavelengths,
+                                    C_Mie = params['C_Mie'],
+                                    C_Y = params['C_Y'], 
+                                    a_phy_440 = params['a_phy_440'], 
+                                    zB = params['zB'], 
+                                    f_0 = params['f_0'],
+                                    f_1 = params['f_1'],
+                                    f_2 = params['f_2'],
+                                    f_3 = params['f_3'],
+                                    f_4 = params['f_4'],
+                                    f_5 = params['f_5'],
+                                    B_0 = params['B_0'],
+                                    B_1 = params['B_1'],
+                                    B_2 = params['B_2'],
+                                    B_3 = params['B_3'],
+                                    B_4 = params['B_4'],
+                                    B_5 = params['B_5'],
+                                    lambda_0 = params['lambda_0'],
+                                    lambda_S = params['lambda_S'],
+                                    S = params['S'],
+                                    b_bMie_spec = params['b_bMie_spec'],
+                                    n = params['n'],
+                                    fresh = params['fresh'],
+                                    n1 = params['n1'],
+                                    n2 = params['n2'],
+                                    g_0 = params['g_0'],
+                                    g_1 = params['g_1'],
+                                    theta_sun = params['theta_sun'],
+                                    a_w_res=a_w_res,
+                                    A_res=A_res,
+                                    b_bw_res=b_bw_res,
+                                    R_i_b_res=R_i_b_res) + params['offset'])
