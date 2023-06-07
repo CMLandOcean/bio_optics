@@ -275,3 +275,27 @@ def resample_n(wavelengths = np.arange(400,800)):
 
     n_res = band_resampler(n_db["n"])
     return n_res
+
+
+def resample_A(wavelengths = np.arange(400,800)):
+    """
+    Spectral parameters for the empirical a_Phy() simulation after [1,2].
+ 
+    [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1 A semianalytical model [10.1364/AO.37.006329]
+    [2] Lee (1994): VISIBLE-INFRARED REMOTE-SENSING MODEL AND APPLICATIONS FOR OCEAN WATERS. Dissertation.
+
+    Args:
+        wavelengths: wavelengths to empirical parameters A0 and A1 water for
+
+    Returns:
+        empirical parameters A0 and A1 for input wavelengths
+    """
+ 
+    # read file
+    a = pd.read_csv(os.path.join(data_dir, 'E0_sun.txt'), sep='\t', skiprows=7)
+    # resample to sensor bands
+    band_resampler = BandResampler(a["wavelength_nm"].values, wavelengths)    
+    a_0 = band_resampler(np.asarray(a["a_0"]))
+    a_1 = band_resampler(np.asarray(a["a_1"]))
+    
+    return a_0, a_1
