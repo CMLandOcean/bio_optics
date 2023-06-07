@@ -51,8 +51,8 @@ def r_rs_dp(u, g_0=0.084, g_1=0.170):
 
     Args:
         u (_type_): b_b / (a + b_b)
-        g_0 (float, optional): Defaults to 0.084.
-        g_1 (float, optional): Defaults to 0.17.
+        g_0 (float, optional): Defaults to 0.084 [sr-1].
+        g_1 (float, optional): Defaults to 0.17 [sr-1].
 
     Returns:
         r_rs_dp: Subsurface radiance reflectance [sr-1] for optically deep water
@@ -62,26 +62,11 @@ def r_rs_dp(u, g_0=0.084, g_1=0.170):
     return r_rs_dp
 
 
-def r_rs_sh(C_Mie = 1,       # represents X from Eq. 10 [1]
-            
-            b_bMie_spec = 1, # must be 1 so C_Mie can represent X
-            lambda_S = 400,
-            n = -1,          # should be estimated using utils.estimate_y()*(-1)
-
-            wavelengths = np.arange(400,800),
-            fresh = False,
-
-            
-
-
-            B = 1,
-            lambda_B = 560,
-            C_Y = 0.0001,
-            lambda_0 = 440,
-            a_phy_440 = 0.0001,
-
-
-            f_0 = 0,
+def r_rs_sh(C_Mie = 1,              # represents X from Eq. 19 [2]
+            C_Y = 0.0001,           # represents G from Eq. 17 [2]
+            a_phy_440 = 0.0001,     # represents P from Eq. 16 [2]
+            zB = 2,                 # represents H from Eq. 9 [2]
+            f_0 = 0,                
             f_1 = 1,
             f_2 = 0,
             f_3 = 0,
@@ -93,23 +78,74 @@ def r_rs_sh(C_Mie = 1,       # represents X from Eq. 10 [1]
             B_3 = 1/np.pi,
             B_4 = 1/np.pi,
             B_5 = 1/np.pi,
+            lambda_0 = 440,
+            lambda_S = 400,
             S = 0.015,
-            zB = 2,
+            b_bMie_spec = 1,        # must be 1 so C_Mie can represent X
+            n = -1,                 # should be estimated using utils.estimate_y()*(-1), varies between 0 and -2.5 [1]
+            fresh = False,
             n1 = 1,
             n2 = 1.33,
             g_0 = 0.084, 
             g_1 = 0.17,
-            theta_inc = np.radians(30),
+            theta_sun = np.radians(30),
+            wavelengths = np.arange(400,800),
             a_w_res=[],
             A_res=[],
             b_bw_res=[],
             R_i_b_res=[]):
     """
-    """
-    # Backscattering and absorption coefficients of the water body depending on the concentration of optically active water constituents
-    # b_bp is defined as X * (400/wavelengths)**Y in Lee et al. (1998) [1]. Almost the same formulation is used in Albert and Mobley (2003) [2] for b_bMie,
-    # thus b_bp() can be exchanged with b_bMie(lambda_S=400, n=-y, b_bMie_spec=1). C_Mie then represents X.
+    Subsurface reflectance of shallow water [sr-1] after Lee et al. (1998, 1999) [1,2].
     
+    In Eq. 19 [2] b_bp' is defined as: 
+        b_bp' = X * (400/wavelengths)**Y
+    Where X combines the particle- backscattering coefficient, viewing-angle information, as well as sea state into one variable [2]. 
+    Almost the same formulation is used in Albert and Mobley (2003) [3] for b_bMie, thus b_bp' can be exchanged with b_bMie(lambda_S=400, n=-Y, b_bMie_spec=1). 
+    When b_bMie_spec = 1, C_Mie represents X. The exponent Y needs to be multiplied by -1 because the wavelength ratio is the opposite in [3].
+
+    Instead of representing bottom albedo as a spectrum normalized at 560 nm and scaled with fit parameter B, we use the implementation of [3] to model bottom albedo as a mixture of
+    up to 6 bottom types.
+
+    [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1 A semianalytical model [10.1364/AO.37.006329]
+    [2] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2 Deriving bottom depths and water properties by optimization [10.1364/ao.38.003831]
+    [3] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
+
+    Args:
+        C_Mie: concentration of non-algal particles type II [mg L-1] from [3], represents particulate backscattering coefficient (plus viewing angle and sea state) at lambda_S=400 nm (X) from Eq. 19 [2] when b_bMie_spec==1, default: 0
+        C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
+        a_phy_440: phytoplankton absorption coefficient at 440 nm, default: 0
+        zB: water depth [m], default: 2
+        f_0: fractional cover of bottom type 0, default: 0
+        f_1: fractional cover of bottom type 1, default: 0
+        f_2: fractional cover of bottom type 2, default: 0
+        f_3: fractional cover of bottom type 3, default: 0
+        f_4: fractional cover of bottom type 4, default: 0
+        f_5: fractional cover of bottom type 5, default: 0
+        B_0: proportion of radiation reflected towards the sensor from bottom type 0, default: 1/np.pi
+        B_1: proportion of radiation reflected towards the sensor from bottom type 1, default: 1/np.pi
+        B_2: proportion of radiation reflected towards the sensor from bottom type 2, default: 1/np.pi
+        B_3: proportion of radiation reflected towards the sensor from bottom type 3, default: 1/np.pi
+        B_4: proportion of radiation reflected towards the sensor from bottom type 4, default: 1/np.pi
+        B_5: proportion of radiation reflected towards the sensor from bottom type 5, default: 1/np.pi
+        lambda_0: reference wavelength for CDOM and NAP absorption [nm], default: 440 nm
+        lambda_S: reference wavelength for scatteromg of particles type II [nm] , default: 400 nm
+        S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.015
+        b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] from [3] but used here to compute b_bp' and must be 1, default: 1
+        n: Angström exponent of particle type II backscattering usually called y or Y in Lee's work, should be estimated using utils.estimate_y()*(-1), default: -1
+        n1: refractive index of origin medium, default: 1 for air
+        n2: refractive index of destination medium, default: 1.33 for water
+        g_0: Empirical value. Defaults to 0.084.
+        g_1: Empirical value. Defaults to 0.17.
+        theta_sun: sun zenith angle [radians], default: np.radians(30)
+        wavelengths: wavelengths to compute r_rs_sh for [nm], default: np.arange(400,800) 
+        a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
+        A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
+        b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
+        R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
+
+    Returns:
+        r_rs_sh: subsurface radiance reflectance [sr-1] of shallow water
+    """
     bs = backscattering.b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res) + \
          backscattering.b_bMie(C_Mie=C_Mie, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n)
     
@@ -120,22 +156,8 @@ def r_rs_sh(C_Mie = 1,       # represents X from Eq. 10 [1]
     kappa = ab + bs    
     u = bs / kappa
     
-    r_rs_sh = (r_rs_dp(u=u, g_0=g_0, g_1=g_1) * (1 - np.exp(-kappa*zB* (1/np.cos(air_water.snell(theta_inc=theta_inc, n1=n1, n2=n2)) + D_u_C(u=u))))) + \
-              bottom_reflectance.R_rs_b_norm(B=B,
-                                             lambda_B=lambda_B,
-                                             f_0=f_0,
-                                             f_1=f_1, 
-                                             f_2=f_2, 
-                                             f_3=f_3, 
-                                             f_4=f_4, 
-                                             f_5=f_5, 
-                                             B_0=B_0, 
-                                             B_1=B_1, 
-                                             B_2=B_2, 
-                                             B_3=B_3, 
-                                             B_4=B_4, 
-                                             B_5=B_5, 
-                                             wavelengths=wavelengths, 
-                                             R_i_b_res=R_i_b_res) * np.exp(-k*zB * (1/np.cos(air_water.snell(theta_inc=theta_inc, n1=n1, n2=n2)) + D_u_B(u=u)))
+    r_rs_sh = (r_rs_dp(u=u, g_0=g_0, g_1=g_1) * (1 - np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_C(u=u))))) + \
+              bottom_reflectance.R_rs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
+              np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_B(u=u)))
                 
     return r_rs_sh
