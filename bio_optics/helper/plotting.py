@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def rgb_to_hex(rgb):
     """
     Convert an RGB into hex color code.
