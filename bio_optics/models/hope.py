@@ -242,7 +242,7 @@ def func2opt(params,
         err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sum(r_rs)
     elif error_method == 6:
         # least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
-        err = (np.abs(savgol_filter(r_rs_sim, window_length=7, polyorder=3, deriv=1) - savgol_filter(r_rs, window_length=7, polyorder=3, deriv=1)))**2 * weights
+        err = (savgol_filter(r_rs_sim, window_length=7, polyorder=3, deriv=1) - savgol_filter(r_rs, window_length=7, polyorder=3, deriv=1))**2 * weights
     elif error_method == 7:
         # least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
         err = np.sum((r_rs_sim - r_rs)**2 * weights)
