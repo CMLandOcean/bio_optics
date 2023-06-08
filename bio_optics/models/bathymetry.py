@@ -41,7 +41,7 @@ def stumpf(R_w,
 
 def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1000, normalized=False):
     """
-    Adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters) using Planet Dove satellites
+    Adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters)
      
     [1] Li et al. (2019): Adaptive bathymetry estimation for shallow coastal waters using Planet Dove satellites [10.1016/j.rse.2019.111302]
             
@@ -70,5 +70,3 @@ def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1
 
     # Note that depth is computed with subsurface r_rs in [1] instead of R_w as in stumpf()
     return stumpf(above2below(R_rs), wavelengths=wavelengths, m1=m1, m0=m0, n=n, normalized=normalized)
-
-    
