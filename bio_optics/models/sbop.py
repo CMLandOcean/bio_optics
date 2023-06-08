@@ -6,9 +6,9 @@ from .. models import hope
 from .. surface import surface, air_water
 from .. helper import resampling
 
-def r_rs_sh(C_Mie = 0.02,           # represents X from Eq. 19 [2]
-            C_Y = 0,                # represents G from Eq. 17 [2]
-            zB = 2,                 # represents H from Eq. 9 [2]
+def r_rs_sh(C_Mie = 0.02,           # represents P from Eq. 10 [1]
+            C_Y = 0,                # represents M from Eq. 11 [1]
+            zB = 2,                 # represents H from Eq. 4 [1]
             f_0 = 0,                
             f_1 = 1,
             f_2 = 0,
@@ -24,8 +24,8 @@ def r_rs_sh(C_Mie = 0.02,           # represents X from Eq. 19 [2]
             lambda_0 = 440,
             lambda_S = 555,
             S = 0.015,
-            b_bMie_spec = 1,        # must be 1 so C_Mie can represent X
-            n = -1,                 # should be estimated using utils.estimate_y()*(-1), varies between 0 and -2.5 [1]
+            b_bMie_spec = 1,        # must be 1 so C_Mie can represent P
+            n = -1,                 # should be estimated using utils.estimate_y()*(-1)
             fresh = False,
             q = 0.75,
             g_0 = 0.089, 
