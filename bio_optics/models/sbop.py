@@ -6,7 +6,7 @@ from .. models import hope
 from .. surface import surface, air_water
 from .. helper import resampling
 
-def r_rs_sh(C_Mie = 0.02,           # represents P from Eq. 10 [1]
+def r_rs_sh(C_Mie = 0,           # represents P from Eq. 10 [1]
             C_Y = 0,                # represents M from Eq. 11 [1]
             zB = 2,                 # represents H from Eq. 4 [1]
             f_0 = 0,                
