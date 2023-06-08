@@ -34,13 +34,12 @@ def r_rs_sh(C_Mie = 0.02,           # represents X from Eq. 19 [2]
             b_bw_res=[],
             R_i_b_res=[]):
     """
-    Subsurface reflectance of shallow water [sr-1] after Li et al. (2017) [1].
+    Shallow water bio-optical properties (SBOP) model after Li et al. (2017) [1].
     
-    In Eq. 19 [2] b_bp' is defined as: 
-        b_bp' = X * (400/wavelengths)**Y
-    Where X combines the particle- backscattering coefficient, viewing-angle information, as well as sea state into one variable [2]. 
-    Almost the same formulation is used in Albert and Mobley (2003) [3] for b_bMie, thus b_bp' can be exchanged with b_bMie(lambda_S=400, n=-Y, b_bMie_spec=1). 
-    When b_bMie_spec = 1, C_Mie represents X. The exponent Y needs to be multiplied by -1 because the wavelength ratio is the opposite in [3].
+    In Eq. 10 [1] b_bp is defined as: 
+        b_bp = P * (wavelengths/555)**y
+    Almost the same formulation is used in Albert and Mobley (2003) [3] for b_bMie, thus b_bp can be exchanged with b_bMie(lambda_S=555, n=-y, b_bMie_spec=1). 
+    When b_bMie_spec = 1, C_Mie represents P. The exponent y needs to be multiplied by -1.
 
     Instead of representing bottom albedo as a spectrum normalized at 560 nm and scaled with fit parameter B, we use the implementation of [3] to model bottom albedo as a mixture of
     up to 6 bottom types.
@@ -50,7 +49,7 @@ def r_rs_sh(C_Mie = 0.02,           # represents X from Eq. 19 [2]
     [3] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 
     Args:
-        C_Mie: concentration of non-algal particles type II [mg L-1] from [3], represents particulate backscattering coefficient (plus viewing angle and sea state) at lambda_S=400 nm (X) from Eq. 19 [2] when b_bMie_spec==1, default: 0
+        C_Mie: concentration of non-algal particles type II [mg L-1] from [3], represents particulate backscattering coefficient (plus viewing angle and sea state) at lambda_S=555 nm (P) from Eq. 10 [1] when b_bMie_spec==1, default: 0
         C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
         a_phy_440: phytoplankton absorption coefficient at 440 nm, default: 0
         zB: water depth [m], default: 2
