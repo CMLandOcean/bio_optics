@@ -2,7 +2,7 @@ import numpy as np
 from .. helper.utils import find_closest
 
 
-def hico(R_rs, wavelengths, lambda1=490, lambda2=670):
+def hico(R_rs, wavelengths, lambda1=670, lambda2=490):
     """
     Empirical CDOM model for the HICO mission [1]
     
@@ -14,8 +14,8 @@ def hico(R_rs, wavelengths, lambda1=490, lambda2=670):
     :param lambda_2: wavelength of second band [nm], default: 670
     :return: CDOM absorption at 412 nm [m-1]
     """
-    band1 = R_rs[find_closest(wavelengths, lambda2)[1]]
-    band2 = R_rs[find_closest(wavelengths, lambda1)[1]]
+    band1 = R_rs[find_closest(wavelengths, lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths, lambda2)[1]]
 
     return 0.8426 * (band1/band2) - 0.032
 
