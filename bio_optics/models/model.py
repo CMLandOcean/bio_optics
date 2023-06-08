@@ -438,10 +438,10 @@ def func2opt(params,
     
     if error_method == 1:
         # least squares
-        err = (np.abs(R_rs-R_rs))**2
+        err = (np.abs(R_rs_sim-R_rs))**2
     elif error_method == 2:
         # absolute differences
-        err = np.abs(R_rs-R_rs) * weights
+        err = np.abs(R_rs_sim-R_rs) * weights
     elif error_method == 3:
         # relative differences
         err = np.abs(1 - R_rs_sim/R_rs)
