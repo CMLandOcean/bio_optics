@@ -40,6 +40,7 @@ import os
 import numpy as np
 import pandas as pd
 from spectral import BandResampler
+from scipy.interpolate import interp1d
 from .. water import backscattering
 
 
@@ -299,3 +300,23 @@ def resample_A(wavelengths = np.arange(400,800)):
     a_1 = band_resampler(np.asarray(a["a_1"]))
     
     return a_0, a_1
+
+
+def resample_srf(srf, original_wavelengths, original_spectrum,  kind='slinear', fill_value='extrapolate'):
+    """
+    Resample a spectrum to a sensor's band setting using it's spectral response function (SRF).
+    Uses scipy.interpolate.interp1d.
+    
+    :param srf: pd.DataFrame with columns ['Wavelength (nm)', band_1_response, ..., band_i_response]
+    :param central_wavelengths: np.array of central wavelengths [nm] for new spectrum
+    :return np.array of resampled reflectance with len(n_bands in SRF).
+    """
+    resampled_spectrum = np.zeros(len(srf.columns[1:]))*np.nan
+    
+    for band_i in range(1,len(srf.columns)-1): # first column is 'Wavelength (nm)'
+        # fit interpolated SRF for respective band
+        interp = interp1d(srf['Wavelength (nm)'], srf[srf.columns[band_i]], kind=kind, fill_value=fill_value)
+        # interpolate original spectrum to SRF bands, multiply interpolated SRF with spectrum, sum and divide by sum of SRF
+        resampled_spectrum[band_i-1] = np.sum(np.multiply(interp(original_wavelengths), original_spectrum)) / np.sum(srf[srf.columns[band_i]])
+        
+    return resampled_spectrum
