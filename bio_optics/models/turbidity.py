@@ -54,3 +54,30 @@ def hico(R_rs, wavelengths, a=2e6, b=2.7848, lambda0=646):
     Returns: turbidity [NTU]
     """
     return chen(R_rs, wavelengths, a, b, lambda0)
+
+
+def dogliotti(R, wavelengths):
+    """
+    Globally applicable one-band turbidity algorithm after Dogliotti et al. (2015) [1].
+    The algorithm uses different wavelengths depending on turbidity: 645 nm for low turbidity and 859 nm for medium to high turbidity, and blends the two by linear weighting in the transition zone.
+        
+    [1] Dogliotti et al. (2015): A single algorithm to retrieve turbidity from remotely-sensed data in all coastal and estuarine waters [10.1016/j.rse.2014.09.020]
+
+    Args:
+        R: Water reflectance [-] spectrum
+        wavelengths: correspondong wavelengths [nm]
+
+    Returns:
+        T_blend: turbidity [FNU]
+    """
+    T_low = 228.1 * R[utils.find_closest(wavelengths, 645)[1]] / (1 - R[utils.find_closest(wavelengths, 645)[1]] / 0.1641)
+    T_high = 3078.9 * R[utils.find_closest(wavelengths, 859)[1]] / (1 - R[utils.find_closest(wavelengths, 859)[1]] / 0.2112)
+    
+    if R[utils.find_closest(wavelengths, 645)[1]] < 0.05:
+        return T_low
+    elif R[utils.find_closest(wavelengths, 645)[1]] > 0.07:
+        return T_high
+    else:
+        w = (R[utils.find_closest(wavelengths, 645)[1]] - 0.05) / (0.07 - 0.05)
+        T_blend = (1-w)*T_645 + w*T_859
+        return T_blend
