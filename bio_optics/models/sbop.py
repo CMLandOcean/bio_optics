@@ -156,19 +156,25 @@ def func2opt(params,
     
     if error_method == 1:
         # least squares
-        err = (np.abs(r_rs-r_rs_sim))**2
+        err = (np.abs(R_rs-R_rs))**2
     elif error_method == 2:
         # absolute differences
-        err = np.abs(r_rs-r_rs_sim) * weights
+        err = np.abs(R_rs-R_rs) * weights
     elif error_method == 3:
         # relative differences
-        err = np.abs(1 - r_rs_sim/r_rs)
+        err = np.abs(1 - R_rs_sim/R_rs)
     elif error_method == 4:
-        # the one described in Li et al. (2017)
-        err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sqrt(np.sum(r_rs))
+        # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015]
+        err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sqrt(np.sum(R_rs))
     elif error_method == 5:
         # absolute percentage difference
-        err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sum(r_rs)
+        err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sum(R_rs)
+    elif error_method == 6:
+        # least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
+        err = (np.abs(savgol_filter(R_rs, window_length=7, polyorder=3, deriv=1) - savgol_filter(R_rs, window_length=7, polyorder=3, deriv=1)))**2 * weights
+    elif error_method == 7:
+        # least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
+        err = np.sum((R_rs_sim - R_rs)**2 * weights)
 
     return err
 
