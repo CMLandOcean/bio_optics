@@ -63,9 +63,9 @@ def r_rs_dp(u, g_0=0.084, g_1=0.170):
     return r_rs_dp
 
 
-def r_rs_sh(C_Mie = 1,              # represents X from Eq. 19 [2]
-            C_Y = 0.0001,           # represents G from Eq. 17 [2]
-            a_phy_440 = 0.0001,     # represents P from Eq. 16 [2]
+def r_rs_sh(C_Mie = 1e-10,              # represents X from Eq. 19 [2]
+            C_Y = 1e-10,           # represents G from Eq. 17 [2]
+            a_phy_440 = 1e-10,     # represents P from Eq. 16 [2]
             zB = 2,                 # represents H from Eq. 9 [2]
             f_0 = 0,                
             f_1 = 1,
