@@ -157,7 +157,7 @@ def func2opt(params,
     
     if error_method == 1:
         # least squares
-        err = (R_rs_sim-R_rs)**2 * weights
+        err = (r_rs_sim-r_rs)**2 * weights
     elif error_method == 2:
         # absolute differences
         err = np.abs(r_rs_sim-r_rs) * weights
