@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import savgol_filter
 from lmfit import minimize, Parameters
 from .. water import absorption, backscattering, temperature_gradient, attenuation, bottom_reflectance
 from .. models import hope
