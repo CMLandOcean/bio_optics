@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import median_abs_deviation
 
+
 def outlier_1D(arr, m=2):
     """
     Identifies outliers in a 1D array. 
