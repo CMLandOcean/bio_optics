@@ -515,6 +515,9 @@ def invert(params,
     :param max_nfev: maximum number of function evaluations, default: 400
     :return: object containing the optimized parameters and several goodness-of-fit statistics.
     """    
+
+    if len(weights==0):
+        weights = np.ones(len(R_rs))
     
     if params['fit_surface']==True:
         res = minimize(func2opt, 
