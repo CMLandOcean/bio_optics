@@ -163,7 +163,7 @@ def r_rs_sh(C_0 = 0,
     :param n1: refractive index of origin medium, default: 1 for air
     :param n2: refractive index of destination medium, default: 1.33 for water
     :param kappa_0: coefficient depending on scattering phase function, default: 1.0546 [3]
-    :param fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: True
+    :param fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: False
     :param T_W: actual water temperature [degrees C], default: 20
     :param T_W_0: reference temperature of pure water absorption [degrees C], default: 20
     :param zB: water depth [m], default: 2
