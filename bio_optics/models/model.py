@@ -516,7 +516,7 @@ def invert(params,
     :return: object containing the optimized parameters and several goodness-of-fit statistics.
     """    
 
-    if len(weights==0):
+    if len(weights)==0:
         weights = np.ones(len(R_rs))
     
     if params['fit_surface']==True:
