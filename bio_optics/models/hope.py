@@ -1,7 +1,7 @@
 import numpy as np
 from lmfit import minimize, Parameters
 from .. water import absorption, backscattering, temperature_gradient, attenuation, bottom_reflectance
-from .. surface import surface, air_water
+from .. surface import air_water
 from .. helper import resampling
 
 
@@ -132,6 +132,7 @@ def r_rs_sh(C_Mie = 1,              # represents X from Eq. 19 [2]
         S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.015
         b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] from [3] but used here to compute b_bp' and must be 1, default: 1
         n: Angström exponent of particle type II backscattering usually called y or Y in Lee's work, should be estimated using utils.estimate_y()*(-1), default: -1
+        fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: False
         n1: refractive index of origin medium, default: 1 for air
         n2: refractive index of destination medium, default: 1.33 for water
         g_0: Empirical value. Defaults to 0.084.
