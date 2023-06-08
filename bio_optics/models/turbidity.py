@@ -70,14 +70,14 @@ def dogliotti(R, wavelengths):
     Returns:
         T_blend: turbidity [FNU]
     """
-    T_low = 228.1 * R[utils.find_closest(wavelengths, 645)[1]] / (1 - R[utils.find_closest(wavelengths, 645)[1]] / 0.1641)
-    T_high = 3078.9 * R[utils.find_closest(wavelengths, 859)[1]] / (1 - R[utils.find_closest(wavelengths, 859)[1]] / 0.2112)
+    T_low = 228.1 * R[find_closest(wavelengths, 645)[1]] / (1 - R[find_closest(wavelengths, 645)[1]] / 0.1641)
+    T_high = 3078.9 * R[find_closest(wavelengths, 859)[1]] / (1 - R[find_closest(wavelengths, 859)[1]] / 0.2112)
     
-    if R[utils.find_closest(wavelengths, 645)[1]] < 0.05:
+    if R[find_closest(wavelengths, 645)[1]] < 0.05:
         return T_low
-    elif R[utils.find_closest(wavelengths, 645)[1]] > 0.07:
+    elif R[find_closest(wavelengths, 645)[1]] > 0.07:
         return T_high
     else:
-        w = (R[utils.find_closest(wavelengths, 645)[1]] - 0.05) / (0.07 - 0.05)
-        T_blend = (1-w)*T_645 + w*T_859
+        w = (R[find_closest(wavelengths, 645)[1]] - 0.05) / (0.07 - 0.05)
+        T_blend = (1-w)*T_low + w*T_high
         return T_blend
