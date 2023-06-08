@@ -449,7 +449,7 @@ def func2opt(params,
         # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015]
         err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sqrt(np.sum(R_rs)) * weights
     elif error_method == 5:
-        # absolute percentage difference
+        # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013]
         err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sum(R_rs) * weights
     elif error_method == 6:
         # least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
