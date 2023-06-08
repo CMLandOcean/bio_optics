@@ -2,7 +2,7 @@ import numpy as np
 from .. helper.utils import find_closest
 
 
-def petus(R_rs, wavelengths, a=26110, b=604.5, c=0.24, lambda0=860):
+def petus(R_rs, wavelengths, a=26110, b=604.5, c=0.24, lambda0=645):
     """
     Empirical turbidity model for MODIS [1] 
 
@@ -17,7 +17,7 @@ def petus(R_rs, wavelengths, a=26110, b=604.5, c=0.24, lambda0=860):
         lambda0: wavelength for turbidity estimation. Defaults to 860.
     Returns: turbidity [NTU]
     """
-    x = R_rs[find_closest(wavelengths, 860)[1]]
+    x = R_rs[find_closest(wavelengths, lambda0)[1]]
     return a*x**2 + b*x + c
 
 
