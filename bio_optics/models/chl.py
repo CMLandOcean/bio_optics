@@ -55,9 +55,9 @@ def hico(R_rs, wavelengths, a=17.477, b=6.152, lambda1 = 686, lambda2 = 703, lam
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 675.
-        lambda2 (int, optional): _description_. Defaults to 720.
-        lambda3 (int, optional): _description_. Defaults to 748.
+        lambda1 (int, optional): _description_. Defaults to 686.
+        lambda2 (int, optional): _description_. Defaults to 703.
+        lambda3 (int, optional): _description_. Defaults to 735.
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
