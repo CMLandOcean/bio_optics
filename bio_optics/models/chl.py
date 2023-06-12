@@ -129,3 +129,166 @@ def li(R_rs, wavelengths, blue=466.79, green=536.90, red=652.07, a=-0.4909, b=19
     omega = R_rs[find_closest(wavelengths, green)[1]] - 0.46 * R_rs[find_closest(wavelengths, red)[1]] - 0.54 * R_rs[find_closest(wavelengths, blue)[1]]
     
     return 10**(a + b * omega)
+
+
+def guc2(R_rs, wavelengths, lambda1=663, lambda2=623, a=113.112, b=58.408, c=8.669, d=0.0384):
+    """
+    Goa University Case II semianalytical algorithm to retrieve chlorophyll-a in optically complex waters [1].
+    Fit to data from the Arabian Sea.
+    
+    [1] Menon & Adhikari (2018): Remote Sensing of Chlorophyll-A in Case II Waters: A Novel Approach With Improved Accuracy Over Widely Implemented Turbid Water Indices [10.1029/2018JC014052]
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1 (int, optional): Wavelength of first band [nm]. Defaults to 663.
+        lambda2 (int, optional): Wavelength of second band [nm]. Defaults to 623.
+        a (float, optional): Defaults to 113.112.
+        b (float, optional): Defaults to 58.408.
+        c (float, optional): Defaults to 8.669.
+        d (float, optional): Defaults to 0.0384.
+
+    Returns:
+        chlorophyll-a pigment concentration [ug L-1]
+    """
+    band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
+
+    x = (band1**(-1) - band2**(-1)) * band2
+    return a*x**3 - b*x**2 + c*x - d 
+
+
+def two_band(R_rs, wavelengths, lambda1=665.0, lambda2=708.0, a=61.324, b=-37.94):
+    """
+    Two-band ratio algorithm after Eq. 2 (Model A) in the Neil et al. (2019) compilation [1].
+
+    The "two-band ratio algorithm of Dall'Olmo et al. (2003), Moses et al. (2009) and Gitelson et al. (2011), originally proposed by Gitelson and Kondratyev (1991) and later adapted to MERIS bands. 
+    This is an empirical formula based on a linear relationship between in-situ Chla and the ratio of MERIS satellite remote sensing reflectance, measured at NIR, Rrs(708), and red, Rrs(665)" [1].
+
+    [1] Neil et al. (2018): A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types [10.1016/j.rse.2019.04.027]
+
+    Args:
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        lambda1 (optional): _description_. Defaults to 665.
+        lambda2 (optional): _description_. Defaults to 708.
+        a (float, optional): Defaults to 61.324.
+        b (float, optional): Defaults to -37.94.
+
+    Returns:
+        _type_: _description_
+    """
+    band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
+    
+    return a * (band2/band1) + b
+
+
+def three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, a=232.329, b=23.174):
+    """
+    Three-band ratio algorithm after Eq. 3 (Model B) in the Neil et al. (2019) compilation [1].
+
+    The "three-band algorithm developed by Moses et al. (2009) and adapted by Gitelson et al. (2011)" [1].
+    "In theory, the combination of three bands alters the model sensitivity to the presence of optically active constituents by removing the effects of SPM and CDOM 
+    (Rrs(665) and Rrs(708) are comparably influenced by SPM and CDOM and Rrs(753) is mainly driven by backscattering) " [1].
+
+    [1] Neil et al. (2018): A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types [10.1016/j.rse.2019.04.027]
+
+    Args:
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        lambda1 (int, optional): _description_. Defaults to 665.
+        lambda2 (int, optional): _description_. Defaults to 708.
+        lambda3 (int, optional): _description_. Defaults to 753.
+        a (float, optional): _description_. Defaults to 232.329.
+        b (float, optional): _description_. Defaults to 23.174.
+
+    Returns:
+        _type_: _description_
+    """
+    band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths,lambda2)[1]] 
+    band3 = R_rs[find_closest(wavelengths,lambda3)[1]]    
+    
+    return a * pigment_concentration(band1, band2, band3) + b
+
+
+def gurlin_two_band(R_rs, wavelengths, lambda1=665, lambda2=708, a=25.28, b=14.85, c=-15.18):
+    """
+    Two-band empirically derived ratio algorithm of Gurlin et al. (2011) after Eq. 4 (Model C) in the Neil et al. (2019) compilation [1].
+
+    [1] Neil et al. (2018): A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types [10.1016/j.rse.2019.04.027]
+
+    Args:
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        lambda1 (int, optional): _description_. Defaults to 665.
+        lambda2 (int, optional): _description_. Defaults to 708.
+        a (float, optional): _description_. Defaults to 25.28.
+        b (float, optional): _description_. Defaults to 14.85.
+        c (float, optional): _description_. Defaults to -15.18.
+
+    Returns:
+        _type_: _description_
+    """       
+    band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths,lambda2)[1]] 
+
+    return a * (band2/band1)**2 + b * (band2/band1) + c
+
+
+def gurlin_three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, a=315.50, b=215.95, c=25.66):
+    """
+    Three-band ratio algorithm of Gurlin et al. (2011) after Eq. 5 (Model D) in the Neil et al. (2019) compilation [1].
+
+    "Calibrated using field measurements of Rrs and Chla taken from Fremont lakes Nebraska" [1].
+
+    [1] Neil et al. (2018): A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types [10.1016/j.rse.2019.04.027]
+
+    Args:
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        lambda1 (int, optional): _description_. Defaults to 665.
+        lambda2 (int, optional): _description_. Defaults to 708.
+        lambda3 (int, optional): _description_. Defaults to 753.
+        a (float, optional): _description_. Defaults to 315.50.
+        b (float, optional): _description_. Defaults to 215.95.
+        c (float, optional): _description_. Defaults to 25.66.
+
+    Returns:
+        _type_: _description_
+    """
+            
+    band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
+    band3 = R_rs[find_closest(wavelengths,lambda3)[1]]   
+
+    Chla = a * (band3/(band1-band2))**2 + b * (band3/(band1-band2)) + c
+    return Chla
+
+
+def analytical_two_band(R_rs, wavelengths, lambda1=665.0, lambda2=708.0, a=35.75, b=19.30, c=1.124):
+    """
+    Advanced two-band semi-analytical algorithm proposed by Gilerson et al. (2010) after Eq. 7 (Model E) in the Neil et al. (2019) compilation [1].
+
+    "While this is governed by the ratio of NIR to red reflectance, model coefficients are determined analytically from individual absorption components contributing to 
+    the total IOPs of the water body. It is assumed that the water term dominates (at red-NIR wavelengths) where Chla concentration is > 5 mg m-3" [1].
+    
+    [1] Neil et al. (2018): A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types [10.1016/j.rse.2019.04.027]
+
+    Args:
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        lambda1 (float, optional): _description_. Defaults to 665.0.
+        lambda2 (float, optional): _description_. Defaults to 708.0.
+        a (float, optional): _description_. Defaults to 35.75.
+        b (float, optional): _description_. Defaults to 19.30.
+        c (float, optional): _description_. Defaults to 1.124.
+
+    Returns:
+        _type_: _description_
+    """
+    band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
+    band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
+
+    return (a * (band2/band1) -b)**c            
