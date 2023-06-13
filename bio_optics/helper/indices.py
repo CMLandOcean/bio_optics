@@ -47,8 +47,8 @@ def ndwi(spectrum, wavelengths, green=559, nir=864):
         nir: nir wavelength [nm]
     Return: NDWI
     """
-    band1 = find_closest(wavelengths, green)[0]
-    band2 = find_closest(wavelengths, nir)[0]
+    band1 = spectrum[find_closest(wavelengths, green)[1]]
+    band2 = spectrum[find_closest(wavelengths, nir)[1]]
     return ndi(band1, band2)
 
 
@@ -65,8 +65,8 @@ def mndwi(spectrum, wavelengths, green=559, swir=1240):
         swir: swir wavelength [nm]
     Return: MNDWI
     """
-    band1 = find_closest(wavelengths, green)[0]
-    band2 = find_closest(wavelengths, swir)[0]
+    band1 = spectrum[find_closest(wavelengths, green)[1]]
+    band2 = spectrum[find_closest(wavelengths, swir)[1]]
     return ndi(band1, band2)
 
 
@@ -84,9 +84,9 @@ def hdwi(spectrum, wavelengths, red=650, nir1=700, nir2=850):
         nir2: nir2 wavelength [nm]
     Return: HDWI
     """
-    band1 = find_closest(wavelengths, red)[1]
-    band2 = find_closest(wavelengths, nir1)[1]
-    band3 = find_closest(wavelengths, nir2)[1]
+    band1 = spectrum[find_closest(wavelengths, red)[1]]
+    band2 = spectrum[find_closest(wavelengths, nir1)[1]]
+    band3 = spectrum[find_closest(wavelengths, nir2)[1]]
 
     return (np.sum(spectrum[band1:band2], axis=0) - np.sum(spectrum[band2:band3], axis=0)) / (np.sum(spectrum[band1:band2], axis=0) + np.sum(spectrum[band2:band3], axis=0))
 
@@ -105,8 +105,8 @@ def ndti(spectrum, wavelengths, green=545, red=650):
         red: red wavelength [nm]
     Return: NDTI
     """
-    band1 = find_closest(wavelengths, red)[0]
-    band2 = find_closest(wavelengths, green)[0]
+    band1 = spectrum[find_closest(wavelengths, red)[1]]
+    band2 = spectrum[find_closest(wavelengths, green)[1]]
     return ndi(band1, band2)
 
 
@@ -124,12 +124,12 @@ def ndpi(spectrum, wavelengths, green=545, mir=1665):
         mir: mir wavelength [nm]
     Return: NDPI
     """
-    band1 = find_closest(wavelengths, mir)[0]
-    band2 = find_closest(wavelengths, green)[0]
+    band1 = spectrum[find_closest(wavelengths, mir)[1]]
+    band2 = spectrum[find_closest(wavelengths, green)[1]]
     return ndi(band1, band2)
 
 
-def awei(spectrum, wavelengths, band1=485, band2=560, band3=830, band4=1650, band5=2215, shade=False):
+def awei(R, wavelengths, band1=485, band2=560, band3=830, band4=1650, band5=2215, shade=False):
     """
     Automated Water Extraction Index (AWEI) [1] 
     to maximize separability of water and nonwater pixels through band differencing, addition and applying different coefficients based on Landsat 5 TM bands.
@@ -139,7 +139,7 @@ def awei(spectrum, wavelengths, band1=485, band2=560, band3=830, band4=1650, ban
     [1] Feyisa et al. (2014) [doi.org/10.1016/j.rse.2013.08.029]
     
     Args:
-        spectrum (_type_): _description_
+        R (_type_): Spectrum in units of Reflectance [-]
         wavelengths (_type_): _description_
         band1 (int, optional): _description_. Defaults to 485.
         band2 (int, optional): _description_. Defaults to 560.
@@ -147,11 +147,11 @@ def awei(spectrum, wavelengths, band1=485, band2=560, band3=830, band4=1650, ban
         band4 (int, optional): _description_. Defaults to 1650.
         band5 (int, optional): _description_. Defaults to 2215.
     """
-    R_b1 = spectrum[find_closest(wavelengths, band1)[1]]
-    R_b2 = spectrum[find_closest(wavelengths, band2)[1]]
-    R_b4 = spectrum[find_closest(wavelengths, band3)[1]]
-    R_b5 = spectrum[find_closest(wavelengths, band4)[1]]
-    R_b7 = spectrum[find_closest(wavelengths, band5)[1]]
+    R_b1 = R[find_closest(wavelengths, band1)[1]]
+    R_b2 = R[find_closest(wavelengths, band2)[1]]
+    R_b4 = R[find_closest(wavelengths, band3)[1]]
+    R_b5 = R[find_closest(wavelengths, band4)[1]]
+    R_b7 = R[find_closest(wavelengths, band5)[1]]
 
     if shade==False:
         return 4 * (R_b2 - R_b5) - (0.25 * R_b4 + 2.75 * R_b7)
