@@ -139,7 +139,7 @@ def awei(R, wavelengths, band1=485, band2=560, band3=830, band4=1650, band5=2215
     [1] Feyisa et al. (2014) [doi.org/10.1016/j.rse.2013.08.029]
     
     Args:
-        R (_type_): Spectrum in units of Reflectance [-]
+        R (_type_): Spectrum or image in units of Reflectance [-]
         wavelengths (_type_): _description_
         band1 (int, optional): _description_. Defaults to 485.
         band2 (int, optional): _description_. Defaults to 560.
