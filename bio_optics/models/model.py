@@ -457,6 +457,8 @@ def func2opt(params,
     elif error_method == 7:
         # least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
         err = np.sum((R_rs_sim - R_rs)**2 * weights)
+    elif error_method == 8:
+        err - np.sum(np.abs(R_rs_sim-R_rs) * weights)
 
     return err
     
