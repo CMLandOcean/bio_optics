@@ -18,15 +18,15 @@
 # Translated to Python by:
 #  Marcel König, mkoenig3 AT asu.edu 
 #
-# WaterQuality
-#  Code is provided to Planet, PBC as part of the CarbonMapper Land and Ocean Program.
+# bio_optics
+#  A former version of this code was provided to Planet, PBC as part of the CarbonMapper Land and Ocean Program.
 #  It builds on the extensive work of many researchers. For example, models were developed  
 #  by Albert & Mobley [1] and Gege [2]; the methodology was mainly developed 
 #  by Gege [3,4,5] and Albert & Gege [6].
 #
 #  Please give proper attribution when using this code for publication:
 #
-#  König, M., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): WaterQuality python package (Version x) [Software]. Available from https://github.com/CMLandOcean/WaterQuality
+#  König, M., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): bio_optics python package (Version x) [Software]. Available from https://github.com/CMLandOcean/bio_optics
 #
 # [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 # [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spectral irradiance in water. [10.1364/AO.51.001407]
@@ -241,7 +241,7 @@ def r_rs_sh(C_0 = 0,
 
     return r_rs_sh
     
-    
+
 #################
 ### Inversion
 #################
