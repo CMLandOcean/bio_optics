@@ -3,7 +3,7 @@ from scipy.signal import savgol_filter
 from lmfit import minimize, Parameters
 from .. water import absorption, backscattering, temperature_gradient, attenuation, bottom_reflectance
 from .. surface import air_water
-from .. helper import resampling
+from .. helper import resampling, utils
 
 
 def D_u_C(u, f1=1.03, f2=2.4):
