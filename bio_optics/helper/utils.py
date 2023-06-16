@@ -84,7 +84,7 @@ def estimate_y(R_rs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.
 
 def compute_residual(y_true, y_pred, method=2, weights=[]):
     """
-    Residual computation for comparison of measured and simulated spectrum.
+    Residual computation for comparison of measured and simulated data.
 
     Args:
         y_true (_type_): array of true values
