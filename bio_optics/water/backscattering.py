@@ -63,7 +63,7 @@ def morel(wavelengths: np.array = np.arange(400,800),
 
 def b_bw(wavelengths: np.array = np.arange(400,800), 
          fresh: bool = True,
-         b_bw_res: np.array = []):
+         b_bw_res = []):
     """
     Spectral backscattering coefficient of pure water according to Morel (1974) [1].
     
@@ -85,7 +85,7 @@ def b_bw(wavelengths: np.array = np.arange(400,800),
 def b_bphy(C_phy: float = 0, 
            wavelengths: np.array = np.arange(400,800), 
            b_bphy_spec: float = 0.0010,           
-           b_phy_norm_res: np.array = []):
+           b_phy_norm_res = []):
     """
     Backscattering of phytoplankton resampled to specified wavelengths.
     The normalized phytoplankton scattering coefficient b_phy_norm is imported from file.
@@ -168,14 +168,14 @@ def b_bMie(C_Mie: float = 0,
 
 def b_bNAP(C_X: float = 0,
            C_Mie: float = 0,
-           wavelengths: np.array = np.arange(400,800),
+           wavelengths = np.arange(400,800),
            b_bMie_spec: float = 0.0042,
            lambda_S: float = 500, 
            n: float = -1,
            b_bX_spec: float = 0.0086,
            b_bX_norm_factor: float = 1,
-           b_X_norm_res: np.array = [],
-           b_Mie_norm_res: np.array = []):
+           b_X_norm_res = [],
+           b_Mie_norm_res = []):
     """
     Spectral backscattering coefficient of non-algal particles (NAP) as a mixture of two types with spectrally different backscattering coefficients [1].
     
@@ -211,8 +211,8 @@ def b_b(C_X: float = 0,
         b_bX_spec: float = 0.0086,
         b_bX_norm_factor: float = 1,
         b_bphy_spec: float = 0.0010,
-        b_bw_res: np.array = [],
-        b_phy_norm_res: np.array = [],
+        b_bw_res = [],
+        b_phy_norm_res = [],
         b_X_norm_res=[],
         b_Mie_norm_res=[]
         ):
