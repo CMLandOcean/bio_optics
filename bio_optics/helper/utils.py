@@ -20,6 +20,7 @@
 
 
 import numpy as np
+from scipy.signal import savgol_filter
 
 
 def find_closest(arr: np.array or list, val: int):  
@@ -79,3 +80,54 @@ def estimate_y(R_rs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.
     y = a * (b - c*np.exp(d*(R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]])))
     
     return y
+
+
+def compute_residual(y_true, y_pred, method=2, weights=[]):
+    """
+    Residual computation for comparison of measured and simulated spectrum.
+
+    Args:
+        y_true (_type_): array of true values
+        y_pred (_type_): array of predicted or simulated values
+        method (int, optional): Defaults to 2.
+        weights (list, optional): element-wise weighting factors, 1 for each element if not provided. Defaults to [].
+    Returns:
+        residual
+    """
+
+    if len(weights)==0:
+        weights = np.ones(len(y_true))
+    
+    if method == 1:
+        # element-wise least squares
+        return (y_pred-y_true)**2 * weights
+    elif method == 2:
+        # element-wise absolute differences
+        return np.abs(y_pred-y_true) * weights
+    elif method == 3:
+        # element-wise relative differences
+        return np.abs(1 - y_pred/y_true) * weights
+    elif method == 4:
+        # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015] but element-wise
+        return np.sqrt((y_true - y_pred)**2) / np.sqrt(y_true) * weights
+    elif method == 5:
+        # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013] but element-wise
+        return np.sqrt((y_true - y_pred)**2) / y_true * weights
+    elif method == 6:
+        # element-wise least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
+        return (savgol_filter(y_pred, window_length=7, polyorder=3, deriv=1) - savgol_filter(y_true, window_length=7, polyorder=3, deriv=1))**2 
+    elif method == 7:
+        # summed least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
+        return np.sum((y_pred - y_true)**2)
+    elif method == 8:
+        # summed absolute difference
+        return np.sum(np.abs(y_pred-y_true) * weights)
+    elif method == 9:
+        # summed relative differences
+        return np.sum(np.abs(1 - y_pred/y_true) * weights)
+    elif method == 10:
+        # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015]
+        return np.sqrt(np.sum((y_true - y_pred)**2)) / np.sqrt(np.sum(y_true)) * weights
+    elif method == 11:
+        # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013]
+        return np.sqrt(np.sum((y_true - y_pred)**2)) / np.sum(y_true) * weights
