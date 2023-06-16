@@ -165,91 +165,6 @@ def r_rs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
     return r_rs_sh
 
 
-def func2opt(params, 
-             R_rs,
-             wavelengths, 
-             weights = [],
-             a_w_res=[],
-             A_res=[],
-             b_bw_res=[],
-             R_i_b_res=[]):
-    """_summary_
-
-    Args:
-        params (_type_): _description_
-        R_rs (_type_): _description_
-        wavelengths (_type_): _description_
-        weights (list, optional): _description_. Defaults to [].
-        a_w_res (list, optional): _description_. Defaults to [].
-        A_res (list, optional): _description_. Defaults to [].
-        b_bw_res (list, optional): _description_. Defaults to [].
-        R_i_b_res (list, optional): _description_. Defaults to [].
-
-    Returns:
-        _type_: _description_
-    """
-    r_rs = air_water.above2below(R_rs)
-    
-    r_rs_sim = r_rs_sh(wavelengths = wavelengths,
-                       C_Mie = params['C_Mie'],    
-                       C_Y = params['C_Y'], 
-                       a_phy_440 = params['a_phy_440'], 
-                       zB = params['zB'], 
-                       f_0 = params['f_0'],
-                       f_1 = params['f_1'],
-                       f_2 = params['f_2'],
-                       f_3 = params['f_3'],
-                       f_4 = params['f_4'],
-                       f_5 = params['f_5'],
-                       B_0 = params['B_0'],
-                       B_1 = params['B_1'],
-                       B_2 = params['B_2'],
-                       B_3 = params['B_3'],
-                       B_4 = params['B_4'],
-                       B_5 = params['B_5'],
-                       lambda_0 = params['lambda_0'],
-                       lambda_S = params['lambda_S'],
-                       S = params['S'],
-                       b_bMie_spec = params['b_bMie_spec'],
-                       n = params['n'],
-                       fresh = params['fresh'],
-                       n1 = params['n1'],
-                       n2 = params['n2'],
-                       g_0 = params['g_0'],
-                       g_1 = params['g_1'],
-                       theta_sun = params['theta_sun'],
-                       a_w_res=a_w_res,
-                       A_res=A_res,
-                       b_bw_res=b_bw_res,
-                       R_i_b_res=R_i_b_res) + params['offset']
-    
-    error_method = params['error_method']    
-    
-    if error_method == 1:
-        # least squares
-        err = (r_rs_sim-r_rs)**2 * weights
-    elif error_method == 2:
-        # absolute differences
-        err = np.abs(r_rs_sim-r_rs) * weights
-    elif error_method == 3:
-        # relative differences
-        err = np.abs(1 - r_rs_sim/r_rs)
-    elif error_method == 4:
-        # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015]
-        err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sqrt(np.sum(r_rs))
-    elif error_method == 5:
-        # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013]
-        err = np.sqrt(np.sum((r_rs - r_rs_sim)**2)) / np.sum(r_rs)
-    elif error_method == 6:
-        # least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
-        err = (savgol_filter(r_rs_sim, window_length=7, polyorder=3, deriv=1) - savgol_filter(r_rs, window_length=7, polyorder=3, deriv=1))**2 * weights
-    elif error_method == 7:
-        # least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
-        err = np.sum((r_rs_sim - r_rs)**2 * weights)
-
-    return err
-
-
 def invert(params, 
            R_rs, 
            wavelengths,
@@ -346,3 +261,36 @@ def forward(params,
                                     R_i_b_res=R_i_b_res) + params['offset'])
     
     return R_rs_sim
+
+
+def func2opt(params, 
+             R_rs,
+             wavelengths, 
+             weights = [],
+             a_w_res=[],
+             A_res=[],
+             b_bw_res=[],
+             R_i_b_res=[]):
+    """_summary_
+
+    Args:
+        params (_type_): _description_
+        R_rs (_type_): _description_
+        wavelengths (_type_): _description_
+        weights (list, optional): _description_. Defaults to [].
+        a_w_res (list, optional): _description_. Defaults to [].
+        A_res (list, optional): _description_. Defaults to [].
+        b_bw_res (list, optional): _description_. Defaults to [].
+        R_i_b_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        _type_: _description_
+    """
+    R_rs_sim = forward(wavelengths = wavelengths,
+                       params = params,
+                       a_w_res=a_w_res,
+                       A_res=A_res,
+                       b_bw_res=b_bw_res,
+                       R_i_b_res=R_i_b_res) + params['offset']
+    
+    return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
