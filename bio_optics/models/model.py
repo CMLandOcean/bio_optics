@@ -41,7 +41,7 @@ from scipy.signal import savgol_filter
 from lmfit import minimize, Parameters
 from .. water import absorption, backscattering, temperature_gradient, attenuation, bottom_reflectance
 from .. surface import surface, air_water
-from .. helper import resampling
+from .. helper import resampling, utils
 
 
 def r_rs_dp(u, 
@@ -434,33 +434,33 @@ def func2opt(params,
                                     da_W_div_dT_res=da_W_div_dT_res)) + \
                             params['offset']
     
-    error_method = params['error_method']    
+    # error_method = params['error_method']    
     
-    if error_method == 1:
-        # least squares
-        err = (R_rs_sim-R_rs)**2 * weights
-    elif error_method == 2:
-        # absolute differences
-        err = np.abs(R_rs_sim-R_rs) * weights
-    elif error_method == 3:
-        # relative differences
-        err = np.abs(1 - R_rs_sim/R_rs) * weights
-    elif error_method == 4:
-        # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015]
-        err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sqrt(np.sum(R_rs)) * weights
-    elif error_method == 5:
-        # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013]
-        err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sum(R_rs) * weights
-    elif error_method == 6:
-        # least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
-        err = (savgol_filter(R_rs_sim, window_length=7, polyorder=3, deriv=1) - savgol_filter(R_rs, window_length=7, polyorder=3, deriv=1))**2 * weights
-    elif error_method == 7:
-        # least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
-        err = np.sum((R_rs_sim - R_rs)**2 * weights)
-    elif error_method == 8:
-        err = np.sum(np.abs(R_rs_sim-R_rs) * weights)
+    # if error_method == 1:
+    #     # least squares
+    #     err = (R_rs_sim-R_rs)**2 * weights
+    # elif error_method == 2:
+    #     # absolute differences
+    #     err = np.abs(R_rs_sim-R_rs) * weights
+    # elif error_method == 3:
+    #     # relative differences
+    #     err = np.abs(1 - R_rs_sim/R_rs) * weights
+    # elif error_method == 4:
+    #     # the one described in Li et al. (2017) [10.1016/j.isprsjprs.2017.03.015]
+    #     err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sqrt(np.sum(R_rs)) * weights
+    # elif error_method == 5:
+    #     # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013]
+    #     err = np.sqrt(np.sum((R_rs - R_rs_sim)**2)) / np.sum(R_rs) * weights
+    # elif error_method == 6:
+    #     # least squares on spectral derivatives after Petit et al. (2017) [10.1016/j.rse.2017.01.004]
+    #     err = (savgol_filter(R_rs_sim, window_length=7, polyorder=3, deriv=1) - savgol_filter(R_rs, window_length=7, polyorder=3, deriv=1))**2 * weights
+    # elif error_method == 7:
+    #     # least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
+    #     err = np.sum((R_rs_sim - R_rs)**2 * weights)
+    # elif error_method == 8:
+    #     err = np.sum(np.abs(R_rs_sim-R_rs) * weights)
 
-    return err
+    return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
     
     
 def invert(params, 
