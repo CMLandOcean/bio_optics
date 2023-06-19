@@ -23,7 +23,7 @@ import numpy as np
 from scipy.signal import savgol_filter
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_squared_error, r2_score
-import distance
+from . import distance
 
 
 def find_closest(arr: np.array or list, val: int):  
