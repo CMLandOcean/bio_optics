@@ -12,8 +12,7 @@ def spectral_angle(s1: np.array, s2: np.array):
         angle =  math.acos(np.dot(s1,s2) / (np.sqrt(np.dot(s1,s1)) * np.sqrt(np.dot(s2,s2))))
     
     except ValueError:
-        # python math don't like when acos is called with
-        # a value very near to 1
+        # python math don't like when acos is called with a value very near to 1
         return 0.0
 
     return angle   
