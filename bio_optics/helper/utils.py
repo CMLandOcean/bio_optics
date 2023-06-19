@@ -21,6 +21,9 @@
 
 import numpy as np
 from scipy.signal import savgol_filter
+from scipy.stats import pearsonr
+from sklearn.metrics import mean_squared_error, r2_score
+import distance
 
 
 def find_closest(arr: np.array or list, val: int):  
@@ -131,3 +134,21 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
     elif method == 11:
         # absolute percentage difference according to Barnes et al. (2018) [10.1016/j.rse.2017.10.013]
         return np.sqrt(np.sum((y_true - y_pred)**2)) / np.sum(y_true) * weights
+    elif method == 12:
+        # RMSE
+        return np.sqrt(mean_squared_error(y_true, y_pred, sample_weight=weights))
+    elif method == 13:
+        # 1 - absolute Pearson r
+        return 1 - np.abs(pearsonr(y_true, y_pred)[0])
+    elif method == 14:
+        # 1 - R2-score
+        return 1 - r2_score(y_true, y_pred)
+    elif method == 15:
+        # SAM
+        return distance.spectral_angle(y_true, y_pred)
+    elif method == 16:
+        # SID
+        return distance.spectral_information_divergence(y_true, y_pred)
+    elif method == 17:
+        # Chebyshev
+        return distance.chebyshev_distance(y_true, y_pred) 
