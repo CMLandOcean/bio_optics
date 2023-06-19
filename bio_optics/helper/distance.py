@@ -1,3 +1,6 @@
+import numpy as np
+import math
+
 def spectral_angle(s1: np.array, s2: np.array):
     """
     Compute the spectral angle between two vectors in radians after Kruse et al. (1993) [doi.org/10.1016/0034-4257(93)90013-N].
