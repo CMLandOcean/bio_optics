@@ -138,17 +138,14 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
         # RMSE
         return np.sqrt(mean_squared_error(y_true, y_pred, sample_weight=weights))
     elif method == 13:
-        # 1 - absolute Pearson r
-        return 1 - np.abs(pearsonr(y_true, y_pred)[0])
-    elif method == 14:
         # 1 - R2-score
         return 1 - r2_score(y_true, y_pred)
-    elif method == 15:
+    elif method == 14:
         # SAM
         return distance.spectral_angle(y_true, y_pred)
-    elif method == 16:
+    elif method == 15:
         # SID
         return distance.spectral_information_divergence(y_true, y_pred)
-    elif method == 17:
+    elif method == 16:
         # Chebyshev
         return distance.chebyshev_distance(y_true, y_pred) 
