@@ -61,7 +61,7 @@ def qwip_score(R_rs, wavelengths):
 
     [1] Dierssen et al. (2022) [doi.org/10.3389/frsen.2022.869611].
     
-    :param wavelengths: All available wavelengths between 400–700 nm 
+    :param wavelengths: All available wavelengths between 400 nm and 700 nm 
     :param R_rs: R_rs at respective wavelengths
     :return: QWIP score
     """
