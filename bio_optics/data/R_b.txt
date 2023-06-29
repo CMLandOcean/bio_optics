@@ -5,10 +5,10 @@ as white reference. Substrate and panel were illuminated with a tungsten halogen
 
 
 0. constant; a constant irradiance reflectance of 0.1 or 10 % [1]
-1. sand; spectrum is an average of 24 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, poyorder=5)
-2. coral; spectrum is an average of 101 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, poyorder=5)
-3. cca (crustose coralline algae); spectrum is an average of 751 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, poyorder=5)
-4. macroalgae; spectrum is an average of 102 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, poyorder=5)
+1. sand; spectrum is an average of 24 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, polyorder=5)
+2. coral; spectrum is an average of 101 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, polyorder=5)
+3. cca (crustose coralline algae); spectrum is an average of 751 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, polyorder=5)
+4. macroalgae; spectrum is an average of 102 single measurements that have been smoothed using a Savitzky-Golay filter (window size=45, polyorder=5)
 5. seagrass; seagrass (Zostera marina) from the Wismar bay in the Baltic Sea (Germany); measured in air (Schnalzger 2017 [2]) as provided with WASI6 [1]
 
 [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
