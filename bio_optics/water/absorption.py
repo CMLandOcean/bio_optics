@@ -289,3 +289,83 @@ def a_Phi(a_phy_440 = 0.01,
     a_phy = (A0 + A1 * np.log(a_phy_440)) * a_phy_440
     
     return a_phy
+
+
+def a_Y_pow(C_Y = 0, 
+        wavelengths = np.arange(400,800),
+        S = 6.92, 
+        lambda_0 = 412):
+    """
+    Spectral absorption of CDOM or yellow substances according to Twardowski et al. 2004 [doi.org/10.1016/j.marchem.2004.02.008].
+    "Another model that has been found to work even better than the exponential model is a power-law model" (Mobley, OceanOpticsBook 2022).
+        
+    :param C_Y: CDOM absorption coefficient [1/m]
+    :param wavelengths: wavelengths to compute 
+    :param S: spectral slope, default: 6.92 
+    :param lambda_0: wavelength used for normalization in nm, default: 412 nm
+    :return: spectral absorption coefficient of CDOM or yellow substances
+    """
+    
+    a_Y = C_Y * (wavelengths / lambda_0)**(-S)
+    
+    return a_Y
+    
+
+def a_Y_gauss(wavelengths=np.arange(400,800), phi1=1, mu1=0, sigma1=10, phi2=1, mu2=0, sigma2=10):
+    """
+    Gaussian decomposition CDOM model inspired by Gege [1].
+    Instead of the commonly used exponential function, CDOM absorption is described by two Gaussian peaks defined by phi, mu, and sigma.
+    Two gaussian peaks are fit per default and following the approach of Gege [3] as described in [4]:
+    (1) A first peak at 203 nm with variable mu and sigma, and
+    (2) a second peak in the wavelength region around 240 nm.
+    All components can be used as fit parameters.
+    
+    [1] Gege, P. (2000): Gaussian model for yellow substance absorption spectra. Proc. Ocean Optics XV conference, October 16-20, 2000, Monaco.
+    [2] Göritz, A. (2018): From laboratory spectroscopy to remote sensing : Methods for the retrieval of water constituents in optically complex waters. Dissertation.
+    
+    :param phi1: height of the first Gaussian peak, default: 1 
+    :param mu1: center position of the first peak, default: 0 (= standard exponential model)
+    :param sigma1: width of the first peak, default: 10
+    :param phi2: height of the second Gaussian peak, default: 1 
+    :param mu2: center position of the second peak, default: 0 (= standard exponential model)
+    :param sigma2: width of the second peak, default: 10
+    :return: spectral absorption coefficient of CDOM or yellow substances
+    """
+    return phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
+           phi2 * np.exp(-np.power(wavelengths - mu2, 2.) / (2 * np.power(sigma2, 2.)))
+    
+
+def a_Y_exp_gauss(C_Y=0, wavelengths=np.arange(400,800), S=0.014, lambda_0=440, K=0, phi1=1, mu1=0, sigma1=10, phi2=1, mu2=0, sigma2=10):
+    """
+    Gaussian decomposition CDOM model inspired by Massicotete & Stiig [1], Grunert et al. [2], and Gege [3].
+    Standard exponential CDOM model extended by two (2) Gaussian peaks defined by phi, mu, and sigma.
+    Two gaussian peaks are fit per default and following the approach of Gege [3] as described in [4]:
+    (1) A first peak at 203 nm with variable mu and sigma, and
+    (2) a second peak in the wavelength region around 240 nm.
+    All components can be used as fit parameters.
+    
+    [1] 10.1016/j.marchem.2016.01.008
+    [2] 10.1002/2017GB005756
+    [3] Gege, P. (2000): Gaussian model for yellow substance absorption spectra. Proc. Ocean Optics XV conference, October 16-20, 2000, Monaco.
+    [4] Göritz, A. (2018): From laboratory spectroscopy to remote sensing : Methods for the retrieval of water constituents in optically complex waters. Dissertation.
+    
+    :param C_Y: CDOM absorption coefficient at lambda_0 [1/m]
+    :param wavelengths: wavelengths to compute 
+    :param S: spectral slope, default: 0.014 [1/nm]
+    :param lambda_0: wavelength used for normalization in nm, default: 440 nm
+    :param K: Constant added to the exponential function. "What this constant represents is not clear. In some cases it is supposed to account 
+              for scattering by the dissolved component, however there is no reason to believe such scattering would be spectrally ﬂat (see Bricaud et al. 1981
+              for an in-depth discussion)" (Mobley [OceanOpticsBook], 2022).
+              "K is a constant addressing background noise and potential instrument bias (1/m)" (Grunert et al. 2018 [doi.org/10.1002/2017GB005756]).
+              , default: 0
+    :param phi1: height of the first Gaussian peak, default: 1 
+    :param mu1: center position of the first peak, default: 0 (= standard exponential model)
+    :param sigma1: width of the first peak, default: 10
+    :param phi2: height of the second Gaussian peak, default: 1 
+    :param mu2: center position of the second peak, default: 0 (= standard exponential model)
+    :param sigma2: width of the second peak, default: 10
+    :return: spectral absorption coefficient of CDOM or yellow substances
+    """
+    return a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S, lambda_0=lambda_0, K=K) + \
+           phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
+           phi2 * np.exp(-np.power(wavelengths - mu2, 2.) / (2 * np.power(sigma2, 2.)))
