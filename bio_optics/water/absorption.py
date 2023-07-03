@@ -294,7 +294,8 @@ def a_Phi(a_phy_440 = 0.01,
 def a_Y_pow(C_Y = 0, 
         wavelengths = np.arange(400,800),
         S = 6.92, 
-        lambda_0 = 412):
+        lambda_0 = 412,
+        K = 0):
     """
     Spectral absorption of CDOM or yellow substances according to Twardowski et al. 2004 [doi.org/10.1016/j.marchem.2004.02.008].
     "Another model that has been found to work even better than the exponential model is a power-law model" (Mobley, OceanOpticsBook 2022).
@@ -306,7 +307,7 @@ def a_Y_pow(C_Y = 0,
     :return: spectral absorption coefficient of CDOM or yellow substances
     """
     
-    a_Y = C_Y * (wavelengths / lambda_0)**(-S)
+    a_Y = C_Y * (wavelengths / lambda_0)**(-S) + K
     
     return a_Y
     
