@@ -312,7 +312,7 @@ def a_Y_pow(C_Y = 0,
     return a_Y
     
 
-def a_Y_gauss(wavelengths=np.arange(400,800), phi1=1, mu1=0, sigma1=10, phi2=1, mu2=0, sigma2=10):
+def a_Y_gauss(wavelengths=np.arange(400,800), C_Y=0, phi1=1, mu1=0, sigma1=10, phi2=1, mu2=0, sigma2=10, K=0):
     """
     Gaussian decomposition CDOM model inspired by Gege [1].
     Instead of the commonly used exponential function, CDOM absorption is described by two Gaussian peaks defined by phi, mu, and sigma.
@@ -332,8 +332,10 @@ def a_Y_gauss(wavelengths=np.arange(400,800), phi1=1, mu1=0, sigma1=10, phi2=1, 
     :param sigma2: width of the second peak, default: 10
     :return: spectral absorption coefficient of CDOM or yellow substances
     """
-    return phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
-           phi2 * np.exp(-np.power(wavelengths - mu2, 2.) / (2 * np.power(sigma2, 2.)))
+    return C_Y * \
+           phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
+           phi2 * np.exp(-np.power(wavelengths - mu2, 2.) / (2 * np.power(sigma2, 2.))) + \
+           K
     
 
 def a_Y_exp_gauss(C_Y=0, wavelengths=np.arange(400,800), S=0.014, lambda_0=440, K=0, phi1=1, mu1=0, sigma1=10, phi2=1, mu2=0, sigma2=10):
