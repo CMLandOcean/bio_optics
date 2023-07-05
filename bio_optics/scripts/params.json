@@ -1,0 +1,351 @@
+{
+    "params": [
+      {
+        "name": "C_0",
+        "value": 0,
+        "min": 0,
+        "max": 10,
+        "vary": true
+      },
+      {
+        "name": "C_1",
+        "value": 0,
+        "min": 0,
+        "max": 100,
+        "vary": false
+      },
+      {
+        "name": "C_2",
+        "value": 0,
+        "min": 0,
+        "max": 100,
+        "vary": false
+      },
+      {
+        "name": "C_3",
+        "value": 0,
+        "min": 0,
+        "max": 100,
+        "vary": false
+      },
+      {
+        "name": "C_4",
+        "value": 0,
+        "min": 0,
+        "max": 100,
+        "vary": false
+      },
+      {
+        "name": "C_5",
+        "value": 0,
+        "min": 0,
+        "max": 100,
+        "vary": false
+      },
+      {
+        "name": "C_Y",
+        "value": 0,
+        "min": 0,
+        "max": 2,
+        "vary": true
+      },
+      {
+        "name": "C_X",
+        "value": 0,
+        "min": 0,
+        "max": 25,
+        "vary": true
+      },
+      {
+        "name": "C_Mie",
+        "value": 0,
+        "min": 0,
+        "max": 25,
+        "vary": true
+      },
+      {
+        "name": "f_0",
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "vary": true
+      },
+      {
+        "name": "f_1",
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "vary": true
+      },
+      {
+        "name": "f_2",
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "vary": true
+      },
+      {
+        "name": "f_3",
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "vary": true
+      },
+      {
+        "name": "f_4",
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "vary": true
+      },
+      {
+        "name": "f_5",
+        "value": 0,
+        "min": 0,
+        "max": 1,
+        "vary": true
+      },
+      {
+        "name": "B_0",
+        "value": 0.3183098861837907,
+        "vary": false
+      },
+      {
+        "name": "B_1",
+        "value": 0.3183098861837907,
+        "vary": false
+      },
+      {
+        "name": "B_2",
+        "value": 0.3183098861837907,
+        "vary": false
+      },
+      {
+        "name": "B_3",
+        "value": 0.3183098861837907,
+        "vary": false
+      },
+      {
+        "name": "B_4",
+        "value": 0.3183098861837907,
+        "vary": false
+      },
+      {
+        "name": "B_5",
+        "value": 0.3183098861837907,
+        "vary": false
+      },
+      {
+        "name": "b_bphy_spec",
+        "value": 0.001,
+        "vary": false
+      },
+      {
+        "name": "b_bMie_spec",
+        "value": 0.0042,
+        "vary": false
+      },
+      {
+        "name": "b_bX_spec",
+        "value": 0.0086,
+        "min": 0,
+        "max": 1,
+        "vary": false
+      },
+      {
+        "name": "b_bX_norm_factor",
+        "value": 1,
+        "vary": false
+      },
+      {
+        "name": "a_NAP_spec_lambda_0",
+        "value": 0.041,
+        "vary": false
+      },
+      {
+        "name": "A",
+        "value": 0.0006,
+        "vary": false
+      },
+      {
+        "name": "B",
+        "value": -0.37,
+        "vary": false
+      },
+      {
+        "name": "S",
+        "value": 0.014,
+        "min": 0.007,
+        "max": 0.026,
+        "vary": false
+      },
+      {
+        "name": "S_NAP",
+        "value": 0.011,
+        "vary": false
+      },
+      {
+        "name": "K",
+        "value": 0,
+        "vary": false
+      },
+      {
+        "name": "n",
+        "value": 0,
+        "min": -1,
+        "max": -0.5,
+        "vary": false
+      },
+      {
+        "name": "lambda_0",
+        "value": 440,
+        "vary": false
+      },
+      {
+        "name": "lambda_S",
+        "value": 500,
+        "vary": false
+      },
+      {
+        "name": "theta_sun",
+        "value": 0.5235987755982988,
+        "min": 0,
+        "max": 1.5707963267948966,
+        "vary": false
+      },
+      {
+        "name": "theta_view",
+        "value": 0,
+        "min": 0,
+        "max": 1.5707963267948966,
+        "vary": false
+      },
+      {
+        "name": "n1",
+        "value": 1,
+        "vary": false
+      },
+      {
+        "name": "n2",
+        "value": 1.33,
+        "vary": false
+      },
+      {
+        "name": "kappa_0",
+        "value": 1.0546,
+        "vary": false
+      },
+      {
+        "name": "fresh",
+        "value": false,
+        "vary": false
+      },
+      {
+        "name": "zB",
+        "value": 10,
+        "min": 0,
+        "max": 100,
+        "vary": true
+      },
+      {
+        "name": "T_W",
+        "value": 25,
+        "min": 0,
+        "max": 40,
+        "vary": false
+      },
+      {
+        "name": "T_W_0",
+        "value": 20,
+        "vary": false
+      },
+      {
+        "name": "P",
+        "value": 1013.25,
+        "vary": false
+      },
+      {
+        "name": "AM",
+        "value": 1,
+        "vary": false
+      },
+      {
+        "name": "RH",
+        "value": 60,
+        "vary": false
+      },
+      {
+        "name": "H_oz",
+        "value": 0.381,
+        "vary": false
+      },
+      {
+        "name": "WV",
+        "value": 2.5,
+        "vary": false
+      },
+      {
+        "name": "alpha",
+        "value": 1.317,
+        "vary": false
+      },
+      {
+        "name": "beta",
+        "value": 0.2606,
+        "vary": false
+      },
+      {
+        "name": "g_dd",
+        "value": 0.02,
+        "min": -1,
+        "max": 10,
+        "vary": true
+      },
+      {
+        "name": "g_dsr",
+        "value": 0.3183098861837907,
+        "min": 0,
+        "max": 10,
+        "vary": true
+      },
+      {
+        "name": "g_dsa",
+        "value": 0.3183098861837907,
+        "min": 0,
+        "max": 10,
+        "vary": true
+      },
+      {
+        "name": "f_dd",
+        "value": 1,
+        "vary": false
+      },
+      {
+        "name": "f_ds",
+        "value": 1,
+        "vary": false
+      },
+      {
+        "name": "rho_L",
+        "value": 0.02006,
+        "vary": false
+      },
+      {
+        "name": "offset",
+        "value": 0,
+        "min": -0.1,
+        "max": 0.1,
+        "vary": false
+      },
+      {
+        "name": "fit_surface",
+        "value": true,
+        "vary": false
+      },
+      {
+        "name": "error_method",
+        "value": 2,
+        "vary": false
+      }
+    ]
+  }
