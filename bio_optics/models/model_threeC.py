@@ -332,8 +332,7 @@ def invert(params,
                              E_dsr_res,
                              E_d_res), 
                        method=method, 
-                       max_nfev=max_nfev,
-                       options={'disp': True, 'gtol': 1e-16, 'eps': 1e-07, 'maxiter': 15000, 'ftol': 1e-16, 'maxls': 20, 'maxcor': 20}) 
+                       max_nfev=max_nfev) 
                        
     elif params['fit_surface']==False:
 
