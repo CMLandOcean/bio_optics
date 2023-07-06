@@ -54,3 +54,21 @@ def constant_nir(R, wavelengths, lambda_nir=980):
         glint factor at lambda_nir [-]
     """
     return R[utils.find_closest(wavelengths, lambda_nir)[1]]
+
+
+def rsoa(wavelengths=np.arange(400,800), h0=0.0, h1=0.0, lambda0=550.0):
+    """
+    Power-law glint model after Lin et al. (2023) [1] as part of the revised spectral optimization approach (RSOA).
+
+    [1] Lin et al. (2023): Revised spectral optimization approach to remove surface-reflected radiance for the estimation of remote-sensing reflectance from the above-water method [10.1364/OE.486981]
+    Args:
+        wavelengths: wavelengths to compute rho for, default: np.arange(400,800)
+        h0 (float, optional): Defaults to 0. Boundaries are h0 < 0.5. [1].
+        h1 (float, optional): Defaults to 0. Boundaries are-0.1 < h1 < 0.5. [1].
+        lambda0 (float, optional): Reference wavelengths. Defaults to 550.
+
+    Returns:
+        rho: sea-surface skylight reflectance for provided wavelengths[sr-1]
+    """    
+     rho = h0 * (wavelengths / lambda0)**h1
+     return rho
