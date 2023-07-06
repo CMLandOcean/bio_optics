@@ -121,7 +121,7 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
         return (savgol_filter(y_pred, window_length=7, polyorder=3, deriv=1) - savgol_filter(y_true, window_length=7, polyorder=3, deriv=1))**2 
     elif method == 7:
         # summed least squared according to Groetsch et al. (2016) [10.1364/OE.25.00A742]
-        return np.sum((y_pred - y_true)**2)
+        return np.sum((y_pred - y_true)**2 * weights)
     elif method == 8:
         # summed absolute difference
         return np.sum(np.abs(y_pred-y_true) * weights)
