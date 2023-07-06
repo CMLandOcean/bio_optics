@@ -249,6 +249,7 @@ def r_rs_sh(C_0 = 0,
 def invert(params, 
            R_rs, 
            wavelengths,
+           Ls_Ed, 
            weights=[],
            a_i_spec_res=[],
            a_w_res=[],
@@ -301,6 +302,7 @@ def invert(params,
                        params, 
                        args=(R_rs, 
                              wavelengths, 
+                             Ls_Ed, 
                              weights, 
                              a_i_spec_res, 
                              a_w_res, 
@@ -319,11 +321,14 @@ def invert(params,
 
         params.add('h0', vary=False) 
         params.add('h1', vary=False) 
+
+        Ls_Ed = np.ones(len(R_rs))
         
         res = minimize(func2opt, 
                        params, 
                        args=(R_rs, 
                              wavelengths, 
+                             Ls_Ed, 
                              weights, 
                              a_i_spec_res, 
                              a_w_res, 
@@ -342,6 +347,7 @@ def invert(params,
 
 def forward(params,
             wavelengths,
+            Ls_Ed, 
             a_i_spec_res=[],
             a_w_res=[],
             a_Y_N_res = [],
@@ -436,7 +442,7 @@ def forward(params,
                             glint.rsoa(wavelengths = wavelengths, 
                                               h0=params['h0'], 
                                               h1=params['h1'], 
-                                              lambda0=params['lambda0']) + \
+                                              lambda0=params['lambda0']) * Ls_Ed + \
                             params['offset']
                             
     elif params['fit_surface']==False:
@@ -502,6 +508,7 @@ def forward(params,
 def func2opt(params, 
              R_rs,
              wavelengths, 
+             Ls_Ed, 
              weights = [],
              a_i_spec_res=[],
              a_w_res=[],
@@ -546,6 +553,7 @@ def func2opt(params,
 
     R_rs_sim = forward(params=params,
                        wavelengths=wavelengths,
+                       Ls_Ed = Ls_Ed, 
                        a_i_spec_res=a_i_spec_res,
                        a_w_res=a_w_res,
                        a_Y_N_res = a_Y_N_res,
