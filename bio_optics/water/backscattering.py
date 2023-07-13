@@ -214,7 +214,8 @@ def b_b(C_X: float = 0,
         b_bw_res = [],
         b_phy_norm_res = [],
         b_X_norm_res=[],
-        b_Mie_norm_res=[]
+        b_Mie_norm_res=[],
+        b_b_res=[]
         ):
     """
     Spectral backscattering coefficient of a natural water body as the sum of the backscattering coefficients of pure water, phytoplankton and non-algal particles [1].
@@ -239,8 +240,12 @@ def b_b(C_X: float = 0,
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
     :return:
     """  
-    b_b = b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res) + \
-          b_bNAP(C_Mie=C_Mie, C_X=C_X, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_bX_spec=b_bX_spec, b_bX_norm_factor=b_bX_norm_factor, b_X_norm_res=b_X_norm_res, b_Mie_norm_res=b_Mie_norm_res) + \
-          b_bphy(wavelengths=wavelengths, C_phy=C_phy, b_bphy_spec=b_bphy_spec, b_phy_norm_res=b_phy_norm_res)
+    if len(b_b_res)==0:
+        b_b = b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res) + \
+            b_bNAP(C_Mie=C_Mie, C_X=C_X, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_bX_spec=b_bX_spec, b_bX_norm_factor=b_bX_norm_factor, b_X_norm_res=b_X_norm_res, b_Mie_norm_res=b_Mie_norm_res) + \
+            b_bphy(wavelengths=wavelengths, C_phy=C_phy, b_bphy_spec=b_bphy_spec, b_phy_norm_res=b_phy_norm_res)
+        
+    else:
+        b_b = b_b_res
     
     return b_b
