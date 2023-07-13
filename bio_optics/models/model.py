@@ -117,7 +117,8 @@ def r_rs_sh(C_0 = 0,
             b_X_norm_res=[],
             b_Mie_norm_res=[],
             R_i_b_res = [],
-            da_W_div_dT_res=[]
+            da_W_div_dT_res=[],
+            b_b_res=[]
             ):
     """
     Subsurface radiance reflectance of optically shallow water after Albert & Mobley (2003) [1].
@@ -195,7 +196,8 @@ def r_rs_sh(C_0 = 0,
                             b_phy_norm_res = b_phy_norm_res,
                             b_bw_res = b_bw_res,
                             b_Mie_norm_res = b_Mie_norm_res,
-                            b_X_norm_res = b_X_norm_res)
+                            b_X_norm_res = b_X_norm_res,
+                            b_b_res = b_b_res)
 
     ab = absorption.a(C_0,
                       C_1,
@@ -268,6 +270,7 @@ def invert(params,
            E_dsa_res=[],
            E_dsr_res=[],
            E_d_res=[],
+           b_b_res=[],
            method="least-squares", 
            max_nfev=400
            ):
@@ -327,7 +330,8 @@ def invert(params,
                              E_dd_res,
                              E_dsa_res,
                              E_dsr_res,
-                             E_d_res), 
+                             E_d_res,
+                             b_b_res), 
                        method=method, 
                        max_nfev=max_nfev) 
                        
@@ -361,7 +365,8 @@ def invert(params,
                              b_X_norm_res, 
                              b_Mie_norm_res, 
                              R_i_b_res, 
-                             da_W_div_dT_res), 
+                             da_W_div_dT_res,
+                             b_b_res), 
                        method=method, 
                        max_nfev=max_nfev) 
     return res
@@ -386,7 +391,8 @@ def forward(params,
             E_dd_res=[],
             E_dsa_res=[],
             E_dsr_res=[],
-            E_d_res=[]):
+            E_d_res=[],
+            b_b_res=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
@@ -467,7 +473,8 @@ def forward(params,
                                     b_X_norm_res=b_X_norm_res,
                                     b_Mie_norm_res=b_Mie_norm_res,
                                     R_i_b_res=R_i_b_res,
-                                    da_W_div_dT_res=da_W_div_dT_res)) + \
+                                    da_W_div_dT_res=da_W_div_dT_res,
+                                    b_b_res=b_b_res)) + \
                             surface.R_rs_surf(wavelengths = wavelengths, 
                                               theta_sun=params['theta_sun'], 
                                               P=params['P'], 
@@ -547,7 +554,8 @@ def forward(params,
                                     b_X_norm_res=b_X_norm_res,
                                     b_Mie_norm_res=b_Mie_norm_res,
                                     R_i_b_res=R_i_b_res,
-                                    da_W_div_dT_res=da_W_div_dT_res)) + \
+                                    da_W_div_dT_res=da_W_div_dT_res,
+                                    b_b_res=b_b_res)) + \
                             params['offset']
                             
     return R_rs_sim
@@ -574,7 +582,8 @@ def func2opt(params,
              E_dd_res=[],
              E_dsa_res=[],
              E_dsr_res=[],
-             E_d_res=[]):
+             E_d_res=[],
+             b_b_res=[]):
     """
     Error function around model to be minimized by changing fit parameters.
     
@@ -625,6 +634,7 @@ def func2opt(params,
                        E_dd_res=E_dd_res,
                        E_dsa_res=E_dsa_res,
                        E_dsr_res=E_dsr_res,
-                       E_d_res=E_d_res)
+                       E_d_res=E_d_res,
+                       b_b_res=b_b_res)
            
     return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
