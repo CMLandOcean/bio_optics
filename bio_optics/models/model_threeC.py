@@ -270,7 +270,8 @@ def invert(params,
            E_dsr_res=[],
            E_d_res=[],
            method="least-squares", 
-           max_nfev=400
+           verbose = False,
+           max_nfev=15000
            ):
     """
     Function to inversely fit a modeled spectrum to a measurement spectrum.
@@ -332,7 +333,7 @@ def invert(params,
                              E_dsr_res,
                              E_d_res), 
                        method=method, 
-                       max_nfev=max_nfev) 
+                       options={'disp': verbose, 'gtol': 1e-16, 'eps': 1e-07, 'maxiter': max_nfev, 'ftol': 1e-16, 'maxls': 20, 'maxcor': 20}) 
                        
     elif params['fit_surface']==False:
 
@@ -369,7 +370,7 @@ def invert(params,
                              R_i_b_res, 
                              da_W_div_dT_res), 
                        method=method, 
-                       max_nfev=max_nfev) 
+                       options={'disp': verbose, 'gtol': 1e-16, 'eps': 1e-07, 'maxiter': max_nfev, 'ftol': 1e-16, 'maxls': 20, 'maxcor': 20}) 
     return res
 
 
