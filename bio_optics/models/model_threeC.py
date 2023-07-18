@@ -183,7 +183,7 @@ def r_rs_sh(C_0 = 0,
     # Backscattering and absorption coefficients of the water body depending on the concentration of optically active water constituents
     bs = backscattering.b_b(C_X=C_X,
                             C_Mie=C_Mie,
-                            C_phy=np.sum([C_0,C_1,C_2,C_3,C_4,C_5]),
+                            C_phy=0, #np.sum([C_0,C_1,C_2,C_3,C_4,C_5]), # PG implementation does not consider b_bphy
                             b_bphy_spec=b_bphy_spec,
                             wavelengths=wavelengths,
                             b_bMie_spec=b_bMie_spec,
@@ -270,7 +270,6 @@ def invert(params,
            E_dsr_res=[],
            E_d_res=[],
            method="least-squares", 
-           verbose = False,
            max_nfev=15000
            ):
     """
@@ -333,7 +332,7 @@ def invert(params,
                              E_dsr_res,
                              E_d_res), 
                        method=method, 
-                       options={'disp': verbose, 'gtol': 1e-16, 'eps': 1e-07, 'maxiter': max_nfev, 'ftol': 1e-16, 'maxls': 20, 'maxcor': 20}) 
+                       max_nfev=max_nfev) 
                        
     elif params['fit_surface']==False:
 
@@ -370,7 +369,7 @@ def invert(params,
                              R_i_b_res, 
                              da_W_div_dT_res), 
                        method=method, 
-                       options={'disp': verbose, 'gtol': 1e-16, 'eps': 1e-07, 'maxiter': max_nfev, 'ftol': 1e-16, 'maxls': 20, 'maxcor': 20}) 
+                       max_nfev=max_nfev) 
     return res
 
 
