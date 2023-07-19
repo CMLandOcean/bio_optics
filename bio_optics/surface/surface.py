@@ -77,7 +77,7 @@ def L_surf(wavelengths=np.arange(400,800),
     :param g_dd: intensity of direct component of E_d [sr-1]
     :param g_dsr: intensity of Rayleigh scattering part of diffuse component of E_d [sr-1]
     :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1]
-    :param rho_L: reflection factor of downwelling irradiance, default: 0.02
+    :param rho_L: reflection factor of downwelling irradiance, default: 0.02; this can alternatively be computed using air_water.fresnel(np.radians(theta_view),n1=1,n2=1.33); n2 can also be read from file: resampling.resample_n(wavelengths).
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time.
