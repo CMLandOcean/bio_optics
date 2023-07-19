@@ -57,7 +57,7 @@ def r_rs_dp(u,
     :param theta_sun: sun zenith angle in air [radians], is converted to in water using Snell's law, default: np.radians(30)
     :param theta_view: viewing angle in air in units [radians], is converted to in water using Snell's law, np.radians(0)
     :param n1: refrective index of origin medium, default: 1 for air
-    :param n2: refrective index of destination medium, default: 1.33 for water; can be replaced with spectral refractive index via resampling.resample_n(wavelengths) 
+    :param n2: refrective index of destination medium, default: 1.33 for water; can be replaced with spectral refractive index resampled to wavelengths via resampling.resample_n(wavelengths) 
     :return: subsurface radiance reflectance of deep water [sr-1]
     """    
     f_rs = 0.0512 * (1 + 4.6659 * u - 7.8387 * u**2 + 5.4571 * u**3) * (1 + 0.1098/np.cos(air_water.snell(theta_sun, n1, n2))) * (1 + 0.4021/np.cos(air_water.snell(theta_view, n1, n2)))
