@@ -68,7 +68,7 @@ def rsoa(wavelengths=np.arange(400,800), h0=0.0, h1=0.0, lambda0=550.0):
         lambda0 (float, optional): Reference wavelengths. Defaults to 550.
 
     Returns:
-        rho: sea-surface skylight reflectance for provided wavelengths[sr-1]
+        rho: sea-surface skylight reflectance for provided wavelengths [sr-1]
     """    
     rho = h0 * (wavelengths / lambda0)**h1
     return rho
