@@ -492,7 +492,7 @@ def forward(params,
                                               g_dsa=params['g_dsa'],
                                               f_dd=params['f_dd'], 
                                               f_ds=params['f_ds'],
-                                              rho_L=params['rho_L'],
+                                              rho_L=air_water.fresnel(params['theta_view']),
                                               E_0_res=E_0_res,
                                               a_oz_res=a_oz_res,
                                               a_ox_res=a_ox_res,
@@ -501,7 +501,7 @@ def forward(params,
                                               E_dsa_res=E_dsa_res,
                                               E_dsr_res=E_dsr_res,
                                               E_d_res=E_d_res) + \
-                            0.0256 * Ls_Ed + \
+                            air_water.fresnel(params['theta_view']) * Ls_Ed + \
                             params['offset']
                             
     elif params['fit_surface']==False:
