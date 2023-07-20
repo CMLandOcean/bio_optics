@@ -392,7 +392,8 @@ def forward(params,
             a_wv_res=[],
             E_dd_res=[],
             E_dsa_res=[],
-            E_dsr_res=[]):
+            E_dsr_res=[],
+            E_d_res=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
