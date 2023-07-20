@@ -392,8 +392,7 @@ def forward(params,
             a_wv_res=[],
             E_dd_res=[],
             E_dsa_res=[],
-            E_dsr_res=[],
-            E_d_res=[]):
+            E_dsr_res=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
@@ -476,27 +475,27 @@ def forward(params,
                                     b_Mie_norm_res=b_Mie_norm_res,
                                     R_i_b_res=R_i_b_res,
                                     da_W_div_dT_res=da_W_div_dT_res)) + \
-                            threeC.R_rs_surf(wavelengths = wavelengths, 
-                                             Ls_Ed = Ls_Ed,
+                            air_water.fresnel(params['theta_view']) * Ls_Ed + \
+                            threeC.delta(wavelengths = wavelengths,
                                              rho_s = params['rho_s'], 
                                              rho_dd = params['rho_dd'], 
                                              rho_ds = params['rho_ds'], 
                                              delta = params['delta'],
                                              theta_sun=params['theta_sun'], 
                                              P=params['P'], 
-                                              AM=params['AM'], 
-                                              RH=params['RH'], 
-                                              H_oz=params['H_oz'], 
-                                              WV=params['WV'], 
-                                              alpha=params['alpha'],
-                                              beta=params['beta'],
-                                              E_0_res=E_0_res,
-                                              a_oz_res=a_oz_res,
-                                              a_ox_res=a_ox_res,
-                                              a_wv_res=a_wv_res,
-                                              E_dd_res=E_dd_res,
-                                              E_dsa_res=E_dsa_res,
-                                              E_dsr_res=E_dsr_res) + \
+                                             AM=params['AM'], 
+                                             RH=params['RH'], 
+                                             H_oz=params['H_oz'], 
+                                             WV=params['WV'], 
+                                             alpha=params['alpha'],
+                                             beta=params['beta'],
+                                             E_0_res=E_0_res,
+                                             a_oz_res=a_oz_res,
+                                             a_ox_res=a_ox_res,
+                                             a_wv_res=a_wv_res,
+                                             E_dd_res=E_dd_res,
+                                             E_dsa_res=E_dsa_res,
+                                             E_dsr_res=E_dsr_res) + \
                             params['offset']
                             
     elif params['fit_surface']==False:
