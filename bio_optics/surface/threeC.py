@@ -1,9 +1,7 @@
 import numpy as np
 from ..atmosphere import sky_radiance, downwelling_irradiance
 
-def R_rs_surf(wavelengths, 
-                 Ls_Ed, # from measurements, this is the only measurement input to the min_funct() the model() functions
-                 rho_s = 0.0256, 
+def delta(wavelengths, 
                  rho_dd = 0.1, 
                  rho_ds = 0.1, 
                  delta = 0.0,
@@ -49,7 +47,7 @@ def R_rs_surf(wavelengths,
     Edsa_Ed = Edsa / Ed
     Eds_Ed = Edsr_Ed + Edsa_Ed
 
-    # Line 180 in [1]
-    Rrs_refl = rho_s * Ls_Ed + rho_dd * Edd_Ed / np.pi + rho_ds * Eds_Ed / np.pi + delta
+    # according to Line 180 in [1]
+    delta = rho_dd * Edd_Ed / np.pi + rho_ds * Eds_Ed / np.pi + delta
 
-    return Rrs_refl
+    return delta
