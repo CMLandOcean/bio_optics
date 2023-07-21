@@ -59,6 +59,6 @@ def K_d(a,
     :param kappa_0: coefficient depending on scattering phase function, default: 1.0546 [2]
     :return: diffuse attenuation for downwelling irradiance
     """   
-    K_d = kappa_0 * ((a + b_b) / np.cos(air_water.snell(theta_sun, n1=1, n2=1.33)))
+    K_d = kappa_0 * ((a + b_b) / np.cos(air_water.snell(theta_sun, n1=n1, n2=n2)))
     
     return K_d
