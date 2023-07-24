@@ -164,7 +164,7 @@ def F_a(theta_sun=np.radians(30), alpha=1.317):
 def T_r(wavelengths=np.arange(400,800), theta_sun=np.radians(30), P=1013.25):
     """
     Rayleigh scattering after [1]. 
-    Note that wavelengths for this particular function are in units of micrometer [2].
+    Note that wavelengths for this particular function are in units of micrometer [2], thus input wavelengths are divided by 1000.
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Gege, P., personal communication
