@@ -433,7 +433,9 @@ def forward(params,
                                     b_X_norm_res=b_X_norm_res,
                                     b_Mie_norm_res=b_Mie_norm_res,
                                     da_W_div_dT_res=da_W_div_dT_res) + \
-                            air_water.fresnel(params['theta_view']) * Ls_Ed + \
+                            air_water.fresnel(params['theta_view'],
+                                              n1 = params['n1'],
+                                              n2 = params['n2'], ) * Ls_Ed + \
                             threeC.delta(wavelengths = wavelengths,
                                              rho_dd = params['rho_dd'], 
                                              rho_ds = params['rho_ds'], 
