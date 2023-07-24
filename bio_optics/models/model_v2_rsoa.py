@@ -510,10 +510,10 @@ def forward(params,
                                     R_i_b_res=R_i_b_res,
                                     da_W_div_dT_res=da_W_div_dT_res,
                                     b_b_res=b_b_res)) + \
-                            glint.rsoa(wavelengths = wavelengths, 
-                                       h0=params['h0'], 
-                                       h1=params['h1'], 
-                                       lambda0=params['lambda0']) + \
+                            air_water.fresnel(params['theta_view'], n2=n2) * glint.rsoa(wavelengths = wavelengths, 
+                                                                                        h0=params['h0'], 
+                                                                                        h1=params['h1'], 
+                                                                                        lambda0=params['lambda0']) + \
                             air_water.fresnel(params['theta_view'], n2=n2) * Ls_Ed + \
                             params['offset']
                             
