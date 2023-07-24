@@ -27,7 +27,7 @@ def delta(wavelengths,
     [1] https://gitlab.com/pgroetsch/rrs_model_3C/-/blob/master/rrs_model_3C.py
     """
 
-    if (len(E_dd)==0 | len(E_dsa)==0 | len(E_dsr)==0):
+    if (len(E_dd_res)==0 | len(E_dsa_res)==0 | len(E_dsr_res)==0):
         Tr = transmittance.T_r(wavelengths=wavelengths, theta_sun=theta_sun, P=P)
         Tas = transmittance.T_as(wavelengths=wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, lambda_a=lambda_a, alpha=alpha, beta=beta)
         Fa = transmittance.F_a(theta_sun=theta_sun, alpha=alpha)
