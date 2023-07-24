@@ -66,6 +66,27 @@ def r_rs_dp(u,
     return r_rs_dp
 
 
+def R_dp(u, 
+         theta_sun=np.radians(30), 
+         n1=1, 
+         n2=1.33):
+    """
+    Subsurface irradiance reflectance of optically deep water after Albert & Mobley (2003) [1.]
+
+    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
+    
+    :param u: ratio of backscattering coefficient to the sum of absorption and backscattering coefficients
+    :param theta_sun: sun zenith angle in air [radians], is converted to in water using Snell's law, default: np.radians(30)
+    :param n1: refrective index of origin medium, default: 1 for air
+    :param n2: refrective index of destination medium, default: 1.33 for water
+    :return: subsurface irradiance reflectance of deep water [sr-1]
+    """
+    f = 0.1034 * (1 + 3.3586 * u + -6.5358 * u**2 + 4.6638 * u**3) * (1 + 2.4121 / np.cos(air_water.snell(theta_sun, n1, n2)))
+    R_dp = f * u
+
+    return R_dp
+
+
 def r_rs_sh(C_0 = 0,
             C_1 = 0,
             C_2 = 0,
