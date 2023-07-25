@@ -410,7 +410,7 @@ def func2opt(params,
                        b_Mie_norm_res=b_Mie_norm_res,
                        da_W_div_dT_res=da_W_div_dT_res)
            
-    return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
+    return np.sum((R_rs_sim - R_rs)**2 * weights) # utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
 
 
 def invert(params, 
