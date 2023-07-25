@@ -136,7 +136,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1], default: 1/np.pi()
     :param f_dd: fraction of direct downwelling irradiance, default: 1
     :param f_ds: fraction of diffuse downwelling irradiance, default: 1
-    :param rho_L: reflection factor of downwelling irradiance, default: 0.02
+    :param rho_L: reflection factor of downwelling irradiance, default: 0.02 (for nadir viewing sensors)
     :param d_r: offset to account for spectrally uniform cloud reflections at the water surface (4C model) as described in [2]
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
