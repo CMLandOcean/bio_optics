@@ -38,9 +38,9 @@
 
 import numpy as np
 from lmfit import minimize, Parameters
-from .. water import absorption, backscattering, temperature_gradient, attenuation, bottom_reflectance
-from .. surface import surface, air_water
-from .. helper import resampling, utils
+from ..water import absorption, backscattering, temperature_gradient, attenuation, bottom_reflectance
+from ..surface import surface, air_water
+from ..helper import resampling, utils
 
 
 def r_rs_dp(u, 
@@ -56,8 +56,8 @@ def r_rs_dp(u,
     :param u: ratio of backscattering coefficient to the sum of absorption and backscattering coefficients
     :param theta_sun: sun zenith angle in air [radians], is converted to in water using Snell's law, default: np.radians(30)
     :param theta_view: viewing angle in air in units [radians], is converted to in water using Snell's law, np.radians(0)
-    :param n1: refrective index of origin medium, default: 1 for air
-    :param n2: refrective index of destination medium, default: 1.33 for water
+    :param n1: refractive index of origin medium, default: 1 for air
+    :param n2: refractive index of destination medium, default: 1.33 for water; can be replaced with spectral refractive index resampled to wavelengths via resampling.resample_n(wavelengths) 
     :return: subsurface radiance reflectance of deep water [sr-1]
     """    
     f_rs = 0.0512 * (1 + 4.6659 * u - 7.8387 * u**2 + 5.4571 * u**3) * (1 + 0.1098/np.cos(air_water.snell(theta_sun, n1, n2))) * (1 + 0.4021/np.cos(air_water.snell(theta_view, n1, n2)))
@@ -118,7 +118,8 @@ def r_rs_sh(C_0 = 0,
             b_Mie_norm_res=[],
             R_i_b_res = [],
             da_W_div_dT_res=[],
-            b_b_res=[]
+            b_b_res=[],
+            n2_res=[]
             ):
     """
     Subsurface radiance reflectance of optically shallow water after Albert & Mobley (2003) [1].
@@ -179,8 +180,15 @@ def r_rs_sh(C_0 = 0,
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
     :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
+    :param b_b_res: optional, pre-computed or measured backscattering coefficient resamples to wavelengths
+    :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
     :return: subsurface radiance reflectance of shallow water [sr-1]
     """
+
+    # if n_res is provided, replace n2=1.33 with spectral refractive index
+    if len(n2_res) > 0:
+        n2 = n2_res
+
     # Backscattering and absorption coefficients of the water body depending on the concentration of optically active water constituents
     bs = backscattering.b_b(C_X=C_X,
                             C_Mie=C_Mie,
@@ -271,6 +279,8 @@ def invert(params,
            E_dsr_res=[],
            E_d_res=[],
            b_b_res=[],
+           n2_res=[],
+           Ls_Ed=[],
            method="least-squares", 
            max_nfev=400
            ):
@@ -299,10 +309,17 @@ def invert(params,
     :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time. Will be computed within function if not provided.
     :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time. Will be computed within function if not provided.
     :param E_d_res: optional, preresampling E_d before inversion saves a lot of time. Will be computed within function if not provided.
+    :param b_b_res: optional, pre-computed or measured backscattering coefficient resamples to wavelengths
+    :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
+    :param Ls_Ed: optional, measured specular sky reflectance (Ls/Ed) [sr-1] with identical wavelength settings; if provided, will be acknowledged in the glint assessment through rho_L * (Ls/Ed) and the glint model will only be used to correct residual glint
     :param method: name of the fitting method to use by lmfit, default: 'least-squares'
     :param max_nfev: maximum number of function evaluations, default: 400
     :return: object containing the optimized parameters and several goodness-of-fit statistics.
     """    
+
+    # set Ls_Ed to zero if not provided so that rho_L * Ls_Ed will be zero
+    if len(Ls_Ed)==0:
+        Ls_Ed = np.zeros(len(R_rs))
 
     if len(weights)==0:
         weights = np.ones(len(R_rs))
@@ -331,7 +348,9 @@ def invert(params,
                              E_dsa_res,
                              E_dsr_res,
                              E_d_res,
-                             b_b_res), 
+                             b_b_res,
+                             n2_res,
+                             Ls_Ed), 
                        method=method, 
                        max_nfev=max_nfev) 
                        
@@ -366,7 +385,8 @@ def invert(params,
                              b_Mie_norm_res, 
                              R_i_b_res, 
                              da_W_div_dT_res,
-                             b_b_res), 
+                             b_b_res,
+                             n2_res), 
                        method=method, 
                        max_nfev=max_nfev) 
     return res
@@ -392,7 +412,9 @@ def forward(params,
             E_dsa_res=[],
             E_dsr_res=[],
             E_d_res=[],
-            b_b_res=[]):
+            b_b_res=[],
+            n2_res=[],
+            Ls_Ed=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
@@ -416,9 +438,22 @@ def forward(params,
     :param E_dsa_res: optional, precomputing E_dsa saves a lot of time. Will be computed within function if not provided.
     :param E_dsr_res: optional, precomputing E_dsr saves a lot of time. Will be computed within function if not provided.
     :param E_d_res: optional, precomputing E_d saves a lot of time. Will be computed within function if not provided.
+    :param b_b_res: optional, pre-computed or measured backscattering coefficient resamples to wavelengths
+    :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
+    :param Ls_Ed: optional, measured specular sky reflectance (Ls/Ed) [sr-1] with identical wavelength settings; if provided, will be acknowledged in the glint assessment through rho_L * (Ls/Ed) and the glint model will only be used to correct residual glint
     :return: R_rs: simulated remote sensing reflectance spectrum [sr-1]
     """
-    
+
+    # set Ls_Ed to zero if not provided so that rho_L * Ls_Ed will be zero
+    if len(Ls_Ed)==0:
+        Ls_Ed = np.zeros(len(wavelengths))
+
+    # replace n2=1.33 with spectral refractive index of water if provided via n2_res
+    if len(n2_res) > 0:
+        n2 = n2_res
+    else:
+        n2 = params['n2']
+
     if params['fit_surface']==True:
         
         R_rs_sim = air_water.below2above(
@@ -457,7 +492,7 @@ def forward(params,
                                     theta_sun = params['theta_sun'],
                                     theta_view = params['theta_view'],
                                     n1 = params['n1'],
-                                    n2 = params['n2'],
+                                    n2 = n2,
                                     kappa_0 = params["kappa_0"],
                                     fresh = params["fresh"],
                                     T_W = params["T_W"],
@@ -490,6 +525,7 @@ def forward(params,
                                               f_dd=params['f_dd'], 
                                               f_ds=params['f_ds'],
                                               rho_L=params['rho_L'],
+                                              d_r=params['d_r'],
                                               E_0_res=E_0_res,
                                               a_oz_res=a_oz_res,
                                               a_ox_res=a_ox_res,
@@ -498,6 +534,7 @@ def forward(params,
                                               E_dsa_res=E_dsa_res,
                                               E_dsr_res=E_dsr_res,
                                               E_d_res=E_d_res) + \
+                            air_water.fresnel(params['theta_view'], n2=n2) * Ls_Ed + \
                             params['offset']
                             
     elif params['fit_surface']==False:
@@ -538,7 +575,7 @@ def forward(params,
                                     theta_sun = params['theta_sun'],
                                     theta_view = params['theta_view'],
                                     n1 = params['n1'],
-                                    n2 = params['n2'],
+                                    n2 = n2,
                                     kappa_0 = params["kappa_0"],
                                     fresh = params["fresh"],
                                     T_W = params["T_W"],
@@ -583,7 +620,9 @@ def func2opt(params,
              E_dsa_res=[],
              E_dsr_res=[],
              E_d_res=[],
-             b_b_res=[]):
+             b_b_res=[],
+             n2_res=[],
+             Ls_Ed=[]):
     """
     Error function around model to be minimized by changing fit parameters.
     
@@ -609,9 +648,11 @@ def func2opt(params,
     :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time. Will be computed within function if not provided.
     :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time. Will be computed within function if not provided.
     :param E_d_res: optional, preresampling E_d before inversion saves a lot of time. Will be computed within function if not provided.
+    :param b_b_res: optional, pre-computed or measured backscattering coefficient resamples to wavelengths
+    :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
+    :param Ls_Ed: optional, measured specular sky reflectance (Ls/Ed) [sr-1] with identical wavelength settings; if provided, will be acknowledged in the glint assessment through rho_L * (Ls/Ed) and the glint model will only be used to correct residual glint
     :return: weighted difference between measured and simulated R_rs
-    """
-    
+    """    
     if len(weights)==0:
         weights = np.ones(len(wavelengths))
 
@@ -635,6 +676,8 @@ def func2opt(params,
                        E_dsa_res=E_dsa_res,
                        E_dsr_res=E_dsr_res,
                        E_d_res=E_d_res,
-                       b_b_res=b_b_res)
+                       b_b_res=b_b_res,
+                       n2_res = n2_res,
+                       Ls_Ed=Ls_Ed)
            
     return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
