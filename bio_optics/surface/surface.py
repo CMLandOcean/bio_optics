@@ -120,7 +120,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     Surface reflectance [1]
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    [2] Goeritz, A. (2018): From laboratory spectroscopy to remote sensing : Methods for the retrieval of water constituents in optically complex waters. Dissertation.
+    [2] Goeritz et al. (2018): Retrieval of Water Constituents from Hyperspectral In-Situ Measurements under Variable Cloud Cover—A Case Study at Lake Stechlin (Germany) [10.3390/rs10020181]
     
     :param wavelengths: wavelengths to compute L_surf for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
