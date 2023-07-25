@@ -107,6 +107,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
               f_dd=1, 
               f_ds=1,
               rho_L=0.02,
+              d_r=0.0,
               E_0_res=[],
               a_oz_res=[],
               a_ox_res=[],
@@ -119,6 +120,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     Surface reflectance [1]
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+    [2] Goeritz, A. (2018): From laboratory spectroscopy to remote sensing : Methods for the retrieval of water constituents in optically complex waters. Dissertation.
     
     :param wavelengths: wavelengths to compute L_surf for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
@@ -135,6 +137,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     :param f_dd: fraction of direct downwelling irradiance, default: 1
     :param f_ds: fraction of diffuse downwelling irradiance, default: 1
     :param rho_L: reflection factor of downwelling irradiance, default: 0.02
+    :param d_r: offset to account for spectrally uniform cloud reflections at the water surface (4C model) as described in [2]
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time.
@@ -183,6 +186,6 @@ def R_rs_surf(wavelengths=np.arange(400,800),
                     E_dd_res=E_dd_res,
                     E_dsa_res=E_dsa_res,
                     E_dsr_res=E_dsr_res,
-                    E_d_res=E_d_res)
+                    E_d_res=E_d_res) + d_r
     
     return R_rs_surf
