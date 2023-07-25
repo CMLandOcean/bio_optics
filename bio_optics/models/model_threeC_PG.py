@@ -63,8 +63,8 @@ def R_rs(C_0 = 0,
          n: float = -1,
          lambda_0: float = 440,
          lambda_S: float = 500,
-         theta_sun = np.radians(30),
-         theta_view = np.radians(1e-10),
+         theta_sun = 30,
+         theta_view = 40,
          n1 = 1,
          n2 = 1.33,
          fresh: bool = False,
@@ -239,7 +239,7 @@ def R_rs(C_0 = 0,
     
     Lu_Ed = Rrs + Rrs_refl
 
-    return Rrs, Rrs_refl
+    return Lu_Ed, Rrs_refl
     
 
 #################
