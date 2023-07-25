@@ -516,7 +516,8 @@ def invert(params,
                              b_Mie_norm_res, 
                              da_W_div_dT_res), 
                        method=method, 
-                       max_nfev=max_nfev) 
+                       options={'disp': verbose, 'gtol': 1e-16, 'eps': 1e-07, 'maxiter': 15000, 'ftol': 1e-16, 'maxls': 20, 'maxcor': 20})
+                       # max_nfev=max_nfev) 
     return res
 
 
