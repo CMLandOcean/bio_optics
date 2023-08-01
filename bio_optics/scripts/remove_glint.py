@@ -103,7 +103,7 @@ def main():
                 r_rs_water = np.where(indices.awei(row, wavelengths) > args.water_mask_threshold, row, np.nan)
         
             # Apply glint correction
-            glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
+            glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res) * np.pi
             R_rs = r_rs_water - glint_reflectance.astype('float32')
 
             # Write output rows into the respective files
