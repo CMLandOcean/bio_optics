@@ -118,8 +118,9 @@ def r_rs_sh(C_0 = 0,
             b_Mie_norm_res=[],
             R_i_b_res = [],
             da_W_div_dT_res=[],
-            b_b_res=[],
-            n2_res=[]
+            n2_res=[],
+            a_res=[],
+            b_b_res=[]
             ):
     """
     Subsurface radiance reflectance of optically shallow water after Albert & Mobley (2003) [1].
@@ -180,8 +181,9 @@ def r_rs_sh(C_0 = 0,
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
     :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
-    :param b_b_res: optional, pre-computed or measured backscattering coefficient resamples to wavelengths
     :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
+    :param b_b_res: optional, pre-computed or measured backscattering coefficient resampled to wavelengths
+    :param a_res: optional, pre-computed or measured absorption coefficient resampled to wavelengths
     :return: subsurface radiance reflectance of shallow water [sr-1]
     """
 
@@ -189,7 +191,7 @@ def r_rs_sh(C_0 = 0,
     if len(n2_res) > 0:
         n2 = n2_res
 
-    # Backscattering and absorption coefficients of the water body depending on the concentration of optically active water constituents
+    # Backscattering and absorption coefficients of the water body depending on the concentration of optically active water constituents if not provided
     bs = backscattering.b_b(C_X=C_X,
                             C_Mie=C_Mie,
                             C_phy=np.sum([C_0,C_1,C_2,C_3,C_4,C_5]),
@@ -205,7 +207,7 @@ def r_rs_sh(C_0 = 0,
                             b_bw_res = b_bw_res,
                             b_Mie_norm_res = b_Mie_norm_res,
                             b_X_norm_res = b_X_norm_res,
-                            b_b_res = b_b_res)
+                            b_b_res = b_b_res) if len(b_b_res)==0 else b_b_res
 
     ab = absorption.a(C_0,
                       C_1,
@@ -228,8 +230,7 @@ def r_rs_sh(C_0 = 0,
                       a_w_res = a_w_res,
                       a_Y_N_res = a_Y_N_res,
                       a_NAP_N_res = a_NAP_N_res,
-                      da_W_div_dT_res=da_W_div_dT_res,
-                      )
+                      da_W_div_dT_res=da_W_div_dT_res) if len(a_res)==0 else a_res
 
     u = bs / (ab + bs)
 
