@@ -99,11 +99,8 @@ def main():
             row = src.read(window=wind)
         
             if args.apply_water_mask==True:  
-                # Apply water mask and convert from reflectance R [-] to above-water radiance reflectance r_rs [sr-1]
-                r_rs_water = np.where(indices.awei(row, wavelengths) > args.water_mask_threshold, row, np.nan) / np.pi
-            else:
-                # Convert from reflectance R [-] to above-water radiance reflectance r_rs [sr-1]
-                r_rs_water = row / np.pi
+                # Apply water mask
+                r_rs_water = np.where(indices.awei(row, wavelengths) > args.water_mask_threshold, row, np.nan)
         
             # Apply glint correction
             glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
