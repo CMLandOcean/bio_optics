@@ -23,7 +23,8 @@ setup(
         'scipy >= 1.7.3',
         'pandas >= 1.3.5',
         'spectral >= 0.22.4',
-        'lmfit >= 1.0.3'
+        'lmfit >= 1.0.3',
+        'scikit-learn >= 1.0.2'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
