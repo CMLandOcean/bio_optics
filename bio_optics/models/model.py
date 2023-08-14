@@ -511,6 +511,7 @@ def forward(params,
                                     b_b_res=b_b_res)) + \
                             surface.R_rs_surf(wavelengths = wavelengths, 
                                               theta_sun=params['theta_sun'], 
+                                              theta_view=params['theta_view'],
                                               P=params['P'], 
                                               AM=params['AM'], 
                                               RH=params['RH'], 
