@@ -64,7 +64,7 @@ def rsoa(wavelengths=np.arange(400,800), h0=0.0, h1=0.0, lambda0=550.0):
     Args:
         wavelengths: wavelengths to compute rho for, default: np.arange(400,800)
         h0 (float, optional): Defaults to 0. Boundaries are h0 < 0.5. [1].
-        h1 (float, optional): Defaults to 0. Boundaries are-0.1 < h1 < 0.5. [1].
+        h1 (float, optional): Defaults to 0. Boundaries are -0.1 < h1 < 0.5. [1].
         lambda0 (float, optional): Reference wavelengths. Defaults to 550.
 
     Returns:
