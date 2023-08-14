@@ -43,6 +43,7 @@ from . air_water import fresnel
 
 def L_surf(wavelengths=np.arange(400,800), 
            theta_sun=np.radians(30), 
+           theta_view=np.radians(1e-10),
            P=1013.25, 
            AM=1, 
            RH=60, 
@@ -69,6 +70,7 @@ def L_surf(wavelengths=np.arange(400,800),
     
     :param wavelengths: wavelengths to compute L_surf for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
+    :param theta_view: viewing angle [radians], default: np.radians(1e-10) [~= nadir]
     :param P: atmospheric pressure [mbar], default: 1013.25
     :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
     :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
@@ -91,7 +93,7 @@ def L_surf(wavelengths=np.arange(400,800),
     :return: L_surf
     """
     # compute rho_L using solar zenith angle
-    rho_L = fresnel(theta_inc=theta_sun, n1=n1, n2=n2)
+    rho_L = fresnel(theta_inc=theta_view, n1=n1, n2=n2)
 
     L_surf = rho_L * sky_radiance.L_s(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, beta=beta, g_dd=g_dd, g_dsr=g_dsr, g_dsa=g_dsa, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dd_res=E_dd_res, E_dsa_res=E_dsa_res, E_dsr_res=E_dsr_res)
     
@@ -100,6 +102,7 @@ def L_surf(wavelengths=np.arange(400,800),
 
 def R_rs_surf(wavelengths=np.arange(400,800), 
               theta_sun=np.radians(30), 
+              theta_view=np.radians(1e-10),
               P=1013.25, 
               AM=1, 
               RH=60, 
@@ -131,6 +134,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     
     :param wavelengths: wavelengths to compute L_surf for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
+    :param theta_view: viewing angle [radians], default: np.radians(1e-10) [~= nadir]
     :param P: atmospheric pressure [mbar], default: 1013.25
     :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
     :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
@@ -156,6 +160,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     """
     R_rs_surf = L_surf(wavelengths=wavelengths,
                        theta_sun=theta_sun, 
+                       theta_view=theta_view,
                        P=P, 
                        AM=AM, 
                        RH=RH, 
