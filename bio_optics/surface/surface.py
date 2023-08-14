@@ -62,8 +62,7 @@ def L_surf(wavelengths=np.arange(400,800),
            a_wv_res=[],
            E_dd_res=[],
            E_dsa_res=[],
-           E_dsr_res=[],
-           n2_res=[]):
+           E_dsr_res=[]):
     """
     Radiance reflected by the water surface [1] as a fraction (rho_L) of sky radiance (L_s).
     
@@ -82,7 +81,7 @@ def L_surf(wavelengths=np.arange(400,800),
     :param g_dsr: intensity of Rayleigh scattering part of diffuse component of E_d [sr-1]
     :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1]
     :param n1: Refractive index of origin medium, default: 1 for air
-    :param n2: Refractive index of destination medium, default: 1.33 for water, superseded by n2_res if provided
+    :param n2: Refractive index of destination medium, default: 1.33 for water
     :param rho_L: reflection factor of downwelling irradiance, default: 0.02; this can alternatively be computed using air_water.fresnel(np.radians(theta_view),n1=1,n2=1.33); n2 can also be read from file: resampling.resample_n(wavelengths).
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
@@ -91,13 +90,8 @@ def L_surf(wavelengths=np.arange(400,800),
     :param E_dd_res: optional, preresampling E_dd before inversion saves a lot of time.
     :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time.
     :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time.
-    :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
     :return: L_surf
     """
-    # use spectral 
-    if len(n2_res)>0:
-        n2 = n2_res
-
     # compute rho_L using solar zenith angle
     rho_L = fresnel(theta_sun=theta_sun, n1=n1, n2=n2)
 
@@ -131,8 +125,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
               E_dd_res=[],
               E_dsa_res=[],
               E_dsr_res=[],
-              E_d_res=[],
-              n2_res=[]):
+              E_d_res=[]):
     """
     Surface reflectance [1]
     
