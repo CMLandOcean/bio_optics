@@ -38,6 +38,7 @@
 
 import numpy as np
 from .. atmosphere import sky_radiance, downwelling_irradiance
+from . air_water import fresnel
 
 
 def L_surf(wavelengths=np.arange(400,800), 
@@ -52,14 +53,17 @@ def L_surf(wavelengths=np.arange(400,800),
            g_dd=0.02,
            g_dsr=1/np.pi,
            g_dsa=1/np.pi,
-           rho_L=0.02,
+           n1=1.0,
+           n2=1.33,
+           rho_L=0.02, # unused: is computed from theta_sun, n1, n2
            E_0_res=[],
            a_oz_res=[],
            a_ox_res=[],
            a_wv_res=[],
            E_dd_res=[],
            E_dsa_res=[],
-           E_dsr_res=[]):
+           E_dsr_res=[],
+           n2_res=[]):
     """
     Radiance reflected by the water surface [1] as a fraction (rho_L) of sky radiance (L_s).
     
@@ -77,6 +81,8 @@ def L_surf(wavelengths=np.arange(400,800),
     :param g_dd: intensity of direct component of E_d [sr-1]
     :param g_dsr: intensity of Rayleigh scattering part of diffuse component of E_d [sr-1]
     :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1]
+    :param n1: Refractive index of origin medium, default: 1 for air
+    :param n2: Refractive index of destination medium, default: 1.33 for water, superseded by n2_res if provided
     :param rho_L: reflection factor of downwelling irradiance, default: 0.02; this can alternatively be computed using air_water.fresnel(np.radians(theta_view),n1=1,n2=1.33); n2 can also be read from file: resampling.resample_n(wavelengths).
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
@@ -85,8 +91,16 @@ def L_surf(wavelengths=np.arange(400,800),
     :param E_dd_res: optional, preresampling E_dd before inversion saves a lot of time.
     :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time.
     :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time.
+    :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
     :return: L_surf
     """
+    # use spectral 
+    if len(n2_res)>0:
+        n2 = n2_res
+
+    # compute rho_L using solar zenith angle
+    rho_L = fresnel(theta_sun=theta_sun, n1=n1, n2=n2)
+
     L_surf = rho_L * sky_radiance.L_s(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, beta=beta, g_dd=g_dd, g_dsr=g_dsr, g_dsa=g_dsa, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dd_res=E_dd_res, E_dsa_res=E_dsa_res, E_dsr_res=E_dsr_res)
     
     return L_surf
@@ -106,7 +120,9 @@ def R_rs_surf(wavelengths=np.arange(400,800),
               g_dsa=1/np.pi,
               f_dd=1, 
               f_ds=1,
-              rho_L=0.02,
+              n1=1,
+              n2=1.33,
+              rho_L=0.02, # unused: is computed from theta_sun, n1, n2
               d_r=0.0,
               E_0_res=[],
               a_oz_res=[],
@@ -115,7 +131,8 @@ def R_rs_surf(wavelengths=np.arange(400,800),
               E_dd_res=[],
               E_dsa_res=[],
               E_dsr_res=[],
-              E_d_res=[]):
+              E_d_res=[],
+              n2_res=[]):
     """
     Surface reflectance [1]
     
@@ -160,6 +177,8 @@ def R_rs_surf(wavelengths=np.arange(400,800),
                        g_dd=g_dd,
                        g_dsr=g_dsr,
                        g_dsa=g_dsa,
+                       n1=n1,
+                       n2=n2,
                        rho_L=rho_L,
                        E_0_res=E_0_res,
                        a_oz_res=a_oz_res,
@@ -167,7 +186,8 @@ def R_rs_surf(wavelengths=np.arange(400,800),
                        a_wv_res=a_wv_res,
                        E_dd_res=E_dd_res,
                        E_dsa_res=E_dsa_res,
-                       E_dsr_res=E_dsr_res) / \
+                       E_dsr_res=E_dsr_res,
+                       n2_res=n2_res) / \
                 downwelling_irradiance.E_d(wavelengths=wavelengths, 
                     theta_sun=theta_sun, 
                     P=P, 
