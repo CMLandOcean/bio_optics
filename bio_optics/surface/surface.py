@@ -92,7 +92,7 @@ def L_surf(wavelengths=np.arange(400,800),
     :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time.
     :return: L_surf
     """
-    # compute rho_L using solar zenith angle
+    # compute rho_L using viewing angle
     rho_L = fresnel(theta_inc=theta_view, n1=n1, n2=n2)
 
     L_surf = rho_L * sky_radiance.L_s(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, beta=beta, g_dd=g_dd, g_dsr=g_dsr, g_dsa=g_dsa, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dd_res=E_dd_res, E_dsa_res=E_dsa_res, E_dsr_res=E_dsr_res)
