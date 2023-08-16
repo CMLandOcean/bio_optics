@@ -4,9 +4,10 @@ import pandas as pd
 import rasterio as rio
 import rioxarray
 import argparse
-import os
+import os, sys
 import timeit
 import spectral
+from collections import OrderedDict
 from datetime import datetime
 
 from bio_optics.helper import utils, indices, resampling
@@ -59,12 +60,14 @@ def main():
     start = timeit.default_timer()
     
     if args.csv:
+        print(f"Running in CSV mode")
         dat = pd.read_csv(args.input_file) 
         wavelengths = dat.iloc[:,0].to_numpy()
         specnames = list(dat.columns)[1:]
-        # Resample LUTs
+        print(f"Found {len(specnames)} reflectance spectra")
+
         n_res = resampling.resample_n(wavelengths)
-        rflarr = dat.iloc[:,1:].to_numpy()
+        r_rs_water = dat.iloc[:,1:].to_numpy()
 
         ######################################################################
         ########## LOOP OVER FIELDS ##########################################
@@ -73,26 +76,30 @@ def main():
         if args.glint_out:
             glinttab = pd.DataFrame({"Wavelen":wavelengths})
         
-        for r_, r_rs_water in rflarr:
+        if args.apply_water_mask==True:  
+            # Apply water mask
+            r_rs_water = np.where(indices.awei(r_rs_water, wavelengths) > args.water_mask_threshold, r_rs_water, np.nan)
             
-            if args.apply_water_mask==True:  
-                # Apply water mask
-                r_rs_water = np.where(indices.awei(r_rs_water, wavelengths) > args.water_mask_threshold, r_rs_water, np.nan)
-            
-            # Apply glint correction
-            glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
-            R_rs = r_rs_water - glint_reflectance.astype('float32')
+        # Apply glint correction
+        glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
+        R_rs = r_rs_water - glint_reflectance.astype('float32')
 
-            # Write output rows into the respective files
-            if dst_glint:
-                glinttab[specnames[r_]] = glint_reflectance
-            outtab[specnames[r_]] = R_rs
+        # Write output rows into the respective files
+        odict = OrderedDict()
+        odict["Wavelen"] = wavelengths
+        for r_i, row in enumerate(R_rs.T):
+            odict[specnames[r_i]] = row
+        ##Write
+        pd.DataFrame(odict).to_csv(args.output_file,index=False)
+
+        if args.glint_out:
+            odict = OrderedDict()
+            odict["Wavelen"] = wavelengths
+            for r_i, row in enumerate(glint_reflectance.T):
+                odict[specnames[r_i]] = row
+            ##Write
+            pd.DataFrame(odict).to_csv(args.glint_out,index=False)
         
-        ##Write this thing
-        outtab.to_csv(args.output_file,index=False)
-        if dst_glint:
-            glinttab.to_csv(args.glint_out,index=False)
-
     else:
         # Use rioxarray to open image
         img = rioxarray.open_rasterio(args.input_file)
