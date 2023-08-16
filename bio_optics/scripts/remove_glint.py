@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 import numpy as np
+import pandas as pd
 import rasterio as rio
 import rioxarray
 import argparse
 import os
 import timeit
+import spectral
 from datetime import datetime
 
 from bio_optics.helper import utils, indices, resampling
@@ -33,6 +35,7 @@ def main():
     parser.add_argument('-dtype',default='float64',type=str,help="dtype")
     parser.add_argument('-output_format',default="ENVI",help="GDAL format to use for output raster, default ENVI")
     parser.add_argument('-glint_out',default='',type=str,help="Name for output glint map, if wanted")
+    parser.add_argument('-csv',action="store_true",help="Input file is csv with header, with first column wavelength in nm and each additional column a refl spectrum")
     parser.add_argument('input_file',help="Image reflectance image")
     parser.add_argument('output_file',help="Output glint-corrected reflectance image")
     args = parser.parse_args()
@@ -53,66 +56,109 @@ def main():
     ########## PREPARATION ###############################################
     ######################################################################
 
-    # Use rioxarray to open image
-    img = rioxarray.open_rasterio(args.input_file)
-    # Get wavelengths information from xarray object
-    wavelengths = img.wavelength.values
-    # Create wavelength mask
-    # wl_mask = np.logical_not(utils.band_mask(wavelengths, [[args.min_wavelength,args.max_wavelength]]))
-
-    # Resample LUTs
-    n_res = resampling.resample_n(wavelengths)
-
-    ######################################################################
-    ########## LOOP OVER ROWS ############################################
-    ######################################################################
-
     start = timeit.default_timer()
+    
+    if args.csv:
+        dat = pd.read_csv(args.input_file) 
+        wavelengths = dat.iloc[:,0].to_numpy()
+        specnames = list(dat.columns)[1:]
+        # Resample LUTs
+        n_res = resampling.resample_n(wavelengths)
+        rflarr = dat.iloc[:,1:].to_numpy()
 
-    with rio.open(args.input_file, 'r') as src:
-
-        # Get profile
-        profile = src.profile
-        profile['driver'] = args.output_format
-        profile['interleave'] = args.interleave
-        profile['dtype'] = args.dtype
-
-        # prepare individual profiles for each of the outputs
-        glint_profile = profile.copy()
-        glint_profile['count'] = len(wavelengths)
-
-        R_rs_profile = profile.copy()
-        R_rs_profile['count'] = len(wavelengths)
-
-        # Open output files and write row by row
+        ######################################################################
+        ########## LOOP OVER FIELDS ##########################################
+        ######################################################################
+        outtab = pd.DataFrame({"Wavelen":wavelengths})
         if args.glint_out:
-            dst_glint = rio.open(args.glint_out, 'w', **glint_profile)
-        else:
-            dst_glint = None
-        dst_R_rs = rio.open(args.output_file, 'w', **glint_profile)
-        # Loop over rows of input file, compute mask and write to output file        
-        for _, wind in src.block_windows():
-            
-            print(wind)
-
-            # Read row from xarray object
-            row = src.read(window=wind)
+            glinttab = pd.DataFrame({"Wavelen":wavelengths})
         
+        for r_, r_rs_water in rflarr:
+            
             if args.apply_water_mask==True:  
                 # Apply water mask
-                r_rs_water = np.where(indices.awei(row, wavelengths) > args.water_mask_threshold, row, np.nan)
-        
+                r_rs_water = np.where(indices.awei(r_rs_water, wavelengths) > args.water_mask_threshold, r_rs_water, np.nan)
+            
             # Apply glint correction
             glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
             R_rs = r_rs_water - glint_reflectance.astype('float32')
 
             # Write output rows into the respective files
             if dst_glint:
-                dst_glint.write(glint_reflectance.astype('float32'), window=wind)
-            dst_R_rs.write(R_rs, window=wind)
-    if dst_glint:
-        dst_glint.close()
-    dst_R_rs.close()
+                glinttab[specnames[r_]] = glint_reflectance
+            outtab[specnames[r_]] = R_rs
+        
+        ##Write this thing
+        outtab.to_csv(args.output_file,index=False)
+        if dst_glint:
+            glinttab.to_csv(args.glint_out,index=False)
+
+    else:
+        # Use rioxarray to open image
+        img = rioxarray.open_rasterio(args.input_file)
+        # Get wavelengths information from xarray object
+        try:
+            wavelengths = img.wavelength.values
+        except AttributeError as exc:
+            print(f"rioxarray failed to get wavelength info, trying pyspectral")
+            hdr = spectral.envi.read_envi_header(
+                    os.path.splitext(args.input_file)[0]+".hdr")
+            wavelengths = np.array([float(w) for w in hdr["wavelength"]])
+        # Create wavelength mask
+        # wl_mask = np.logical_not(utils.band_mask(wavelengths, [[args.min_wavelength,args.max_wavelength]]))
+        # Resample LUTs
+        n_res = resampling.resample_n(wavelengths)
+
+
+        ######################################################################
+        ########## LOOP OVER ROWS ############################################
+        ######################################################################
+
+
+        with rio.open(args.input_file, 'r') as src:
+
+            # Get profile
+            profile = src.profile
+            profile['driver'] = args.output_format
+            profile['interleave'] = args.interleave
+            profile['dtype'] = args.dtype
+
+            # prepare individual profiles for each of the outputs
+            glint_profile = profile.copy()
+            glint_profile['count'] = len(wavelengths)
+
+            R_rs_profile = profile.copy()
+            R_rs_profile['count'] = len(wavelengths)
+
+            # Open output files and write row by row
+            if args.glint_out:
+                dst_glint = rio.open(args.glint_out, 'w', **glint_profile)
+            else:
+                dst_glint = None
+            dst_R_rs = rio.open(args.output_file, 'w', **glint_profile)
+            # Loop over rows of input file, compute mask and write to output file        
+            for _, wind in src.block_windows():
+                
+                print(wind)
+
+                # Read row from xarray object
+                r_rs_water = src.read(window=wind)
+            
+                if args.apply_water_mask==True:  
+                    # Apply water mask
+                    r_rs_water = np.where(indices.awei(r_rs_water, wavelengths) > args.water_mask_threshold, r_rs_water, np.nan)
+            
+                # Apply glint correction
+                glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
+                R_rs = r_rs_water - glint_reflectance.astype('float32')
+
+                # Write output rows into the respective files
+                if dst_glint:
+                    dst_glint.write(glint_reflectance.astype('float32'), window=wind)
+                dst_R_rs.write(R_rs, window=wind)
+        if dst_glint:
+            dst_glint.close()
+        dst_R_rs.close()
 
     stop = timeit.default_timer()
     print('Processing time: ', stop - start, '')  
