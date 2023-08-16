@@ -369,7 +369,6 @@ def invert(params,
         params.add('g_dsa', vary=False) 
         params.add('f_dd', vary=False) 
         params.add('f_ds', vary=False) 
-        params.add('rho_L', vary=False) 
 
         res = minimize(func2opt, 
                        params, 
@@ -441,7 +440,6 @@ def forward(params,
     :param E_d_res: optional, precomputing E_d saves a lot of time. Will be computed within function if not provided.
     :param b_b_res: optional, pre-computed or measured backscattering coefficient resamples to wavelengths
     :param n2_res: optional, pre-computed spectral refractive index of water; constant n2=1.33 if not provided
-    :param Ls_Ed: optional, measured specular sky reflectance (Ls/Ed) [sr-1] with identical wavelength settings; if provided, will be acknowledged in the glint assessment through rho_L * (Ls/Ed) and the glint model will only be used to correct residual glint
     :return: R_rs: simulated remote sensing reflectance spectrum [sr-1]
     """
 
@@ -513,6 +511,7 @@ def forward(params,
                                     b_b_res=b_b_res)) + \
                             surface.R_rs_surf(wavelengths = wavelengths, 
                                               theta_sun=params['theta_sun'], 
+                                              theta_view=params['theta_view'],
                                               P=params['P'], 
                                               AM=params['AM'], 
                                               RH=params['RH'], 
@@ -525,7 +524,8 @@ def forward(params,
                                               g_dsa=params['g_dsa'],
                                               f_dd=params['f_dd'], 
                                               f_ds=params['f_ds'],
-                                              rho_L=params['rho_L'],
+                                              n1=params['n1'],
+                                              n2=n2,
                                               d_r=params['d_r'],
                                               E_0_res=E_0_res,
                                               a_oz_res=a_oz_res,

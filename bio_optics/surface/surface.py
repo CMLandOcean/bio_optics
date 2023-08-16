@@ -38,10 +38,12 @@
 
 import numpy as np
 from .. atmosphere import sky_radiance, downwelling_irradiance
+from . air_water import fresnel
 
 
 def L_surf(wavelengths=np.arange(400,800), 
            theta_sun=np.radians(30), 
+           theta_view=np.radians(1e-10),
            P=1013.25, 
            AM=1, 
            RH=60, 
@@ -52,7 +54,8 @@ def L_surf(wavelengths=np.arange(400,800),
            g_dd=0.02,
            g_dsr=1/np.pi,
            g_dsa=1/np.pi,
-           rho_L=0.02,
+           n1=1.0,
+           n2=1.33,
            E_0_res=[],
            a_oz_res=[],
            a_ox_res=[],
@@ -67,6 +70,7 @@ def L_surf(wavelengths=np.arange(400,800),
     
     :param wavelengths: wavelengths to compute L_surf for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
+    :param theta_view: viewing angle [radians], default: np.radians(1e-10) [~= nadir]
     :param P: atmospheric pressure [mbar], default: 1013.25
     :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
     :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
@@ -77,7 +81,8 @@ def L_surf(wavelengths=np.arange(400,800),
     :param g_dd: intensity of direct component of E_d [sr-1]
     :param g_dsr: intensity of Rayleigh scattering part of diffuse component of E_d [sr-1]
     :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1]
-    :param rho_L: reflection factor of downwelling irradiance, default: 0.02; this can alternatively be computed using air_water.fresnel(np.radians(theta_view),n1=1,n2=1.33); n2 can also be read from file: resampling.resample_n(wavelengths).
+    :param n1: Refractive index of origin medium, default: 1 for air
+    :param n2: Refractive index of destination medium, default: 1.33 for water
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time.
@@ -87,6 +92,9 @@ def L_surf(wavelengths=np.arange(400,800),
     :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time.
     :return: L_surf
     """
+    # compute rho_L using solar zenith angle
+    rho_L = fresnel(theta_inc=theta_view, n1=n1, n2=n2)
+
     L_surf = rho_L * sky_radiance.L_s(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, beta=beta, g_dd=g_dd, g_dsr=g_dsr, g_dsa=g_dsa, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dd_res=E_dd_res, E_dsa_res=E_dsa_res, E_dsr_res=E_dsr_res)
     
     return L_surf
@@ -94,6 +102,7 @@ def L_surf(wavelengths=np.arange(400,800),
 
 def R_rs_surf(wavelengths=np.arange(400,800), 
               theta_sun=np.radians(30), 
+              theta_view=np.radians(1e-10),
               P=1013.25, 
               AM=1, 
               RH=60, 
@@ -106,7 +115,8 @@ def R_rs_surf(wavelengths=np.arange(400,800),
               g_dsa=1/np.pi,
               f_dd=1, 
               f_ds=1,
-              rho_L=0.02,
+              n1=1,
+              n2=1.33,
               d_r=0.0,
               E_0_res=[],
               a_oz_res=[],
@@ -124,6 +134,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     
     :param wavelengths: wavelengths to compute L_surf for, default: np.arange(400,800)
     :param theta_sun: sun zenith angle [radians], default: np.radians(30)
+    :param theta_view: viewing angle [radians], default: np.radians(1e-10) [~= nadir]
     :param P: atmospheric pressure [mbar], default: 1013.25
     :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
     :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
@@ -136,7 +147,6 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1], default: 1/np.pi()
     :param f_dd: fraction of direct downwelling irradiance, default: 1
     :param f_ds: fraction of diffuse downwelling irradiance, default: 1
-    :param rho_L: reflection factor of downwelling irradiance, default: 0.02 (for nadir viewing sensors)
     :param d_r: offset to account for spectrally uniform cloud reflections at the water surface (4C model) as described in [2]
     :param E_0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
@@ -150,6 +160,7 @@ def R_rs_surf(wavelengths=np.arange(400,800),
     """
     R_rs_surf = L_surf(wavelengths=wavelengths,
                        theta_sun=theta_sun, 
+                       theta_view=theta_view,
                        P=P, 
                        AM=AM, 
                        RH=RH, 
@@ -160,7 +171,8 @@ def R_rs_surf(wavelengths=np.arange(400,800),
                        g_dd=g_dd,
                        g_dsr=g_dsr,
                        g_dsa=g_dsa,
-                       rho_L=rho_L,
+                       n1=n1,
+                       n2=n2,
                        E_0_res=E_0_res,
                        a_oz_res=a_oz_res,
                        a_ox_res=a_ox_res,
