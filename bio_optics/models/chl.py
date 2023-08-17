@@ -177,13 +177,13 @@ def li(R_rs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, a=-0.4
         lambda1 (float, optional): Wavelength of red band [nm]. Defaults to 652.07.
         lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 536.90.
         lambda3 (float, optional): Wavelength of blue band [nm]. Defaults to 466.79.
-        
+
     Returns:
         chl concentration [mg m-3]
     """
-    omega = ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.46, y=0.54)
-    
-    return 10**(a + b * omega)
+    chl = cia(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y, a=a, b=b)
+  
+    return chl
 
 
 def guc2(R_rs, wavelengths, lambda1=663, lambda2=623, a=113.112, b=58.408, c=8.669, d=0.0384):
