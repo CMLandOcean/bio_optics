@@ -160,7 +160,7 @@ def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y
     return cia 
 
 
-def li(R_rs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, a=-0.4909, b=191.659):
+def li(R_rs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, x=0.46, y=0.54, a=-0.4909, b=191.659):
     """
     Chl-a retrieval for Planet Dove data as described in Li et al. (2019) [1] after Hu et al. (2012) [2]
     Part of adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters).
@@ -177,6 +177,10 @@ def li(R_rs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, a=-0.4
         lambda1 (float, optional): Wavelength of red band [nm]. Defaults to 652.07.
         lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 536.90.
         lambda3 (float, optional): Wavelength of blue band [nm]. Defaults to 466.79.
+        x (float, optional): Factor for red band. Defaults to 0.46.
+        y (float, optional): Factor for blue band. Defaults to 0.54.
+        a (float, optional): Empirical component. Defaults to -0.4909.
+        b (float, optional): Empirical component. Defaults to 191.659.
 
     Returns:
         chl concentration [mg m-3]
