@@ -166,7 +166,7 @@ def li(R_rs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, a=-0.4
     Part of adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters).
 
     !!! Note that compared to Hu et al., the red and blue band are interchanged !!!    
-    !!! Only valid for opticall deep water !!!
+    !!! Only valid for optically deep water !!!
 
     [1] Li et al. (2019): Adaptive bathymetry estimation for shallow coastal waters using Planet Dove satellites [10.1016/j.rse.2019.111302]
     [2] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
