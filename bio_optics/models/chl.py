@@ -112,21 +112,76 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     return a0 + a1 *  ndi(band2, band1) + a2 * ndi(band2, band1)**2
 
 
-def li(R_rs, wavelengths, blue=466.79, green=536.90, red=652.07, a=-0.4909, b=191.659):
+def ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
     """
-    Simple chl-a retrieval after Li et al. (2019) [1].
+    Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3.
+
+    [1] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+
+    Args:
+        R_rs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1 (float, optional): Wavelength of blue band [nm]. Defaults to 443.0
+        lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 555.0
+        lambda3 (float, optional): Wavelength of red band [nm]. Defaults to 670.0
+
+    Returns:
+        chl concentration [mg m-3]
+    """
+    ci = R_rs[find_closest(wavelengths, lambda2)[1]] - x * R_rs[find_closest(wavelengths, lambda1)[1]] + y * R_rs[find_closest(wavelengths, lambda3)[1]]
+
+    return ci
+
+
+def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0, a=-0.4909, b=191.659):
+    """
+    CI-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
+
+    !!! Only valid for CI <= 0.0005 sr-1 !!!
+
+    [1] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+
+    Args:
+        R_rs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1 (float, optional): Wavelength of blue band [nm]. Defaults to 443.0
+        lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 555.0
+        lambda3 (float, optional): Wavelength of red band [nm]. Defaults to 670.0
+        x (float, optional): Factor for blue band. Defaults to 0.5.
+        y (float, optional): Factor for red band. Defaults to 1.0.
+        a (float, optional): Empirical component. Defaults to -0.4909.
+        b (float, optional): Empirical component. Defaults to 191.659.
+    
+    Returns:
+        chl concentration [mg m-3]
+    """
+    cia = 10**(a + b * ci(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y))
+
+    return cia 
+
+
+def li(R_rs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, a=-0.4909, b=191.659):
+    """
+    Chl-a retrieval for Planet Dove data as described in Li et al. (2019) [1] after Hu et al. (2012) [2]
     Part of adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters).
 
-    [1] Li et al. (2019): Adaptive bathymetry estimation for shallow coastal waters using Planet Dove satellites [10.1016/j.rse.2019.111302]
+    !!! Note that compared to Hu et al., the red and blue band are interchanged !!!    
+    !!! Only valid for opticall deep water !!!
 
+    [1] Li et al. (2019): Adaptive bathymetry estimation for shallow coastal waters using Planet Dove satellites [10.1016/j.rse.2019.111302]
+    [2] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+    
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        blue (float, optional): Wavelength of blue band [nm]. Defaults to 466.79.
-        green (float, optional): Wavelength of green band [nm]. Defaults to 536.90.
-        red (float, optional): Wavelength of red band [nm]. Defaults to 652.07.
+        lambda1 (float, optional): Wavelength of red band [nm]. Defaults to 652.07.
+        lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 536.90.
+        lambda3 (float, optional): Wavelength of blue band [nm]. Defaults to 466.79.
+        
+    Returns:
+        chl concentration [mg m-3]
     """
-    omega = R_rs[find_closest(wavelengths, green)[1]] - 0.46 * R_rs[find_closest(wavelengths, red)[1]] - 0.54 * R_rs[find_closest(wavelengths, blue)[1]]
+    omega = ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.46, y=0.54)
     
     return 10**(a + b * omega)
 
