@@ -239,7 +239,7 @@ def r_rs_sh(C_0 = 0,
 
     # Attenuation coefficients for upwelling radiance of the water body (k_uW) and the bottom (k_uB)
     k_uW = ((ab + bs) / np.cos(air_water.snell(theta_view, n1, n2))) * (1 + u)**3.5421 * (1 - (0.2786 / np.cos(air_water.snell(theta_sun, n1, n2))))
-    k_uB = ((ab + bs) / np.cos(air_water.snell(theta_view, n1, n2))) * (1 + u)**2.2658 * (1 - (0.0577 / np.cos(air_water.snell(theta_sun, n1, n2))))
+    k_uB = ((ab + bs) / np.cos(air_water.snell(theta_view, n1, n2))) * (1 + u)**2.2658 * (1 + (0.0577 / np.cos(air_water.snell(theta_sun, n1, n2))))
 
     A_rs_1 = 1.1576 # (+/- 0.0038)
     A_rs_2 = 1.0389 # (+/- 0.0014) 
