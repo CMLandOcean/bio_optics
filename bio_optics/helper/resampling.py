@@ -307,15 +307,15 @@ def resample_srf(srf, original_wavelengths, original_spectrum,  kind='slinear', 
     Resample a spectrum to a sensor's band setting using it's spectral response function (SRF).
     Uses scipy.interpolate.interp1d.
     
-    :param srf: pd.DataFrame with columns ['Wavelength (nm)', band_1_response, ..., band_i_response]
+    :param srf: pd.DataFrame with columns [wavelength [nm], band_1_response, ..., band_i_response]
     :param central_wavelengths: np.array of central wavelengths [nm] for new spectrum
     :return np.array of resampled reflectance with len(n_bands in SRF).
     """
     resampled_spectrum = np.zeros(len(srf.columns[1:]))*np.nan
     
-    for band_i in range(1,len(srf.columns)-1): # first column is 'Wavelength (nm)'
+    for band_i in range(1,len(srf.columns)-1): # first column is wavelength (nm)
         # fit interpolated SRF for respective band
-        interp = interp1d(srf['Wavelength (nm)'], srf[srf.columns[band_i]], kind=kind, fill_value=fill_value)
+        interp = interp1d(srf[srf.columns[0]], srf[srf.columns[band_i]], kind=kind, fill_value=fill_value)
         # interpolate original spectrum to SRF bands, multiply interpolated SRF with spectrum, sum and divide by sum of SRF
         resampled_spectrum[band_i-1] = np.sum(np.multiply(interp(original_wavelengths), original_spectrum)) / np.sum(srf[srf.columns[band_i]])
         
