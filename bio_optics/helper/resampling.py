@@ -326,7 +326,7 @@ def resample_srf(srf_wavelengths, srf_factors, input_wavelengths, input_spectrum
         # interpolate original spectrum to SRF bands, multiply interpolated SRF with spectrum, sum and divide by sum of SRF
         # if input is 1D
         if len(input_spectrum.shape)==1:
-            resampled_spectrum[band_i-1] = np.sum(np.multiply(interp_srf_factors, input_spectrum)) / np.sum(srf_factors[band_i])
+            resampled_spectrum[band_i-1] = np.einsum('i,i->i', interp(input_wavelengths), input_spectrum).sum(axis=0) / np.sum(srf_factors[band_i])
         # else if input is 2D
         elif len(input_spectrum.shape)==2:
             resampled_spectrum[band_i-1,:] = np.einsum('i,ik->ik', interp_srf_factors, input_spectrum).sum(axis=0) / np.sum(srf_factors[band_i])
