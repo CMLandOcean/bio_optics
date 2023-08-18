@@ -302,21 +302,25 @@ def resample_A(wavelengths = np.arange(400,800)):
     return a_0, a_1
 
 
-def resample_srf(srf, original_wavelengths, original_spectrum,  kind='slinear', fill_value='extrapolate'):
+def resample_srf(srf_wavelengths, srf_factors, input_wavelengths, input_spectrum, kind='slinear', fill_value='extrapolate'):
     """
     Resample a spectrum to a sensor's band setting using it's spectral response function (SRF).
     Uses scipy.interpolate.interp1d.
     
-    :param srf: pd.DataFrame with columns [wavelength [nm], band_1_response, ..., band_i_response]
-    :param central_wavelengths: np.array of central wavelengths [nm] for new spectrum
-    :return np.array of resampled reflectance with len(n_bands in SRF).
+    :param srf_wavelengths: wavelengths of srf [nm]
+    :param srf_factors: spectral response factor per wavelength per band with shape (output_bands, srf_wavelengths)
+    :param input_wavelengths: wavelengths of input spectrum [nm]
+    :param input spectrum: spectrum to be resampled
+    :param kind: specifies kind of interpolation, parameter for interp1d, default: 'slinear'
+    :param fill_value: parameter for interp1d, default: 'extrapolate'
+    :return: resampled spectrum with new band setting
     """
-    resampled_spectrum = np.zeros(len(srf.columns[1:]))*np.nan
+    resampled_spectrum = np.zeros(srf_factors.shape[0])*np.nan
     
-    for band_i in range(1,len(srf.columns)-1): # first column is wavelength (nm)
+    for band_i in range(srf_factors.shape[0]):
         # fit interpolated SRF for respective band
-        interp = interp1d(srf[srf.columns[0]], srf[srf.columns[band_i]], kind=kind, fill_value=fill_value)
+        interp = interp1d(srf_wavelengths, srf_factors[band_i], kind=kind, fill_value=fill_value)
         # interpolate original spectrum to SRF bands, multiply interpolated SRF with spectrum, sum and divide by sum of SRF
-        resampled_spectrum[band_i-1] = np.sum(np.multiply(interp(original_wavelengths), original_spectrum)) / np.sum(srf[srf.columns[band_i]])
+        resampled_spectrum[band_i-1] = np.sum(np.multiply(interp(input_wavelengths), input_spectrum)) / np.sum(srf_factors[band_i])
         
     return resampled_spectrum
