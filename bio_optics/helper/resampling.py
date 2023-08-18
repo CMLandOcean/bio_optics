@@ -320,7 +320,7 @@ def resample_srf(srf_wavelengths, srf_factors, input_wavelengths, input_spectrum
     
     for band_i in range(srf_factors.shape[1]):
         # fit interpolated SRF for respective band
-        interp = interp1d(srf_wavelengths, srf_factors[:,band_i], kind='slinear', fill_value='extrapolate')
+        interp = interp1d(srf_wavelengths, srf_factors[:,band_i], kind=kind, fill_value=fill_value)
         interp_srf_factors = interp(input_wavelengths)
         
         # interpolate original spectrum to SRF bands, multiply interpolated SRF with spectrum, sum and divide by sum of SRF
