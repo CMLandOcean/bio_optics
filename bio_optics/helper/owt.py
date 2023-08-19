@@ -21,7 +21,8 @@
 
 import numpy as np
 import pandas as pd
-from . utils import find_closest, resampling
+from . resampling import resample_srf
+from . utils import find_closest
 from . indices import ndi
 
 
@@ -119,7 +120,7 @@ def jiang(R_rs, wavelengths):
 
 
 
-def forel_ule(R_rs, wavelengths):
+def forel_ule(R_rs, wavelengths, kind='slinear'):
     """
     Discrete Forel-Ule scale [1,2,3]
 
@@ -129,20 +130,21 @@ def forel_ule(R_rs, wavelengths):
 
     :param R_rs: array of remote sensing reflectance, if more than 1D, first axis needs to be bands
     :param wavelengths: corresponding wavelengths [nm]
+    :param kind: specifies kind of interpolation, parameter for interp1d, default: 'slinear'
 
     """
-    # !!! to do: need to change paths to data folder !!!
+    # !!! to do: change paths to data folder !!!
     fu_scale = pd.read_csv(r"C:\Users\mkoenig3\Dropbox (ASU)\Backup\Documents\Github\InHouse\orig\utils\fu_scale\FU_scale.csv")
     cie = pd.read_csv(r"C:\Users\mkoenig3\Dropbox (ASU)\Backup\Documents\Github\InHouse\orig\utils\fu_scale\CIE.csv")
 
-    XYZ =resampling.resample_srf(srf_wavelengths=cie.iloc[:,0].values, 
-                             srf_factors = cie.iloc[:,1:].values, 
-                             input_wavelengths = wavelengths, 
-                             input_spectrum = R_rs, # transpose to make sure bands are first axis
-                             kind='cubic') 
+    xyz =resample_srf(srf_wavelengths=cie.iloc[:,0].values, 
+                      srf_factors = cie.iloc[:,1:].values, 
+                      input_wavelengths = wavelengths, 
+                      input_spectrum = R_rs,
+                      kind=kind) 
 
-    x = XYZ[0] / XYZ.sum(axis=0)
-    y = XYZ[1] / XYZ.sum(axis=0)
+    x = xyz[0] / xyz.sum(axis=0)
+    y = xyz[1] / xyz.sum(axis=0)
 
     alpha = np.degrees(np.arctan2(y-(1/3),x-(1/3)))
     alpha = np.where(alpha<0, 180-alpha, alpha)
@@ -152,12 +154,10 @@ def forel_ule(R_rs, wavelengths):
 
     if len(R_rs.shape)==1:
         idx = np.where(alpha_lut-alpha < 0, -1e10, alpha_lut-alpha).argmin(axis=0)
-        
     else:
         # if R_rs has more than 1 dimension
         alpha_lut = np.broadcast_to(alpha_lut, R_rs.T.shape[:-1] + (21,)).T
         idx = np.where(alpha_lut-alpha < 0, -1e10, alpha_lut-alpha).argmin(axis=0)
-
 
     fu_class = idx + 1
     dominant_wavelength = fu_scale["dominant_wl"].values[idx]
