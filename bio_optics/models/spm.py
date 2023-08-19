@@ -155,8 +155,15 @@ def dsa(R_rs, wavelengths, lambda1=671, lambda2=551, a=1.25, b=1.11):
 
 def jiang(R_rs, wavelengths, lambda1=443, lambda2=490, lambda3=560, lambda4=620, lambda5=665, lambda6=754, lambda7=865):
     """"
-    Total suspended solid (TSS) estimation as described in Jiang et al. (2021) [10.1016/j.rse.2021.112386].
+    Total suspended solid (TSS) estimation as described in Jiang et al. (2021) [1]
     
+    Jiang et al. (2021): Remotely estimating total suspended solids concentration in clear to extremely turbid waters using a novel semi-analytical method [10.1016/j.rse.2021.112386].
+    
+    !!! ---------------
+    Testing on simulated data indicates that there might be a typo in Eq. 12 in [1]. Type II concentrations were constantly overestimated.
+    We tested different values for the scalar in Eq. 12 and found that 0.039 instead of 0.39 improves results for Type II water.
+    Thus, we changed the value accordingly.
+    !!! ---------------
 
     :return: np.arrays of TSS and optical water types
     """
@@ -184,8 +191,8 @@ def jiang(R_rs, wavelengths, lambda1=443, lambda2=490, lambda3=560, lambda4=620,
     a_560 = a_w[lambdas.index(560)] + 10**(-1.146 - 1.366 * x - 0.469 * x**2)                                                                   
     tss_type1 = 94.607 * ((u[lambdas.index(560)] * a_560) / (1 - u[lambdas.index(560)]) - b_bw[lambdas.index(560)])
 
-    # Type 2:
-    a_665 = a_w[lambdas.index(665)] + 0.39 * (R_rs[idx[lambdas.index(665)]] / (R_rs[idx[lambdas.index(443)]] + R_rs[idx[lambdas.index(490)]]))**1.14
+    # Type 2: [!!! changed the scalar in a_665 to 0.039 instead of 0.39 !!!]
+    a_665 = a_w[lambdas.index(665)] + 0.039 * (R_rs[idx[lambdas.index(665)]] / (R_rs[idx[lambdas.index(443)]] + R_rs[idx[lambdas.index(490)]]))**1.14
     tss_type2 = 114.012 * ((u[lambdas.index(665)] * a_665) / (1 - u[lambdas.index(665)]) - b_bw[lambdas.index(665)])
     
     # Type 3:
