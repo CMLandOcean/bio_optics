@@ -93,7 +93,7 @@ def flh(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     return L2 - k * L1 - (1-k) * L3
 
 
-def cyanobacterial_index(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705):
+def cyanobacterial_index(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=709):
     """
     Cyanobacterial index (CI) as described in Kudela et al. (2015) [1] (Table 3) after Wynne et al. (2008) [2].
     The spectral shape equation (SS) in Table 3 is mathematically identical to the fluorescence line hight (FLH) but weirdly gets multiplied by (-1).
@@ -101,8 +101,42 @@ def cyanobacterial_index(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=70
     [1] Kudela et al. (2015): Application of hyperspectral remote sensing to cyanobacterial blooms in inland waters [10.1016/j.rse.2015.01.025]
     [2] Wynne et al. (2008): Relating spectral shape to cyanobacterial blooms in the Laurentian Great Lakes [10.1080/01431160802007640]
 
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 681.
+        lambda3: _description_. Defaults to 709.
+    Returns: 
+        Cyanobacterial index
     """
     return (-1) * flh(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3)   
+
+
+def slh(R_rs, wavelengths, lambda1=654, lambda2=714, lambda3=754):
+    """
+    Scattering line height (SLH) for detection of cyanobacteria as described in Kudela et al. (2015) [1] (Table 3).
+
+    [1] Kudela et al. (2015): Application of hyperspectral remote sensing to cyanobacterial blooms in inland waters [10.1016/j.rse.2015.01.025]
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1: _description_. Defaults to 654.
+        lambda2: _description_. Defaults to 714.
+        lambda3: _description_. Defaults to 754.
+    Returns: 
+        Scattering line height
+    """
+    Rrs1 = R_rs[find_closest(wavelengths, lambda1)[1]]
+    Rrs2 = R_rs[find_closest(wavelengths, lambda2)[1]]
+    Rrs3 = R_rs[find_closest(wavelengths, lambda3)[1]]
+
+    lambda1 = find_closest(wavelengths, lambda1)[0]
+    lambda2 = find_closest(wavelengths, lambda2)[0]
+    lambda3 = find_closest(wavelengths, lambda3)[0]
+
+    return  Rrs2 - (Rrs1 + ((Rrs3 - Rrs1)/(lambda3-lambda1)) * (lambda2-lambda1))
 
 
 def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=194.325):
