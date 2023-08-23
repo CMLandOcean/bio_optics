@@ -331,6 +331,13 @@
         "vary": false
       },
       {
+        "name": "d_r",
+        "value": 0.0,
+        "min": 0.0,
+        "max": 0.1,
+        "vary": false
+      },
+      {
         "name": "offset",
         "value": 0,
         "min": -0.1,
