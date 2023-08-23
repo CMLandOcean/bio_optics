@@ -116,7 +116,7 @@ def ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=
     """
     Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3.
 
-    [1] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+    [1] Hu et al. (2012): Chlorophyll algorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
 
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
