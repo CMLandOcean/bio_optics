@@ -32,9 +32,9 @@ def gitelson(R, wavelengths, a=117.42, b=23.09, lambda1=660, lambda2=715, lambda
     Args:
         R (_type_): irradiance reflectance [-] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 675.
-        lambda2 (int, optional): _description_. Defaults to 720.
-        lambda3 (int, optional): _description_. Defaults to 748.
+        lambda1: _description_. Defaults to 675.
+        lambda2: _description_. Defaults to 720.
+        lambda3: _description_. Defaults to 748.
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
@@ -55,9 +55,9 @@ def hico(R_rs, wavelengths, a=17.477, b=6.152, lambda1 = 686, lambda2 = 703, lam
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 686.
-        lambda2 (int, optional): _description_. Defaults to 703.
-        lambda3 (int, optional): _description_. Defaults to 735.
+        lambda1: _description_. Defaults to 686.
+        lambda2: _description_. Defaults to 703.
+        lambda3: _description_. Defaults to 735.
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
@@ -74,23 +74,23 @@ def flh(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     Estimates magnitude of sun induces chlorophyll fluorescence at 681 nm above a baseline between 665 and 705 nm.
 
     [1] Gower et al. (2010): Interpretation of the 685nm peak in water-leaving radiance spectra in terms of fluorescence, absorption and scattering, and its observation by MERIS [doi.org/10.1080/014311699212470].
-    [2] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters, p. 211.
+    [2] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters, p. 211., Eq. 7.39
 
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 680.
-        lambda2 (int, optional): _description_. Defaults to 708.
-        lambda3 (int, optional): _description_. Defaults to 753.
+        lambda1: _description_. Defaults to 680.
+        lambda2: _description_. Defaults to 708.
+        lambda3: _description_. Defaults to 753.
         k (float, optional): _description_. Defaults to 1.005.
     """
     L1 = R_rs[find_closest(wavelengths, lambda1)[1]]
     L2 = R_rs[find_closest(wavelengths, lambda2)[1]]
     L3 = R_rs[find_closest(wavelengths, lambda3)[1]]
 
-    k = ((R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda2)[1]]) / (R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda1)[1]]))
+    k = (find_closest(wavelengths, lambda3)[0]-find_closest(wavelengths, lambda2)[0]) / (find_closest(wavelengths, lambda3)[0]-find_closest(wavelengths, lambda1)[0])
 
-    return L2 - (L3 + (L1 - L3) * k)
+    return L2 - k * L1 - (1-k) * L3
 
 
 def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=194.325):
@@ -103,8 +103,8 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
     """
     band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
     band2 = R_rs[find_closest(wavelengths,lambda2)[1]]
@@ -200,8 +200,8 @@ def guc2(R_rs, wavelengths, lambda1=663, lambda2=623, a=113.112, b=58.408, c=8.6
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): Wavelength of first band [nm]. Defaults to 663.
-        lambda2 (int, optional): Wavelength of second band [nm]. Defaults to 623.
+        lambda1: Wavelength of first band [nm]. Defaults to 663.
+        lambda2: Wavelength of second band [nm]. Defaults to 623.
         a (float, optional): Defaults to 113.112.
         b (float, optional): Defaults to 58.408.
         c (float, optional): Defaults to 8.669.
@@ -258,9 +258,9 @@ def three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, a=232.3
     Args:
         R_rs (_type_): _description_
         wavelengths (_type_): _description_
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
-        lambda3 (int, optional): _description_. Defaults to 753.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
+        lambda3: _description_. Defaults to 753.
         a (float, optional): _description_. Defaults to 232.329.
         b (float, optional): _description_. Defaults to 23.174.
 
@@ -284,8 +284,8 @@ def gurlin_two_band(R_rs, wavelengths, lambda1=665, lambda2=708, a=25.28, b=14.8
     Args:
         R_rs (_type_): _description_
         wavelengths (_type_): _description_
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
         a (float, optional): _description_. Defaults to 25.28.
         b (float, optional): _description_. Defaults to 14.85.
         c (float, optional): _description_. Defaults to -15.18.
@@ -312,9 +312,9 @@ def gurlin_three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, 
     Args:
         R_rs (_type_): _description_
         wavelengths (_type_): _description_
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
-        lambda3 (int, optional): _description_. Defaults to 753.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
+        lambda3: _description_. Defaults to 753.
         a (float, optional): _description_. Defaults to 315.50.
         b (float, optional): _description_. Defaults to 215.95.
         c (float, optional): _description_. Defaults to 25.66.
