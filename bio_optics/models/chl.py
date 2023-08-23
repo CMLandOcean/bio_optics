@@ -93,6 +93,18 @@ def flh(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     return L2 - k * L1 - (1-k) * L3
 
 
+def cyanobacterial_index(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705):
+    """
+    Cyanobacterial index (CI) as described in Kudela et al. (2015) [1] (Table 3) after Wynne et al. (2008) [2].
+    The spectral shape equation (SS) in Table 3 is mathematically identical to the fluorescence line hight (FLH) but weirdly gets multiplied by (-1).
+
+    [1] Kudela et al. (2015): Application of hyperspectral remote sensing to cyanobacterial blooms in inland waters [10.1016/j.rse.2015.01.025]
+    [2] Wynne et al. (2008): Relating spectral shape to cyanobacterial blooms in the Laurentian Great Lakes [10.1080/01431160802007640]
+
+    """
+    return (-1) * flh(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3)   
+
+
 def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=194.325):
     """
     Normalized Difference Chlorophyll Index [1]
@@ -112,7 +124,7 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     return a0 + a1 *  ndi(band2, band1) + a2 * ndi(band2, band1)**2
 
 
-def ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
+def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
     """
     Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3.
 
@@ -135,7 +147,7 @@ def ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=
 
 def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0, a=-0.4909, b=191.659):
     """
-    CI-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
+    Color index-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
 
     !!! Only valid for CI <= 0.0005 sr-1 !!!
 
@@ -155,7 +167,7 @@ def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y
     Returns:
         chl concentration [mg m-3]
     """
-    cia = 10**(a + b * ci(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y))
+    cia = 10**(a + b * color_index(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y))
 
     return cia 
 
