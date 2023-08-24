@@ -435,3 +435,37 @@ def oc4me(R_rs, wavelengths, lambda1=443, lambda2=489, lambda3=510, lambda4=560,
     Chl_a = 10**(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4)
 
     return Chl_a
+
+
+def potes_cya(R, wavelengths, lambda1=490, lambda2=560, lambda3=620, a=115530.31, b=2.38):
+    """
+    Empirical algorithm for Cyanobacteria concentration [10**3 cells mL-1] as reported in Petus et al. (2018) [1].
+    Originally developed for MERIS but proven to work for Sentinel-2 as well.
+
+    [1] Petus et al. (2018): Use of Sentinel 2-MSI for water quality monitoring at Alqueva reservoir, Portugal [10.5194/piahs-380-73-2018]
+
+    Args:
+        R: Water reflectance [-] spectrum
+        wavelengths: correspondong wavelengths [nm]
+
+    Returns:
+        Cyanobacteria concentration [10**3 cells mL-1]
+    """
+    return a * ((R[find_closest(wavelengths, lambda2)[1]] * R[find_closest(wavelengths, lambda3)[1]]) / R[find_closest(wavelengths, lambda1)[1]])**b 
+
+
+def potes_chl(R, wavelengths, lambda1=442.5, lambda2=560, a=4.23, b=3.94):
+    """
+    Empirical algorithm for Chl a concentration [mg m-3] as reported in Petus et al. (2018) [1].
+    Originally developed for MERIS but proven to work for Sentinel-2 as well.
+
+    [1] Petus et al. (2018): Use of Sentinel 2-MSI for water quality monitoring at Alqueva reservoir, Portugal [10.5194/piahs-380-73-2018]
+
+    Args:
+        R: Water reflectance [-] spectrum
+        wavelengths: correspondong wavelengths [nm]
+
+    Returns:
+        Cyanobacteria concentration [10**3 cells mL-1]
+    """
+    return a * (R[find_closest(wavelengths, lambda2)[1]] / R[find_closest(wavelengths, lambda3)[1]])**b 
