@@ -403,3 +403,35 @@ def analytical_two_band(R_rs, wavelengths, lambda1=665.0, lambda2=708.0, a=35.74
     band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
 
     return (a * (band2/band1) -b)**c            
+
+
+def oc4me(R_rs, wavelengths, lambda1=443, lambda2=489, lambda3=510, lambda4=560, a0=0.450, a1=-3.259, a2=3.523, a3=-3.359, a4=0.950):
+    """
+    Ocean Color for Meris (OC4Me) algorithm as described in Mishra et al. (2017) [1] Eqs. 6.2f.
+
+    [1] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters.
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1: _description_. Defaults to 443.
+        lambda2: _description_. Defaults to 489.
+        lambda3: _description_. Defaults to 510.
+        lambda4: _description_. Defaults to 560.
+        a0: Defaults to 0.450.
+        a1: Defaults to -3.259.
+        a2: Defaults to 3.523.
+        a3: Defaults to -3.359.
+        a4: Defaults to 0.950.
+    Returns: 
+        Scattering line height
+    """
+
+    R_rs1 = np.max(R_rs[[find_closest(wavelengths, lambda1)[1], find_closest(wavelengths, lambda2)[1], find_closest(wavelengths, lambda3)[1]]], axis=0)
+    R_rs2 = R_rs[find_closest(wavelengths, lambda4)[1]]
+
+    x = np.log10(R_rs1/R_rs2)
+
+    Chl_a = 10**(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4)
+
+    return Chl_a
