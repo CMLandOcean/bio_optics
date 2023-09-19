@@ -87,7 +87,6 @@ def E_dd(wavelengths=np.arange(400,800),
         
     return E_dd
     
-    
 def E_dsr(wavelengths=np.arange(400,800), 
           theta_sun=np.radians(30), 
           P=1013.25, 
@@ -129,8 +128,7 @@ def E_dsr(wavelengths=np.arange(400,800),
         E_dsr=E_dsr_res
         
     return E_dsr
-    
-    
+ 
 def E_dsa(wavelengths=np.arange(400,800), 
           theta_sun=np.radians(30), 
           P=1013.25, 
@@ -179,26 +177,14 @@ def E_dsa(wavelengths=np.arange(400,800),
     
     return E_dsa
     
-    
-def E_d(wavelengths=np.arange(400,800), 
-        theta_sun=np.radians(30), 
-        P=1013.25, 
-        AM=5, 
-        RH=80, 
-        H_oz=0.38, 
-        WV=2.5, 
-        alpha=1.317,
-        beta=0.2606,
+def E_ds(E_dsr, E_dsa):
+    return E_dsr + E_dsa
+
+def E_d(E_dd,
+        E_ds,
         f_dd=1,
-        f_ds=1,
-        E_0_res=[],
-        a_oz_res=[],
-        a_ox_res=[],
-        a_wv_res=[],
-        E_dd_res = [],
-        E_dsa_res = [],
-        E_dsr_res = [],
-        E_d_res = []):
+        f_ds=1
+        ):
     """
     Downwelling irradiance is split into a direct and a diffuse component [1]: 
     * E_dd is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source. 
@@ -207,32 +193,6 @@ def E_d(wavelengths=np.arange(400,800),
         * E_dsa represents aerosol scattering
      
      [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-     
-    :param wavelengths: wavelengths to compute tau_a fpr, default: np.arange(400,800)
-    :param theta_sun: sun zenith angle [radians], default: np.radians(30)
-    :param P: atmospheric pressure [mbar], default: 1013.25
-    :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
-    :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
-    :param H_oz: ozone scale height [cm], default: 0.381
-    :param WV: precipitable water [cm], default: 2.5
-    :param alpha: Angstroem exponent determining wavelength dependency (typically ranges from 0.2 to 2 [1]), default: 1.317
-    :param beta: turbidity coefficient as a measure of concentration (typically ranges from 0.16 to 0.50 [1]), default: 0.2606
-    :param f_dd: fraction of direct downwelling irradiance, default: 1
-    :param f_ds: fraction of diffuse downwelling irradiance,default: 1
-    :param E_0_res: optional, precomputing E_0 saves a lot of time.
-    :param a_oz_res: optional, precomputing a_oz saves a lot of time.
-    :param a_ox_res: optional, precomputing a_ox saves a lot of time.
-    :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :param E_dd_res: optional, preresampling E_dd before inversion saves a lot of time.
-    :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time.
-    :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time.
-    :return: E_d
     """
-    if len(E_d_res)==0:
-        E_d = f_dd * E_dd(wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, beta=beta, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res) + \
-              f_ds * (E_dsr(wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res) + \
-                      E_dsa(wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res))
-    else:
-        E_d = E_d_res
 
-    return E_d
+    return f_dd * E_dd + f_ds * E_ds
