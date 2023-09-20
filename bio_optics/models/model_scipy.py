@@ -234,6 +234,45 @@ def forward(parameters,
         R_rs_sim = R_rs_water + parameters["offset"]
         return R_rs_sim
 
+def forward_glint(parameters,
+        wavelengths,
+        E_0_res=[],
+        a_oz_res=[],
+        a_ox_res=[],
+        a_wv_res=[],
+        E_dd_res=[],
+        E_dsa_res=[],
+        E_dsr_res=[],
+        E_d_res=[]):
+    if len(E_dd_res) == 0:
+        E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
+    else:
+        E_dd = E_dd_res
+
+    if len(E_dsa_res) == 0:
+        E_dsa = downwelling_irradiance.E_dsa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsa_res)
+    else:
+        E_dsa = E_dsa_res
+
+    if len(E_dsr_res) == 0:
+        E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+    else:
+        E_dsr = E_dsr_res
+
+    E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+
+    if len(E_d_res) == 0:
+        E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
+    else:
+        E_d = E_d_res
+
+    L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
+
+    R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"])
+
+    return R_rs_surface
+    
+
 def dfun(parameters,
         wavelengths,
         a_w_res=[],
@@ -672,7 +711,7 @@ def invert(parameters: Parameters,
     userdfun = get_dfun_shim(dfun, wavelengths, fit_param_names, ret_params)
 
     if analytical:
-        analytical_grad = least_squares(userfun, fit_params, bounds=fit_bounds, jac=userdfun,
+        analytical_fit = least_squares(userfun, fit_params, bounds=fit_bounds, jac=userdfun,
                                     kwargs={
                                         "a_i_spec_res": a_i_spec_res,
                                         "a_w_res": a_w_res,
@@ -694,9 +733,9 @@ def invert(parameters: Parameters,
                                         "E_d_res": E_d_res
                                     },
                                     max_nfev=max_nfev)
-        return analytical_grad, ret_params
+        return analytical_fit, ret_params
     else:
-        numerical_grad = least_squares(userfun, fit_params, bounds=fit_bounds,
+        numerical_fit = least_squares(userfun, fit_params, bounds=fit_bounds,
                                     kwargs={
                                         "a_i_spec_res": a_i_spec_res,
                                         "a_w_res": a_w_res,
@@ -718,4 +757,4 @@ def invert(parameters: Parameters,
                                         "E_d_res": E_d_res
                                     },
                                     max_nfev=max_nfev)
-        return numerical_grad, ret_params
+        return numerical_fit, ret_params
