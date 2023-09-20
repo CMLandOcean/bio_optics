@@ -149,7 +149,8 @@ def forward(parameters,
         E_dd_res=[],
         E_dsa_res=[],
         E_dsr_res=[],
-        E_d_res=[]):
+        E_d_res=[],
+        E_ds_res=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     """
@@ -216,7 +217,10 @@ def forward(parameters,
         else:
             E_dsr = E_dsr_res
 
-        E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+        if len(E_ds_res) == 0:
+            E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+        else:
+            E_ds = E_ds_res
 
         if len(E_d_res) == 0:
             E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
@@ -243,7 +247,8 @@ def forward_glint(parameters,
         E_dd_res=[],
         E_dsa_res=[],
         E_dsr_res=[],
-        E_d_res=[]):
+        E_d_res=[],
+        E_ds_res=[]):
     if len(E_dd_res) == 0:
         E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
     else:
@@ -259,7 +264,10 @@ def forward_glint(parameters,
     else:
         E_dsr = E_dsr_res
 
-    E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+    if len(E_ds_res) == 0:
+        E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+    else:
+        E_ds = E_ds_res
 
     if len(E_d_res) == 0:
         E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
@@ -271,7 +279,6 @@ def forward_glint(parameters,
     R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"])
 
     return R_rs_surface
-    
 
 def dfun(parameters,
         wavelengths,
@@ -292,7 +299,8 @@ def dfun(parameters,
         E_dd_res=[],
         E_dsa_res=[],
         E_dsr_res=[],
-        E_d_res=[]):
+        E_d_res=[],
+        E_ds_res=[]):
 
     jacobian = []
     
@@ -359,7 +367,10 @@ def dfun(parameters,
     else:
         E_dsr = E_dsr_res
 
-    E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+    if len(E_ds_res) == 0:
+        E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+    else:
+        E_ds = E_ds_res
 
     if len(E_d_res) == 0:
         E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
@@ -689,6 +700,7 @@ def invert(parameters: Parameters,
            E_dsa_res=[],
            E_dsr_res=[],
            E_d_res=[],
+           E_ds_res=[],
            method="least-squares", 
            max_nfev=400,
            analytical=True
@@ -730,7 +742,8 @@ def invert(parameters: Parameters,
                                         "E_dd_res": E_dd_res,
                                         "E_dsa_res": E_dsa_res,
                                         "E_dsr_res": E_dsr_res,
-                                        "E_d_res": E_d_res
+                                        "E_d_res": E_d_res,
+                                        "E_ds_res": E_ds_res
                                     },
                                     max_nfev=max_nfev)
         return analytical_fit, ret_params
@@ -754,7 +767,8 @@ def invert(parameters: Parameters,
                                         "E_dd_res": E_dd_res,
                                         "E_dsa_res": E_dsa_res,
                                         "E_dsr_res": E_dsr_res,
-                                        "E_d_res": E_d_res
+                                        "E_d_res": E_d_res,
+                                        "E_ds_res": E_ds_res
                                     },
                                     max_nfev=max_nfev)
         return numerical_fit, ret_params
