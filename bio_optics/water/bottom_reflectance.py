@@ -74,14 +74,71 @@ def R_rs_b(f_0 = 0,
     :param wavelengths: wavelengths to resample R_i_b (albedo of bottom types 0..5) to
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time.
     :return: radiance reflectance of benthic substrate [sr-1]
+
+    # Math: R_{rs}^b(\lambda) = \sum_{n=0}^{N-1}f_n * B_n * a_n(\lambda)
     """
     f_i = np.array([f_0,f_1,f_2,f_3,f_4,f_5])
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
     if len(R_i_b_res)==0:
         R_i_b = resampling.resample_R_i_b(wavelengths=wavelengths)
-    else: R_i_b = R_i_b_res
+    else:
+        R_i_b = R_i_b_res
     
-    R_rs_b = np.sum([f_i[i] * B_i[i] * R_i_b.T[i] for i in np.arange(R_i_b.shape[1])], axis=0)
-    
+    R_rs_b = 0
+    for i in np.arange(R_i_b.shape[1]): R_rs_b += f_i[i] * B_i[i] * R_i_b.T[i]
+
     return R_rs_b
+
+def dR_rs_b_div_df_i(i, 
+           B_0 = 1/np.pi, 
+           B_1 = 1/np.pi, 
+           B_2 = 1/np.pi, 
+           B_3 = 1/np.pi, 
+           B_4 = 1/np.pi, 
+           B_5 = 1/np.pi, 
+           wavelengths=np.arange(400,800),
+           R_i_b_res = []):
+    """
+    # Math: \frac{\partial}{\partial f_i} R_{rs}^b(\lambda) = \frac{\partial}{\partial f_i} \sum_{n=0}^{N-1}f_n * B_n * a_n(\lambda) = B_i * a_i(\lambda)
+    """
+    B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
+    
+    if len(R_i_b_res)==0:
+        R_i_b = resampling.resample_R_i_b(wavelengths=wavelengths)
+    else: 
+        R_i_b = R_i_b_res
+    
+    dR_rs_b_div_df_i = B_i[i] * R_i_b.T[i]
+    
+    return dR_rs_b_div_df_i
+
+def dR_rs_b_div_dB_i(i, 
+           f_0 = 0,
+           f_1 = 0,
+           f_2 = 0,
+           f_3 = 0,
+           f_4 = 0,
+           f_5 = 0,
+           B_0 = 1/np.pi, 
+           B_1 = 1/np.pi, 
+           B_2 = 1/np.pi, 
+           B_3 = 1/np.pi, 
+           B_4 = 1/np.pi, 
+           B_5 = 1/np.pi, 
+           wavelengths=np.arange(400,800),
+           R_i_b_res = []):
+    """
+    # Math: \frac{\partial}{\partial B_i} R_{rs}^b(\lambda) = \frac{\partial}{\partial B_i} \sum_{n=0}^{N-1}f_n * B_n * a_n(\lambda) = f_i * a_i(\lambda)
+    """
+    f_i = np.array([f_0,f_1,f_2,f_3,f_4,f_5])
+    B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
+    
+    if len(R_i_b_res)==0:
+        R_i_b = resampling.resample_R_i_b(wavelengths=wavelengths)
+    else: 
+        R_i_b = R_i_b_res
+    
+    dR_rs_b_div_dB_i = f_i[i] * R_i_b.T[i]
+    
+    return dR_rs_b_div_dB_i

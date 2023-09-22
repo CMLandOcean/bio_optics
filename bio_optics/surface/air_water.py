@@ -49,9 +49,18 @@ def below2above(r_rs, zeta=0.52, Gamma=1.6):
     
     :param r_rs: subsurface radiance reflectance
     :return: remote sensing reflectance
+    
+    # Math: R_{rs}(\lambda) = \frac{\zeta * r_{rs}^*(\lambda)} {1 - \Gamma * r_{rs}^- (\lambda)}
     """
-    Gamma = np.broadcast_to(Gamma, r_rs.T.shape).T # Broadcasting enables using arrays instead of single numbers
     return (zeta * r_rs) / (1 - Gamma * r_rs)
+
+def dbelow2above_div_dp(r_rs, dr_rs_div_dp, zeta=0.52, Gamma=1.6):
+    """
+    # Math: \frac{\partial}{\partial p}R_{rs} = \frac{\partial}{\partial p}\left[\frac{\zeta r_{rs}^-} {1 - \Gamma r_{rs}^- } \right] 
+    # Math: = \zeta \frac{\partial r_{rs}^-}{\partial p} \left[ \frac{1}{1 - \Gamma r_{rs}^-} \right] + \zeta r_{rs}^- \left[\frac{1}{(1 - \Gamma r_{rs}^-)^2} \Gamma \frac{\partial r_{rs}^-}{\partial p} \right]
+    # Math: = \zeta \frac{\partial r_{rs}^-}{\partial p} \frac{1}{(1 - \Gamma r_{rs}^-)^2}
+    """
+    return zeta * dr_rs_div_dp * (1 - Gamma * r_rs)**-2
     
 
 def above2below(R_rs, zeta=0.52, Gamma=1.6):
@@ -65,7 +74,6 @@ def above2below(R_rs, zeta=0.52, Gamma=1.6):
     :param R_rs: remote sensing reflectance
     :return: subsurface radiance reflectance
     """
-    Gamma = np.broadcast_to(Gamma, R_rs.T.shape).T # Broadcasting enables using arrays instead of single numbers
     return R_rs / (zeta + Gamma * R_rs)
     
     
