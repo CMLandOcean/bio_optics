@@ -172,7 +172,7 @@ def forward(parameters,
                         a_Y_N_res=a_Y_N_res,
                         a_NAP_N_res=a_NAP_N_res)
     
-    b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["B_0"], parameters["B_1"], parameters["B_2"], parameters["B_3"], parameters["B_4"], parameters["B_5"]]), wavelengths=wavelengths, 
+    b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                         fresh=parameters["fresh"],
                         b_bphy_spec=parameters["b_bphy_spec"],
                         b_bMie_spec=parameters["b_bMie_spec"],
@@ -322,7 +322,7 @@ def dfun(parameters,
                         a_Y_N_res=a_Y_N_res,
                         a_NAP_N_res=a_NAP_N_res)
     
-    b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["B_0"], parameters["B_1"], parameters["B_2"], parameters["B_3"], parameters["B_4"], parameters["B_5"]]), wavelengths=wavelengths, 
+    b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                         fresh=parameters["fresh"],
                         b_bphy_spec=parameters["b_bphy_spec"],
                         b_bMie_spec=parameters["b_bMie_spec"],
