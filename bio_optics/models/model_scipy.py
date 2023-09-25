@@ -201,7 +201,7 @@ def forward(parameters,
 
     R_rs_water = air_water.below2above(water_alg.r_rs_shallow(r_rs_deep=rrsd, K_d=Kd, k_uW=kuW, zB=parameters["zB"], R_rs_b=Rrsb, k_uB=kuB)) # zeta & gamma
 
-    if parameters["fit_surface"]==True:        
+    if parameters["fit_surface"].value:
         if len(E_dd_res) == 0:
             E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
         else:
@@ -351,7 +351,6 @@ def dfun(parameters,
 
     R_rs_water = air_water.below2above(water_alg.r_rs_shallow(r_rs_deep=rrsd, K_d=Kd, k_uW=kuW, zB=parameters["zB"], R_rs_b=Rrsb, k_uB=kuB)) # zeta & gamma
 
-    # if p["fit_surface"]==True:        
     if len(E_dd_res) == 0:
         E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
     else:
@@ -664,17 +663,28 @@ def dfun(parameters,
                                             )
         jacobian.append(df_div_df_5)
 
-    if parameters["g_dd"].vary:
-        df_div_dg_dd  =  (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dd(E_dd)
-        jacobian.append(df_div_dg_dd)
+    if parameters["fit_surface"].value:
+        if parameters["g_dd"].vary:
+            df_div_dg_dd  =  (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dd(E_dd)
+            jacobian.append(df_div_dg_dd)
 
-    if parameters["g_dsa"].vary:
-        df_div_dg_dsa = (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dsa(E_dsa)
-        jacobian.append(df_div_dg_dsa)
+        if parameters["g_dsa"].vary:
+            df_div_dg_dsa = (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dsa(E_dsa)
+            jacobian.append(df_div_dg_dsa)
 
-    if parameters["g_dsr"].vary:
-        df_div_dg_dsr = (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dsr(E_dsr)
-        jacobian.append(df_div_dg_dsr)
+        if parameters["g_dsr"].vary:
+            df_div_dg_dsr = (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dsr(E_dsr)
+            jacobian.append(df_div_dg_dsr)
+    else:
+        zero = np.zeros_like(wavelengths)
+
+        if parameters["g_dd"].vary:
+            jacobian.append(zero)
+        if parameters["g_dsa"].vary:
+            jacobian.append(zero)
+        if parameters["g_dsr"].vary:
+            jacobian.append(zero)        
+        
     
     return np.array(jacobian).T
 

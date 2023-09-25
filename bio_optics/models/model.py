@@ -104,7 +104,7 @@ def invert(params,
     if len(weights)==0:
         weights = np.ones(len(R_rs))
     
-    if params['fit_surface']==True:
+    if params['fit_surface'].value:
         res = minimize(func2opt, 
                        params, 
                        args=(R_rs, 
@@ -132,7 +132,7 @@ def invert(params,
                        method=method, 
                        max_nfev=max_nfev) 
                        
-    elif params['fit_surface']==False:
+    elif not params['fit_surface'].value:
 
         params.add('P', vary=False) 
         params.add('AM', vary=False) 
@@ -238,7 +238,7 @@ def forward(parameters,
 
     R_rs_water = air_water.below2above(water_alg.r_rs_shallow(r_rs_deep=rrsd, K_d=Kd, k_uW=kuW, zB=parameters["zB"], R_rs_b=Rrsb, k_uB=kuB)) # zeta & gamma
 
-    if parameters["fit_surface"]==True:        
+    if parameters["fit_surface"].value:        
         if len(E_dd_res) == 0:
             E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
         else:
