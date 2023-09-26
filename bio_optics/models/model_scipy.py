@@ -665,16 +665,17 @@ def dfun(parameters,
 
     if parameters["fit_surface"].value:
         if parameters["g_dd"].vary:
-            df_div_dg_dd  =  (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dd(E_dd)
+            df_div_dg_dd  =  parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
             jacobian.append(df_div_dg_dd)
 
+        if parameters["g_dsr"].vary:
+            df_div_dg_dsr = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsr(E_dsr) / E_d)
+            jacobian.append(df_div_dg_dsr)
+
         if parameters["g_dsa"].vary:
-            df_div_dg_dsa = (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dsa(E_dsa)
+            df_div_dg_dsa = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
             jacobian.append(df_div_dg_dsa)
 
-        if parameters["g_dsr"].vary:
-            df_div_dg_dsr = (parameters["rho_L"] / E_d) * sky_radiance.d_LS_div_dg_dsr(E_dsr)
-            jacobian.append(df_div_dg_dsr)
     else:
         zero = np.zeros_like(wavelengths)
 
