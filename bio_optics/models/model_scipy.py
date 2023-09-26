@@ -383,7 +383,7 @@ def dfun(parameters,
         domegadC0 = attenuation.domega_b_div_dp(a=a_sim, b_b=b_b_sim, da_div_dp=dadC0, db_b_div_dp=dbdcphy)
         dfrsdC0 = water_alg.df_rs_div_dp(omega_b=ob, domega_b_div_dp=domegadC0, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_0 = air_water.dbelow2above_div_dp(r_rs=R_rs_water, 
-                                                dr_rs_div_dp=water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                dr_rs_div_dp=water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC0, ob, domegadC0),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC0, dbdcphy, ctsp, parameters["kappa_0"]),
@@ -403,7 +403,7 @@ def dfun(parameters,
         domegadC1 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC1, dbdcphy)
         dfrsdC1 = water_alg.df_rs_div_dp(ob, domegadC1, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_1 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC1, ob, domegadC1),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC1, dbdcphy, ctsp, parameters["kappa_0"]),
@@ -423,7 +423,7 @@ def dfun(parameters,
         domegadC2 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC2, dbdcphy)
         dfrsdC2 = water_alg.df_rs_div_dp(ob, domegadC2, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_2 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC2, ob, domegadC2),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC2, dbdcphy, ctsp, parameters["kappa_0"]),
@@ -443,7 +443,7 @@ def dfun(parameters,
         domegadC3 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC3, dbdcphy)
         dfrsdC3 = water_alg.df_rs_div_dp(ob, domegadC3, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_3 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC3, ob, domegadC3),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC3, dbdcphy, ctsp, parameters["kappa_0"]),
@@ -463,7 +463,7 @@ def dfun(parameters,
         domegadC4 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC4, dbdcphy)
         dfrsdC4 = water_alg.df_rs_div_dp(ob, domegadC4, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_4 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC4, ob, domegadC4),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC4, dbdcphy, ctsp, parameters["kappa_0"]),
@@ -483,7 +483,7 @@ def dfun(parameters,
         domegadC5 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC5, dbdcphy)
         dfrsdC5 = water_alg.df_rs_div_dp(ob, domegadC5, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_5 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC5, ob, domegadC5),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC5, dbdcphy, ctsp, parameters["kappa_0"]),
@@ -504,7 +504,7 @@ def dfun(parameters,
         domegadCY = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCY, dbdCY)
         dfrsdCY = water_alg.df_rs_div_dp(ob, domegadCY)
         df_div_dC_Y = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdCY, ob, domegadCY),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadCY, dbdCY, ctsp, parameters["kappa_0"]),
@@ -525,7 +525,7 @@ def dfun(parameters,
         domegadCX = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCX, dbdCX)
         dfrsdCX = water_alg.df_rs_div_dp(ob, domegadCX)
         df_div_dC_X = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdCX, ob, domegadCX),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadCX, dbdCX, ctsp, ctvp),
@@ -546,7 +546,7 @@ def dfun(parameters,
         domegadCMie = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCMie, dbdCMie)
         dfrsdCMie = water_alg.df_rs_div_dp(ob, domegadCMie)
         df_div_dC_Mie = air_water.dbelow2above_div_dp(R_rs_water,
-                                                  water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                  water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                   dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdCMie, ob, domegadCMie),
                                                                                   K_d=Kd,
                                                                                   dK_d_div_dp=attenuation.dK_d_div_dp(dadCMie, dbdCMie, ctsp, ctvp),
@@ -563,7 +563,7 @@ def dfun(parameters,
 
     if parameters["f_0"].vary:
         df_div_df_0 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
@@ -580,7 +580,7 @@ def dfun(parameters,
 
     if parameters["f_1"].vary:        
         df_div_df_1 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
@@ -597,7 +597,7 @@ def dfun(parameters,
 
     if parameters["f_2"].vary:
         df_div_df_2 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
@@ -614,7 +614,7 @@ def dfun(parameters,
 
     if parameters["f_3"].vary:
         df_div_df_3 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
@@ -631,7 +631,7 @@ def dfun(parameters,
 
     if parameters["f_4"].vary:
         df_div_df_4 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
@@ -648,7 +648,7 @@ def dfun(parameters,
 
     if parameters["f_5"].vary:
         df_div_df_5 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.drs_rs_shallow_div_dp(r_rs_deep=rrsd,
+                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
@@ -663,6 +663,18 @@ def dfun(parameters,
                                             )
         jacobian.append(df_div_df_5)
 
+    if parameters["zB"].vary:
+        df_div_d_zB = air_water.dbelow2above_div_dp(R_rs_water,
+                                                    water_alg.dr_rs_shallow_div_zB(r_rs_deep=rrsd,
+                                                                                K_d=Kd,
+                                                                                k_uW=kuW,
+                                                                                r_rs_b=Rrsb,
+                                                                                k_uB=kuB,
+                                                                                zB=parameters["zB"]
+                                                        )
+                                                    )
+        jacobian.append(df_div_d_zB)
+
     if parameters["fit_surface"].value:
         if parameters["g_dd"].vary:
             df_div_dg_dd  =  parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
@@ -675,7 +687,6 @@ def dfun(parameters,
         if parameters["g_dsa"].vary:
             df_div_dg_dsa = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
             jacobian.append(df_div_dg_dsa)
-
     else:
         zero = np.zeros_like(wavelengths)
 

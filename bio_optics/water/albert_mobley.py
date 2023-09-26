@@ -117,7 +117,7 @@ def r_rs_shallow(r_rs_deep,
             (1 - A_rs1 * np.exp(-(K_d + k_uW) * zB)) + \
             A_rs2 * R_rs_b * np.exp(-(K_d + k_uB) * zB)
 
-def drs_rs_shallow_div_dp(r_rs_deep,
+def dr_rs_shallow_div_dp(r_rs_deep,
                           dr_rs_deep_div_dp,
                           K_d,
                           dK_d_div_dp,
@@ -146,3 +146,24 @@ def drs_rs_shallow_div_dp(r_rs_deep,
                 d_r_rs_b_div_dp * eB + \
                 r_rs_b * deB
             )
+
+def dr_rs_shallow_div_zB(r_rs_deep,
+                          K_d,
+                          k_uW,
+                          r_rs_b,
+                          k_uB,
+                          zB,
+                          A_rs1=1.1576,
+                          A_rs2=1.0389):
+    """
+    # Math: r_{rs}^{sh-} = r_{rs}^{deep-} * \left[ 1 - A_{rs,1} * e^{-(K_d + k_{uW}) * zB} \right] + A_{rs,2} * R_{rs}^b * e^{-(K_d + k_{uB}) * zB}
+    # Math: \frac{\partial}{\partial_{zB}}r_{rs}^{sh-} = r_{rs}^{deep-} * - A_{rs,1} * -(K_d + k_{uW}) * e^{-(K_d + k_{uW}) * zB} + A_{rs,2} * R_{rs}^b * -(K_d + k_{uB}) * e^{-(K_d + k_{uB}) * zB}
+    # Math: \frac{\partial}{\partial_{zB}}r_{rs}^{sh-} = r_{rs}^{deep-} * A_{rs,1} * (K_d + k_{uW}) * e^{-(K_d + k_{uW}) * zB} - A_{rs,2} * R_{rs}^b * (K_d + k_{uB}) * e^{-(K_d + k_{uB}) * zB}
+    """
+    # These arrays each must be added twice in the mathematical expression above
+    # instead, memoize values here
+    k_d_p_k_uW = (K_d + k_uW)
+    n_k_d_p_k_uB = -(K_d + k_uB)
+    
+    return k_d_p_k_uW * r_rs_deep * A_rs1 * np.exp(-k_d_p_k_uW * zB) + \
+            n_k_d_p_k_uB * A_rs2 * r_rs_b * np.exp(n_k_d_p_k_uB * zB)
