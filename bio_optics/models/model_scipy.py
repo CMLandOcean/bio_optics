@@ -302,7 +302,13 @@ def dfun(parameters,
         E_d_res=[],
         E_ds_res=[]):
 
-    jacobian = []
+    fit_params = []
+    partials   = {}
+    jacobian   = []
+
+    for param in parameters.keys():
+        if parameters[param].vary:
+            fit_params.append(param)
     
     ctsp = np.cos(air_water.snell(parameters["theta_sun"], n1=parameters["n1"], n2=parameters["n2"]))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=parameters["n2"]))
@@ -378,7 +384,7 @@ def dfun(parameters,
 
     dbdcphy = backscattering.db_b_div_dC_phy(wavelengths=wavelengths, b_bphy_spec=parameters["b_bphy_spec"], b_phy_norm_res=b_phy_norm_res)
 
-    if parameters["C_0"].vary:
+    def C_0():
         dadC0   = absorption.da_div_dC_i(i=0, wavelengths=wavelengths, a_i_spec_res=a_i_spec_res)
         domegadC0 = attenuation.domega_b_div_dp(a=a_sim, b_b=b_b_sim, da_div_dp=dadC0, db_b_div_dp=dbdcphy)
         dfrsdC0 = water_alg.df_rs_div_dp(omega_b=ob, domega_b_div_dp=domegadC0, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -396,9 +402,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
-        jacobian.append(df_div_dC_0)
+        return df_div_dC_0
+    partials["C_0"] = C_0
 
-    if parameters["C_1"].vary:
+    def C_1():
         dadC1   = absorption.da_div_dC_i(1, wavelengths, a_i_spec_res)
         domegadC1 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC1, dbdcphy)
         dfrsdC1 = water_alg.df_rs_div_dp(ob, domegadC1, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -416,9 +423,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
-        jacobian.append(df_div_dC_1)
+        return df_div_dC_1
+    partials["C_1"] = C_1
 
-    if parameters["C_2"].vary:
+    def C_2():
         dadC2   = absorption.da_div_dC_i(2, wavelengths, a_i_spec_res)
         domegadC2 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC2, dbdcphy)
         dfrsdC2 = water_alg.df_rs_div_dp(ob, domegadC2, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -436,9 +444,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
-        jacobian.append(df_div_dC_2)
+        return df_div_dC_2
+    partials["C_2"] = C_2
 
-    if parameters["C_3"].vary:
+    def C_3():
         dadC3   = absorption.da_div_dC_i(3, wavelengths, a_i_spec_res)
         domegadC3 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC3, dbdcphy)
         dfrsdC3 = water_alg.df_rs_div_dp(ob, domegadC3, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -456,9 +465,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
-        jacobian.append(df_div_dC_3)
+        return df_div_dC_3
+    partials["C_3"] = C_3
 
-    if parameters["C_4"].vary:
+    def C_4():
         dadC4   = absorption.da_div_dC_i(4, wavelengths, a_i_spec_res)
         domegadC4 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC4, dbdcphy)
         dfrsdC4 = water_alg.df_rs_div_dp(ob, domegadC4, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -476,9 +486,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
-        jacobian.append(df_div_dC_4)
+        return df_div_dC_4
+    partials["C_4"] = C_4
 
-    if parameters["C_5"].vary:
+    def C_5():
         dadC5   = absorption.da_div_dC_i(5, wavelengths, a_i_spec_res)
         domegadC5 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC5, dbdcphy)
         dfrsdC5 = water_alg.df_rs_div_dp(ob, domegadC5, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -496,7 +507,8 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
-        jacobian.append(df_div_dC_5)
+        return df_div_dC_5
+    partials["C_5"] = C_5
     
     if parameters["C_Y"].vary:
         dadCY = absorption.da_div_dC_Y(wavelengths=wavelengths, S=parameters["S"], lambda_0=parameters["lambda_0"], a_Y_N_res=a_Y_N_res)
@@ -688,6 +700,8 @@ def dfun(parameters,
             df_div_dg_dsa = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
             jacobian.append(df_div_dg_dsa)
     else:
+        # A memoized instance of this variable will improve the relative speed gains
+        # when fit_surface == False.
         zero = np.zeros_like(wavelengths)
 
         if parameters["g_dd"].vary:
