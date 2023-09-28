@@ -384,7 +384,7 @@ def dfun(parameters,
 
     dbdcphy = backscattering.db_b_div_dC_phy(wavelengths=wavelengths, b_bphy_spec=parameters["b_bphy_spec"], b_phy_norm_res=b_phy_norm_res)
 
-    def C_0():
+    def df_div_dC_0():
         dadC0   = absorption.da_div_dC_i(i=0, wavelengths=wavelengths, a_i_spec_res=a_i_spec_res)
         domegadC0 = attenuation.domega_b_div_dp(a=a_sim, b_b=b_b_sim, da_div_dp=dadC0, db_b_div_dp=dbdcphy)
         dfrsdC0 = water_alg.df_rs_div_dp(omega_b=ob, domega_b_div_dp=domegadC0, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -404,7 +404,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_0
 
-    def C_1():
+    def df_div_dC_1():
         dadC1   = absorption.da_div_dC_i(1, wavelengths, a_i_spec_res)
         domegadC1 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC1, dbdcphy)
         dfrsdC1 = water_alg.df_rs_div_dp(ob, domegadC1, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -424,7 +424,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_1
 
-    def C_2():
+    def df_div_dC_2():
         dadC2   = absorption.da_div_dC_i(2, wavelengths, a_i_spec_res)
         domegadC2 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC2, dbdcphy)
         dfrsdC2 = water_alg.df_rs_div_dp(ob, domegadC2, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -444,7 +444,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_2
 
-    def C_3():
+    def df_div_dC_3():
         dadC3   = absorption.da_div_dC_i(3, wavelengths, a_i_spec_res)
         domegadC3 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC3, dbdcphy)
         dfrsdC3 = water_alg.df_rs_div_dp(ob, domegadC3, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -464,7 +464,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_3
 
-    def C_4():
+    def df_div_dC_4():
         dadC4   = absorption.da_div_dC_i(4, wavelengths, a_i_spec_res)
         domegadC4 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC4, dbdcphy)
         dfrsdC4 = water_alg.df_rs_div_dp(ob, domegadC4, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -484,7 +484,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_4
 
-    def C_5():
+    def df_div_dC_5():
         dadC5   = absorption.da_div_dC_i(5, wavelengths, a_i_spec_res)
         domegadC5 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC5, dbdcphy)
         dfrsdC5 = water_alg.df_rs_div_dp(ob, domegadC5, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
@@ -504,7 +504,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_5
         
-    def C_Y():
+    def df_div_dC_Y():
         dadCY = absorption.da_div_dC_Y(wavelengths=wavelengths, S=parameters["S"], lambda_0=parameters["lambda_0"], a_Y_N_res=a_Y_N_res)
         dbdCY = 0
         domegadCY = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCY, dbdCY)
@@ -525,7 +525,7 @@ def dfun(parameters,
                                                 )
         return df_div_dC_Y
         
-    def C_X():
+    def df_div_dC_X():
         dadCX = absorption.da_div_dC_X(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
         dbdCX = backscattering.db_b_div_dC_X(wavelengths=wavelengths, b_X_norm_res=b_X_norm_res)
         domegadCX = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCX, dbdCX)
@@ -546,7 +546,7 @@ def dfun(parameters,
                     )
         return df_div_dC_X
 
-    def C_Mie():
+    def df_div_dC_Mie():
         dadCMie = absorption.da_div_dC_Mie(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
         dbdCMie = backscattering.db_b_div_dC_Mie(wavelengths=wavelengths, n=parameters["n"], b_bMie_spec=parameters["b_bMie_spec"], lambda_S=parameters["lambda_S"], b_bMie_norm_res=b_Mie_norm_res)
         domegadCMie = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCMie, dbdCMie)
@@ -567,7 +567,7 @@ def dfun(parameters,
                     )
         return df_div_dC_Mie
 
-    def f_0():
+    def df_div_df_0():
         df_div_df_0 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -584,7 +584,7 @@ def dfun(parameters,
                                             )
         return df_div_df_0
 
-    def f_1():
+    def df_div_df_1():
         df_div_df_1 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -601,7 +601,7 @@ def dfun(parameters,
                                             )
         return df_div_df_1
 
-    def f_2():
+    def df_div_df_2():
         df_div_df_2 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -618,7 +618,7 @@ def dfun(parameters,
                                             )
         return df_div_df_2
 
-    def f_3():
+    def df_div_df_3():
         df_div_df_3 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -635,7 +635,7 @@ def dfun(parameters,
                                             )
         return df_div_df_3
 
-    def f_4():
+    def df_div_df_4():
         df_div_df_4 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -652,7 +652,7 @@ def dfun(parameters,
                                             )
         return df_div_df_4
 
-    def f_5():
+    def df_div_df_5():
         df_div_df_5 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -669,7 +669,7 @@ def dfun(parameters,
                                             )
         return df_div_df_5
 
-    def zB():
+    def df_div_dzB():
         df_div_d_zB = air_water.dbelow2above_div_dp(R_rs_water,
                                                     water_alg.dr_rs_shallow_div_zB(r_rs_deep=rrsd,
                                                                                 K_d=Kd,
@@ -682,53 +682,50 @@ def dfun(parameters,
         return df_div_d_zB
     
     if parameters["fit_surface"].value:
-        def g_dd():
+        def df_div_dg_dd():
             df_div_dg_dd  =  parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
             return df_div_dg_dd
-        partials["g_dd"] = g_dd
-
-        def g_dsr():
+        
+        def df_div_dg_dsr():
             df_div_dg_dsr = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsr(E_dsr) / E_d)
             return df_div_dg_dsr
-        partials["g_dsr"] = g_dsr
 
-        def g_dsa():
+        def df_div_dg_dsa():
             df_div_dg_dsa = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
             return df_div_dg_dsa
-        partials["g_dsa"] = g_dsa
     else:
         # A memoized instance of this variable will improve the relative speed gains
         # when fit_surface == False.
         zero = np.zeros_like(wavelengths)
 
-        def g_dd():
+        def df_div_dg_dd():
             return zero
-        def g_dsr():
+        def df_div_dg_dsr():
             return zero
-        def g_dsa():
+        def df_div_dg_dsa():
             return zero
         
     partials = \
     {
-        "C_0":   C_0,
-        "C_1":   C_1,
-        "C_2":   C_2,
-        "C_3":   C_3,
-        "C_4":   C_4,
-        "C_5":   C_5,
-        "C_Y":   C_Y,
-        "C_X":   C_X,
-        "C_Mie": C_Mie,
-        "f_0":   f_0,
-        "f_1":   f_1,
-        "f_2":   f_2,
-        "f_3":   f_3,
-        "f_4":   f_4,
-        "f_5":   f_5,
-        "zB":    zB,
-        "g_dd":  g_dd,  # this function scoped to module even though defined in an "if"
-        "g_dsa": g_dsa, # this function scoped to module even though defined in an "if"
-        "g_dsr": g_dsr  # this function scoped to module even though defined in an "if"
+        "C_0":   df_div_dC_0,
+        "C_1":   df_div_dC_1,
+        "C_2":   df_div_dC_2,
+        "C_3":   df_div_dC_3,
+        "C_4":   df_div_dC_4,
+        "C_5":   df_div_dC_5,
+        "C_Y":   df_div_dC_Y,
+        "C_X":   df_div_dC_X,
+        "C_Mie": df_div_dC_Mie,
+        "f_0":   df_div_df_0,
+        "f_1":   df_div_df_1,
+        "f_2":   df_div_df_2,
+        "f_3":   df_div_df_3,
+        "f_4":   df_div_df_4,
+        "f_5":   df_div_df_5,
+        "zB":    df_div_dzB,
+        "g_dd":  df_div_dg_dd,  # this function scoped to module even though defined in an "if"
+        "g_dsa": df_div_dg_dsa, # this function scoped to module even though defined in an "if"
+        "g_dsr": df_div_dg_dsr  # this function scoped to module even though defined in an "if"
     }
 
     for param in fit_params:
