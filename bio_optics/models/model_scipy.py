@@ -403,7 +403,6 @@ def dfun(parameters,
                                                                             )
                                                 )
         return df_div_dC_0
-    partials["C_0"] = C_0
 
     def C_1():
         dadC1   = absorption.da_div_dC_i(1, wavelengths, a_i_spec_res)
@@ -424,7 +423,6 @@ def dfun(parameters,
                                                                             )
                                                 )
         return df_div_dC_1
-    partials["C_1"] = C_1
 
     def C_2():
         dadC2   = absorption.da_div_dC_i(2, wavelengths, a_i_spec_res)
@@ -445,7 +443,6 @@ def dfun(parameters,
                                                                             )
                                                 )
         return df_div_dC_2
-    partials["C_2"] = C_2
 
     def C_3():
         dadC3   = absorption.da_div_dC_i(3, wavelengths, a_i_spec_res)
@@ -466,7 +463,6 @@ def dfun(parameters,
                                                                             )
                                                 )
         return df_div_dC_3
-    partials["C_3"] = C_3
 
     def C_4():
         dadC4   = absorption.da_div_dC_i(4, wavelengths, a_i_spec_res)
@@ -487,7 +483,6 @@ def dfun(parameters,
                                                                             )
                                                 )
         return df_div_dC_4
-    partials["C_4"] = C_4
 
     def C_5():
         dadC5   = absorption.da_div_dC_i(5, wavelengths, a_i_spec_res)
@@ -508,8 +503,7 @@ def dfun(parameters,
                                                                             )
                                                 )
         return df_div_dC_5
-    partials["C_5"] = C_5
-    
+        
     def C_Y():
         dadCY = absorption.da_div_dC_Y(wavelengths=wavelengths, S=parameters["S"], lambda_0=parameters["lambda_0"], a_Y_N_res=a_Y_N_res)
         dbdCY = 0
@@ -530,8 +524,7 @@ def dfun(parameters,
                                                                                 )
                                                 )
         return df_div_dC_Y
-    partials["C_Y"] = C_Y
-    
+        
     def C_X():
         dadCX = absorption.da_div_dC_X(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
         dbdCX = backscattering.db_b_div_dC_X(wavelengths=wavelengths, b_X_norm_res=b_X_norm_res)
@@ -552,7 +545,6 @@ def dfun(parameters,
                                                                                 )                                                
                     )
         return df_div_dC_X
-    partials["C_X"] = C_X
 
     def C_Mie():
         dadCMie = absorption.da_div_dC_Mie(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
@@ -574,7 +566,6 @@ def dfun(parameters,
                                                                                 )
                     )
         return df_div_dC_Mie
-    partials["C_Mie"] = C_Mie
 
     def f_0():
         df_div_df_0 = air_water.dbelow2above_div_dp(R_rs_water,
@@ -592,7 +583,6 @@ def dfun(parameters,
                                                 )
                                             )
         return df_div_df_0
-    partials["f_0"] = f_0
 
     def f_1():
         df_div_df_1 = air_water.dbelow2above_div_dp(R_rs_water,
@@ -610,7 +600,6 @@ def dfun(parameters,
                                                 )
                                             )
         return df_div_df_1
-    partials["f_1"] = f_1
 
     def f_2():
         df_div_df_2 = air_water.dbelow2above_div_dp(R_rs_water,
@@ -628,7 +617,6 @@ def dfun(parameters,
                                                 )
                                             )
         return df_div_df_2
-    partials["f_2"] = f_2
 
     def f_3():
         df_div_df_3 = air_water.dbelow2above_div_dp(R_rs_water,
@@ -646,7 +634,6 @@ def dfun(parameters,
                                                 )
                                             )
         return df_div_df_3
-    partials["f_3"] = f_3
 
     def f_4():
         df_div_df_4 = air_water.dbelow2above_div_dp(R_rs_water,
@@ -664,7 +651,6 @@ def dfun(parameters,
                                                 )
                                             )
         return df_div_df_4
-    partials["f_4"] = f_4
 
     def f_5():
         df_div_df_5 = air_water.dbelow2above_div_dp(R_rs_water,
@@ -682,7 +668,6 @@ def dfun(parameters,
                                                 )
                                             )
         return df_div_df_5
-    partials["f_5"] = f_5
 
     def zB():
         df_div_d_zB = air_water.dbelow2above_div_dp(R_rs_water,
@@ -695,8 +680,7 @@ def dfun(parameters,
                                                         )
                                                     )
         return df_div_d_zB
-    partials["zB"] = zB
-
+    
     if parameters["fit_surface"].value:
         def g_dd():
             df_div_dg_dd  =  parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
@@ -719,14 +703,34 @@ def dfun(parameters,
 
         def g_dd():
             return zero
-        partials["g_dd"] = g_dd
         def g_dsr():
             return zero
-        partials["g_dsr"] = g_dsr
         def g_dsa():
             return zero
-        partials["g_dsa"] = g_dsa
         
+    partials = \
+    {
+        "C_0":   C_0,
+        "C_1":   C_1,
+        "C_2":   C_2,
+        "C_3":   C_3,
+        "C_4":   C_4,
+        "C_5":   C_5,
+        "C_Y":   C_Y,
+        "C_X":   C_X,
+        "C_Mie": C_Mie,
+        "f_0":   f_0,
+        "f_1":   f_1,
+        "f_2":   f_2,
+        "f_3":   f_3,
+        "f_4":   f_4,
+        "f_5":   f_5,
+        "zB":    zB,
+        "g_dd":  g_dd,  # this function scoped to module even though defined in an "if"
+        "g_dsa": g_dsa, # this function scoped to module even though defined in an "if"
+        "g_dsr": g_dsr  # this function scoped to module even though defined in an "if"
+    }
+
     for param in fit_params:
         jacobian.append(partials[param]())
 
