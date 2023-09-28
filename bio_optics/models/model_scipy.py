@@ -510,7 +510,7 @@ def dfun(parameters,
         return df_div_dC_5
     partials["C_5"] = C_5
     
-    if parameters["C_Y"].vary:
+    def C_Y():
         dadCY = absorption.da_div_dC_Y(wavelengths=wavelengths, S=parameters["S"], lambda_0=parameters["lambda_0"], a_Y_N_res=a_Y_N_res)
         dbdCY = 0
         domegadCY = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCY, dbdCY)
@@ -529,9 +529,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                                 )
                                                 )
-        jacobian.append(df_div_dC_Y)
+        return df_div_dC_Y
+    partials["C_Y"] = C_Y
     
-    if parameters["C_X"].vary:
+    def C_X():
         dadCX = absorption.da_div_dC_X(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
         dbdCX = backscattering.db_b_div_dC_X(wavelengths=wavelengths, b_X_norm_res=b_X_norm_res)
         domegadCX = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCX, dbdCX)
@@ -550,9 +551,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                                                 )                                                
                     )
-        jacobian.append(df_div_dC_X)
+        return df_div_dC_X
+    partials["C_X"] = C_X
 
-    if parameters["C_Mie"].vary:
+    def C_Mie():
         dadCMie = absorption.da_div_dC_Mie(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
         dbdCMie = backscattering.db_b_div_dC_Mie(wavelengths=wavelengths, n=parameters["n"], b_bMie_spec=parameters["b_bMie_spec"], lambda_S=parameters["lambda_S"], b_bMie_norm_res=b_Mie_norm_res)
         domegadCMie = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCMie, dbdCMie)
@@ -571,9 +573,10 @@ def dfun(parameters,
                                                                                   zB=parameters["zB"]              
                                                                                 )
                     )
-        jacobian.append(df_div_dC_Mie)
+        return df_div_dC_Mie
+    partials["C_Mie"] = C_Mie
 
-    if parameters["f_0"].vary:
+    def f_0():
         df_div_df_0 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -588,9 +591,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                 )
                                             )
-        jacobian.append(df_div_df_0)
+        return df_div_df_0
+    partials["f_0"] = f_0
 
-    if parameters["f_1"].vary:        
+    def f_1():
         df_div_df_1 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -605,9 +609,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                 )
                                             )
-        jacobian.append(df_div_df_1)
+        return df_div_df_1
+    partials["f_1"] = f_1
 
-    if parameters["f_2"].vary:
+    def f_2():
         df_div_df_2 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -622,9 +627,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                 )
                                             )
-        jacobian.append(df_div_df_2)
+        return df_div_df_2
+    partials["f_2"] = f_2
 
-    if parameters["f_3"].vary:
+    def f_3():
         df_div_df_3 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -639,9 +645,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                 )
                                             )
-        jacobian.append(df_div_df_3)
+        return df_div_df_3
+    partials["f_3"] = f_3
 
-    if parameters["f_4"].vary:
+    def f_4():
         df_div_df_4 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -656,9 +663,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                 )
                                             )
-        jacobian.append(df_div_df_4)
+        return df_div_df_4
+    partials["f_4"] = f_4
 
-    if parameters["f_5"].vary:
+    def f_5():
         df_div_df_5 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
                                                                                 dr_rs_deep_div_dp=0,
@@ -673,9 +681,10 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                 )
                                             )
-        jacobian.append(df_div_df_5)
+        return df_div_df_5
+    partials["f_5"] = f_5
 
-    if parameters["zB"].vary:
+    def zB():
         df_div_d_zB = air_water.dbelow2above_div_dp(R_rs_water,
                                                     water_alg.dr_rs_shallow_div_zB(r_rs_deep=rrsd,
                                                                                 K_d=Kd,
@@ -685,33 +694,42 @@ def dfun(parameters,
                                                                                 zB=parameters["zB"]
                                                         )
                                                     )
-        jacobian.append(df_div_d_zB)
+        return df_div_d_zB
+    partials["zB"] = zB
 
     if parameters["fit_surface"].value:
-        if parameters["g_dd"].vary:
+        def g_dd():
             df_div_dg_dd  =  parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
-            jacobian.append(df_div_dg_dd)
+            return df_div_dg_dd
+        partials["g_dd"] = g_dd
 
-        if parameters["g_dsr"].vary:
+        def g_dsr():
             df_div_dg_dsr = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsr(E_dsr) / E_d)
-            jacobian.append(df_div_dg_dsr)
+            return df_div_dg_dsr
+        partials["g_dsr"] = g_dsr
 
-        if parameters["g_dsa"].vary:
+        def g_dsa():
             df_div_dg_dsa = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
-            jacobian.append(df_div_dg_dsa)
+            return df_div_dg_dsa
+        partials["g_dsa"] = g_dsa
     else:
         # A memoized instance of this variable will improve the relative speed gains
         # when fit_surface == False.
         zero = np.zeros_like(wavelengths)
 
-        if parameters["g_dd"].vary:
-            jacobian.append(zero)
-        if parameters["g_dsa"].vary:
-            jacobian.append(zero)
-        if parameters["g_dsr"].vary:
-            jacobian.append(zero)        
+        def g_dd():
+            return zero
+        partials["g_dd"] = g_dd
+        def g_dsr():
+            return zero
+        partials["g_dsr"] = g_dsr
+        def g_dsa():
+            return zero
+        partials["g_dsa"] = g_dsa
         
-    
+    for param in fit_params:
+        jacobian.append(partials[param]())
+
     return np.array(jacobian).T
 
 def invert(parameters: Parameters, 
