@@ -85,8 +85,7 @@ def R_rs_b(f_0 = 0,
     else:
         R_i_b = R_i_b_res
     
-    R_rs_b = 0
-    for i in np.arange(R_i_b.shape[1]): R_rs_b += f_i[i] * B_i[i] * R_i_b.T[i]
+    R_rs_b = np.sum([f_i[i] * B_i[i] * R_i_b.T[i] for i in np.arange(R_i_b.shape[1])], axis=0)
 
     return R_rs_b
 

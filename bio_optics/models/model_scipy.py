@@ -132,6 +132,8 @@ def get_dfun_shim(dfun, wavelengths, fit_param_names, params_obj):
 
 def forward(parameters,
         wavelengths,
+        a_res=[],
+        b_b_res=[],
         a_w_res=[],
         da_W_div_dT_res=[],
         a_i_spec_res=[],
@@ -150,40 +152,52 @@ def forward(parameters,
         E_dsa_res=[],
         E_dsr_res=[],
         E_d_res=[],
-        E_ds_res=[]):
+        E_ds_res=[],
+        n2_res=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     """
-    ctsp = np.cos(air_water.snell(parameters["theta_sun"],  n1=parameters["n1"], n2=parameters["n2"]))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
-    ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=parameters["n2"]))
+    if len(n2_res) == 0:
+        n2 = parameters["n2"]
+    else:
+        n2 = n2_res
 
-    a_sim = absorption.a(C_0=parameters["C_0"], C_1=parameters["C_1"], C_2=parameters["C_2"], C_3=parameters["C_3"], C_4=parameters["C_4"], C_5=parameters["C_5"], 
-                        C_Y=parameters["C_Y"], C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], S=parameters["S"], 
-                        S_NAP=parameters["S_NAP"], 
-                        a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"],
-                        lambda_0=parameters["lambda_0"],
-                        K=parameters["K"],
-                        wavelengths=wavelengths,
-                        T_W=parameters["T_W"],
-                        T_W_0=parameters["T_W_0"],
-                        a_w_res=a_w_res,
-                        da_W_div_dT_res=da_W_div_dT_res, 
-                        a_i_spec_res=a_i_spec_res, 
-                        a_Y_N_res=a_Y_N_res,
-                        a_NAP_N_res=a_NAP_N_res)
+    ctsp = np.cos(air_water.snell(parameters["theta_sun"],  n1=parameters["n1"], n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
+    ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
+
+    if len(a_res) == 0:
+        a_sim = absorption.a(C_0=parameters["C_0"], C_1=parameters["C_1"], C_2=parameters["C_2"], C_3=parameters["C_3"], C_4=parameters["C_4"], C_5=parameters["C_5"], 
+                            C_Y=parameters["C_Y"], C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], S=parameters["S"], 
+                            S_NAP=parameters["S_NAP"], 
+                            a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"],
+                            lambda_0=parameters["lambda_0"],
+                            K=parameters["K"],
+                            wavelengths=wavelengths,
+                            T_W=parameters["T_W"],
+                            T_W_0=parameters["T_W_0"],
+                            a_w_res=a_w_res,
+                            da_W_div_dT_res=da_W_div_dT_res, 
+                            a_i_spec_res=a_i_spec_res, 
+                            a_Y_N_res=a_Y_N_res,
+                            a_NAP_N_res=a_NAP_N_res)
+    else:
+        a_sim = a_res
     
-    b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
-                        fresh=parameters["fresh"],
-                        b_bphy_spec=parameters["b_bphy_spec"],
-                        b_bMie_spec=parameters["b_bMie_spec"],
-                        b_bX_spec=parameters["b_bX_spec"],
-                        b_bX_norm_factor=parameters["b_bX_norm_factor"],
-                        lambda_S=parameters["lambda_S"],
-                        n=parameters["n"],
-                        b_bw_res=b_bw_res, 
-                        b_phy_norm_res=b_phy_norm_res, 
-                        b_X_norm_res=b_X_norm_res, 
-                        b_Mie_norm_res=b_Mie_norm_res)
+    if len(b_b_sim) == 0:
+        b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
+                            fresh=parameters["fresh"],
+                            b_bphy_spec=parameters["b_bphy_spec"],
+                            b_bMie_spec=parameters["b_bMie_spec"],
+                            b_bX_spec=parameters["b_bX_spec"],
+                            b_bX_norm_factor=parameters["b_bX_norm_factor"],
+                            lambda_S=parameters["lambda_S"],
+                            n=parameters["n"],
+                            b_bw_res=b_bw_res, 
+                            b_phy_norm_res=b_phy_norm_res, 
+                            b_X_norm_res=b_X_norm_res, 
+                            b_Mie_norm_res=b_Mie_norm_res)
+    else:
+        b_b_sim = b_b_res
 
     Rrsb = bottom_reflectance.R_rs_b(parameters["f_0"], parameters["f_1"], parameters["f_2"], parameters["f_3"], parameters["f_4"], parameters["f_5"], B_0=parameters["B_0"], B_1=parameters["B_1"], B_2=parameters["B_2"], B_3=parameters["B_3"], B_4=parameters["B_4"], B_5=parameters["B_5"], wavelengths=wavelengths, R_i_b_res=R_i_b_res)
 
@@ -229,7 +243,7 @@ def forward(parameters,
 
         L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
-        R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"])
+        R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"], parameters["d_r"])
 
         R_rs_sim = R_rs_water + R_rs_surface + parameters["offset"]
         return R_rs_sim
@@ -276,12 +290,14 @@ def forward_glint(parameters,
 
     L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
-    R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"])
+    R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"], parameters["d_r"])
 
     return R_rs_surface
 
 def dfun(parameters,
         wavelengths,
+        a_res=[],
+        b_b_res=[],
         a_w_res=[],
         da_W_div_dT_res=[],
         a_i_spec_res=[],
@@ -300,7 +316,8 @@ def dfun(parameters,
         E_dsa_res=[],
         E_dsr_res=[],
         E_d_res=[],
-        E_ds_res=[]):
+        E_ds_res=[],
+        n2_res=[]):
 
     fit_params = []
     partials   = {}
@@ -310,36 +327,47 @@ def dfun(parameters,
         if parameters[param].vary:
             fit_params.append(param)
     
-    ctsp = np.cos(air_water.snell(parameters["theta_sun"], n1=parameters["n1"], n2=parameters["n2"]))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
-    ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=parameters["n2"]))
+    if len(n2_res) == 0:
+        n2 = parameters["n2"]
+    else:
+        n2 = n2_res
 
-    a_sim = absorption.a(C_0=parameters["C_0"], C_1=parameters["C_1"], C_2=parameters["C_2"], C_3=parameters["C_3"], C_4=parameters["C_4"], C_5=parameters["C_5"], 
-                        C_Y=parameters["C_Y"], C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], S=parameters["S"], 
-                        S_NAP=parameters["S_NAP"], 
-                        a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"],
-                        lambda_0=parameters["lambda_0"],
-                        K=parameters["K"],
-                        wavelengths=wavelengths,
-                        T_W=parameters["T_W"],
-                        T_W_0=parameters["T_W_0"],
-                        a_w_res=a_w_res,
-                        da_W_div_dT_res=da_W_div_dT_res, 
-                        a_i_spec_res=a_i_spec_res, 
-                        a_Y_N_res=a_Y_N_res,
-                        a_NAP_N_res=a_NAP_N_res)
-    
-    b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
-                        fresh=parameters["fresh"],
-                        b_bphy_spec=parameters["b_bphy_spec"],
-                        b_bMie_spec=parameters["b_bMie_spec"],
-                        b_bX_spec=parameters["b_bX_spec"],
-                        b_bX_norm_factor=parameters["b_bX_norm_factor"],
-                        lambda_S=parameters["lambda_S"],
-                        n=parameters["n"],
-                        b_bw_res=b_bw_res, 
-                        b_phy_norm_res=b_phy_norm_res, 
-                        b_X_norm_res=b_X_norm_res, 
-                        b_Mie_norm_res=b_Mie_norm_res)
+    ctsp = np.cos(air_water.snell(parameters["theta_sun"], n1=parameters["n1"],  n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
+    ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
+
+    if len(a_res) == 0:
+        a_sim = absorption.a(C_0=parameters["C_0"], C_1=parameters["C_1"], C_2=parameters["C_2"], C_3=parameters["C_3"], C_4=parameters["C_4"], C_5=parameters["C_5"], 
+                            C_Y=parameters["C_Y"], C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], S=parameters["S"], 
+                            S_NAP=parameters["S_NAP"], 
+                            a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"],
+                            lambda_0=parameters["lambda_0"],
+                            K=parameters["K"],
+                            wavelengths=wavelengths,
+                            T_W=parameters["T_W"],
+                            T_W_0=parameters["T_W_0"],
+                            a_w_res=a_w_res,
+                            da_W_div_dT_res=da_W_div_dT_res, 
+                            a_i_spec_res=a_i_spec_res, 
+                            a_Y_N_res=a_Y_N_res,
+                            a_NAP_N_res=a_NAP_N_res)
+    else:
+        a_sim = a_res
+
+    if len(b_b_res) == 0:
+        b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
+                            fresh=parameters["fresh"],
+                            b_bphy_spec=parameters["b_bphy_spec"],
+                            b_bMie_spec=parameters["b_bMie_spec"],
+                            b_bX_spec=parameters["b_bX_spec"],
+                            b_bX_norm_factor=parameters["b_bX_norm_factor"],
+                            lambda_S=parameters["lambda_S"],
+                            n=parameters["n"],
+                            b_bw_res=b_bw_res, 
+                            b_phy_norm_res=b_phy_norm_res, 
+                            b_X_norm_res=b_X_norm_res, 
+                            b_Mie_norm_res=b_Mie_norm_res)
+    else:
+        b_b_sim = b_b_res
 
     Rrsb = bottom_reflectance.R_rs_b(parameters["f_0"], parameters["f_1"], parameters["f_2"], parameters["f_3"], parameters["f_4"], parameters["f_5"], B_0=parameters["B_0"], B_1=parameters["B_1"], B_2=parameters["B_2"], B_3=parameters["B_3"], B_4=parameters["B_4"], B_5=parameters["B_5"], wavelengths=wavelengths, R_i_b_res=R_i_b_res)
 
@@ -737,6 +765,8 @@ def invert(parameters: Parameters,
            R_rs, 
            wavelengths,
            weights=[],
+           a_res=[],
+           b_b_res=[],
            a_i_spec_res=[],
            a_w_res=[],
            a_Y_N_res = [],
@@ -756,6 +786,7 @@ def invert(parameters: Parameters,
            E_dsr_res=[],
            E_d_res=[],
            E_ds_res=[],
+           n2_res=[],
            method="least-squares", 
            max_nfev=400,
            analytical=True
@@ -780,6 +811,8 @@ def invert(parameters: Parameters,
     if analytical:
         analytical_fit = least_squares(userfun, fit_params, bounds=fit_bounds, jac=userdfun,
                                     kwargs={
+                                        "a_res": a_res,
+                                        "b_b_res": b_b_res,
                                         "a_i_spec_res": a_i_spec_res,
                                         "a_w_res": a_w_res,
                                         "a_Y_N_res": a_Y_N_res,
@@ -798,13 +831,16 @@ def invert(parameters: Parameters,
                                         "E_dsa_res": E_dsa_res,
                                         "E_dsr_res": E_dsr_res,
                                         "E_d_res": E_d_res,
-                                        "E_ds_res": E_ds_res
+                                        "E_ds_res": E_ds_res,
+                                        "n2_res": n2_res
                                     },
                                     max_nfev=max_nfev)
         return analytical_fit, ret_params
     else:
         numerical_fit = least_squares(userfun, fit_params, bounds=fit_bounds,
                                     kwargs={
+                                        "a_res": a_res,
+                                        "b_b_res": b_b_res,
                                         "a_i_spec_res": a_i_spec_res,
                                         "a_w_res": a_w_res,
                                         "a_Y_N_res": a_Y_N_res,
@@ -823,7 +859,8 @@ def invert(parameters: Parameters,
                                         "E_dsa_res": E_dsa_res,
                                         "E_dsr_res": E_dsr_res,
                                         "E_d_res": E_d_res,
-                                        "E_ds_res": E_ds_res
+                                        "E_ds_res": E_ds_res,
+                                        "n2_res": n2_res
                                     },
                                     max_nfev=max_nfev)
         return numerical_fit, ret_params
