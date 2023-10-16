@@ -32,9 +32,9 @@ def gitelson(R, wavelengths, a=117.42, b=23.09, lambda1=660, lambda2=715, lambda
     Args:
         R (_type_): irradiance reflectance [-] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 675.
-        lambda2 (int, optional): _description_. Defaults to 720.
-        lambda3 (int, optional): _description_. Defaults to 748.
+        lambda1: _description_. Defaults to 675.
+        lambda2: _description_. Defaults to 720.
+        lambda3: _description_. Defaults to 748.
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
@@ -55,9 +55,9 @@ def hico(R_rs, wavelengths, a=17.477, b=6.152, lambda1 = 686, lambda2 = 703, lam
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 686.
-        lambda2 (int, optional): _description_. Defaults to 703.
-        lambda3 (int, optional): _description_. Defaults to 735.
+        lambda1: _description_. Defaults to 686.
+        lambda2: _description_. Defaults to 703.
+        lambda3: _description_. Defaults to 735.
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
@@ -74,23 +74,69 @@ def flh(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     Estimates magnitude of sun induces chlorophyll fluorescence at 681 nm above a baseline between 665 and 705 nm.
 
     [1] Gower et al. (2010): Interpretation of the 685nm peak in water-leaving radiance spectra in terms of fluorescence, absorption and scattering, and its observation by MERIS [doi.org/10.1080/014311699212470].
-    [2] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters, p. 211.
+    [2] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters, p. 211., Eq. 7.39
 
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 680.
-        lambda2 (int, optional): _description_. Defaults to 708.
-        lambda3 (int, optional): _description_. Defaults to 753.
+        lambda1: _description_. Defaults to 680.
+        lambda2: _description_. Defaults to 708.
+        lambda3: _description_. Defaults to 753.
         k (float, optional): _description_. Defaults to 1.005.
     """
     L1 = R_rs[find_closest(wavelengths, lambda1)[1]]
     L2 = R_rs[find_closest(wavelengths, lambda2)[1]]
     L3 = R_rs[find_closest(wavelengths, lambda3)[1]]
 
-    k = ((R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda2)[1]]) / (R_rs[find_closest(wavelengths, lambda3)[1]]-R_rs[find_closest(wavelengths, lambda1)[1]]))
+    k = (find_closest(wavelengths, lambda3)[0]-find_closest(wavelengths, lambda2)[0]) / (find_closest(wavelengths, lambda3)[0]-find_closest(wavelengths, lambda1)[0])
 
-    return L2 - (L3 + (L1 - L3) * k)
+    return L2 - k * L1 - (1-k) * L3
+
+
+def cyanobacterial_index(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=709):
+    """
+    Cyanobacterial index (CI) as described in Kudela et al. (2015) [1] (Table 3) after Wynne et al. (2008) [2].
+    The spectral shape equation (SS) in Table 3 is mathematically identical to the fluorescence line hight (FLH) but weirdly gets multiplied by (-1).
+
+    [1] Kudela et al. (2015): Application of hyperspectral remote sensing to cyanobacterial blooms in inland waters [10.1016/j.rse.2015.01.025]
+    [2] Wynne et al. (2008): Relating spectral shape to cyanobacterial blooms in the Laurentian Great Lakes [10.1080/01431160802007640]
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 681.
+        lambda3: _description_. Defaults to 709.
+    Returns: 
+        Cyanobacterial index
+    """
+    return (-1) * flh(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3)   
+
+
+def slh(R_rs, wavelengths, lambda1=654, lambda2=714, lambda3=754):
+    """
+    Scattering line height (SLH) for detection of cyanobacteria as described in Kudela et al. (2015) [1] (Table 3).
+
+    [1] Kudela et al. (2015): Application of hyperspectral remote sensing to cyanobacterial blooms in inland waters [10.1016/j.rse.2015.01.025]
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1: _description_. Defaults to 654.
+        lambda2: _description_. Defaults to 714.
+        lambda3: _description_. Defaults to 754.
+    Returns: 
+        Scattering line height
+    """
+    Rrs1 = R_rs[find_closest(wavelengths, lambda1)[1]]
+    Rrs2 = R_rs[find_closest(wavelengths, lambda2)[1]]
+    Rrs3 = R_rs[find_closest(wavelengths, lambda3)[1]]
+
+    lambda1 = find_closest(wavelengths, lambda1)[0]
+    lambda2 = find_closest(wavelengths, lambda2)[0]
+    lambda3 = find_closest(wavelengths, lambda3)[0]
+
+    return  Rrs2 - (Rrs1 + ((Rrs3 - Rrs1)/(lambda3-lambda1)) * (lambda2-lambda1))
 
 
 def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=194.325):
@@ -103,8 +149,8 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
     """
     band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
     band2 = R_rs[find_closest(wavelengths,lambda2)[1]]
@@ -112,11 +158,11 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     return a0 + a1 *  ndi(band2, band1) + a2 * ndi(band2, band1)**2
 
 
-def ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
+def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
     """
     Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3.
 
-    [1] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+    [1] Hu et al. (2012): Chlorophyll algorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
 
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
@@ -135,7 +181,7 @@ def ci(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=
 
 def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0, a=-0.4909, b=191.659):
     """
-    CI-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
+    Color index-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
 
     !!! Only valid for CI <= 0.0005 sr-1 !!!
 
@@ -155,7 +201,7 @@ def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y
     Returns:
         chl concentration [mg m-3]
     """
-    cia = 10**(a + b * ci(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y))
+    cia = 10**(a + b * color_index(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y))
 
     return cia 
 
@@ -200,8 +246,8 @@ def guc2(R_rs, wavelengths, lambda1=663, lambda2=623, a=113.112, b=58.408, c=8.6
     Args:
         R_rs (_type_): remote sensing reflectance [sr-1] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1 (int, optional): Wavelength of first band [nm]. Defaults to 663.
-        lambda2 (int, optional): Wavelength of second band [nm]. Defaults to 623.
+        lambda1: Wavelength of first band [nm]. Defaults to 663.
+        lambda2: Wavelength of second band [nm]. Defaults to 623.
         a (float, optional): Defaults to 113.112.
         b (float, optional): Defaults to 58.408.
         c (float, optional): Defaults to 8.669.
@@ -258,9 +304,9 @@ def three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, a=232.3
     Args:
         R_rs (_type_): _description_
         wavelengths (_type_): _description_
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
-        lambda3 (int, optional): _description_. Defaults to 753.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
+        lambda3: _description_. Defaults to 753.
         a (float, optional): _description_. Defaults to 232.329.
         b (float, optional): _description_. Defaults to 23.174.
 
@@ -284,8 +330,8 @@ def gurlin_two_band(R_rs, wavelengths, lambda1=665, lambda2=708, a=25.28, b=14.8
     Args:
         R_rs (_type_): _description_
         wavelengths (_type_): _description_
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
         a (float, optional): _description_. Defaults to 25.28.
         b (float, optional): _description_. Defaults to 14.85.
         c (float, optional): _description_. Defaults to -15.18.
@@ -312,9 +358,9 @@ def gurlin_three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, 
     Args:
         R_rs (_type_): _description_
         wavelengths (_type_): _description_
-        lambda1 (int, optional): _description_. Defaults to 665.
-        lambda2 (int, optional): _description_. Defaults to 708.
-        lambda3 (int, optional): _description_. Defaults to 753.
+        lambda1: _description_. Defaults to 665.
+        lambda2: _description_. Defaults to 708.
+        lambda3: _description_. Defaults to 753.
         a (float, optional): _description_. Defaults to 315.50.
         b (float, optional): _description_. Defaults to 215.95.
         c (float, optional): _description_. Defaults to 25.66.
@@ -357,3 +403,69 @@ def analytical_two_band(R_rs, wavelengths, lambda1=665.0, lambda2=708.0, a=35.74
     band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
 
     return (a * (band2/band1) -b)**c            
+
+
+def oc4me(R_rs, wavelengths, lambda1=443, lambda2=489, lambda3=510, lambda4=560, a0=0.450, a1=-3.259, a2=3.523, a3=-3.359, a4=0.950):
+    """
+    Ocean Color for Meris (OC4Me) algorithm as described in Mishra et al. (2017) [1] Eqs. 6.2f.
+
+    [1] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters.
+
+    Args:
+        R_rs (_type_): remote sensing reflectance [sr-1] spectrum
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1: _description_. Defaults to 443.
+        lambda2: _description_. Defaults to 489.
+        lambda3: _description_. Defaults to 510.
+        lambda4: _description_. Defaults to 560.
+        a0: Defaults to 0.450.
+        a1: Defaults to -3.259.
+        a2: Defaults to 3.523.
+        a3: Defaults to -3.359.
+        a4: Defaults to 0.950.
+    Returns: 
+        Scattering line height
+    """
+
+    R_rs1 = np.max(R_rs[[find_closest(wavelengths, lambda1)[1], find_closest(wavelengths, lambda2)[1], find_closest(wavelengths, lambda3)[1]]], axis=0)
+    R_rs2 = R_rs[find_closest(wavelengths, lambda4)[1]]
+
+    x = np.log10(R_rs1/R_rs2)
+
+    Chl_a = 10**(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4)
+
+    return Chl_a
+
+
+def potes_cya(R, wavelengths, lambda1=490, lambda2=560, lambda3=620, a=115530.31, b=2.38):
+    """
+    Empirical algorithm for Cyanobacteria concentration [10**3 cells mL-1] as reported in Petus et al. (2018) [1].
+    Originally developed for MERIS but proven to work for Sentinel-2 as well.
+
+    [1] Potes et al. (2018): Use of Sentinel 2-MSI for water quality monitoring at Alqueva reservoir, Portugal [10.5194/piahs-380-73-2018]
+
+    Args:
+        R: Water reflectance [-] spectrum
+        wavelengths: correspondong wavelengths [nm]
+
+    Returns:
+        Cyanobacteria concentration [10**3 cells mL-1]
+    """
+    return a * ((R[find_closest(wavelengths, lambda2)[1]] * R[find_closest(wavelengths, lambda3)[1]]) / R[find_closest(wavelengths, lambda1)[1]])**b 
+
+
+def potes_chl(R, wavelengths, lambda1=442.5, lambda2=560, a=4.23, b=3.94):
+    """
+    Empirical algorithm for Chl a concentration [mg m-3] as reported in Petus et al. (2018) [1].
+    Originally developed for MERIS but proven to work for Sentinel-2 as well.
+
+    [1] Potes et al. (2018): Use of Sentinel 2-MSI for water quality monitoring at Alqueva reservoir, Portugal [10.5194/piahs-380-73-2018]
+
+    Args:
+        R: Water reflectance [-] spectrum
+        wavelengths: correspondong wavelengths [nm]
+
+    Returns:
+        Cyanobacteria concentration [10**3 cells mL-1]
+    """
+    return a * (R[find_closest(wavelengths, lambda2)[1]] / R[find_closest(wavelengths, lambda1)[1]])**b 

@@ -124,13 +124,14 @@ def main():
     parser = argparse.ArgumentParser(description='Invert Reflectance [-] image')
     parser.add_argument('-input_file',help="Image file to invert for")
     parser.add_argument('-params_file',help="JSON file containing the fit parameters")
-    parser.add_argument('-min_wavelength',default=420,type=int,help="Minimum wavelength for inversion")
-    parser.add_argument('-max_wavelength',default=850,type=int,help="Maximum wavelength for inversion")
-    parser.add_argument('-method',default='least_squares',type=str,help="Minimization method")
-    parser.add_argument('-max_nfev',default=1500,type=int,help="Maximum number of iterations per pixel")
-    parser.add_argument('-interleave',default='BIL',type=str,help="interleave")
-    parser.add_argument('-dtype',default='float64',type=str,help="dtype")
-    parser.add_argument('-output_format',default="ENVI",help="GDAL format to use for output raster, default ENVI")
+    parser.add_argument('-min_wavelength',default=420,type=int,help="Minimum wavelength for inversion, default: 420")
+    parser.add_argument('-max_wavelength',default=850,type=int,help="Maximum wavelength for inversion, default: 850")
+    parser.add_argument('-method',default='least_squares',type=str,help="Minimization method, default: least_squares")
+    parser.add_argument('-max_nfev',default=1500,type=int,help="Maximum number of iterations per pixel, default: 1500")
+    parser.add_argument('-interleave',default='BIL',type=str,help="interleave, default: BIL")
+    parser.add_argument('-dtype',default='float64',type=str,help="dtype: default: float64")
+    parser.add_argument('-output_format',default="ENVI",help="GDAL format to use for output raster, default: ENVI")
+    parser.add_argument('-shade',default=False,help='Shade flag for AWEI, default: False')
     args = parser.parse_args()
 
     # Test if input_file exists
@@ -232,7 +233,7 @@ def main():
                 row = img[:,idx[0],:]
 
                 # Apply water mask and convert from reflectance R [-] to above-water radiance reflectance r_rs [sr-1]
-                r_rs = row.where(indices.awei(row, row.wavelength)>0) / np.pi
+                r_rs = row.where(indices.awei(row, row.wavelength)>0, shade=args.shade) / np.pi
                 
                 # Select only water pixels
                 data = r_rs[wl_mask].where(r_rs.notnull().all(axis=0), drop=True).T
