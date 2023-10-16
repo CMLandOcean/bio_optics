@@ -34,7 +34,7 @@ def main():
     parser.add_argument('-water_mask_threshold',default=0.0,type=float,help="Threshold to use for masking non-water pixels")
     parser.add_argument('-interleave',default='BIL',type=str,help="interleave")
     parser.add_argument('-dtype',default='float64',type=str,help="dtype")
-    parser.add_argument('-output_format',default="ENVI",help="GDAL format to use for output raster, default ENVI")
+    #  parser.add_argument('-output_format',default="ENVI",help="GDAL format to use for output raster, default ENVI")
     parser.add_argument('-glint_out',default='',type=str,help="Name for output glint map, if wanted")
     parser.add_argument('-csv',action="store_true",help="Input file is csv with header, with first column wavelength in nm and each additional column a refl spectrum")
     parser.add_argument('input_file',help="Image reflectance image")
@@ -103,30 +103,38 @@ def main():
     else:
         # Use rioxarray to open image
         img = rioxarray.open_rasterio(args.input_file)
+        hdr = spectral.envi.read_envi_header(
+                os.path.splitext(args.input_file)[0]+".hdr")
         # Get wavelengths information from xarray object
         try:
             wavelengths = img.wavelength.values
         except AttributeError as exc:
             print(f"rioxarray failed to get wavelength info, trying pyspectral")
-            hdr = spectral.envi.read_envi_header(
-                    os.path.splitext(args.input_file)[0]+".hdr")
             wavelengths = np.array([float(w) for w in hdr["wavelength"]])
         # Create wavelength mask
         # wl_mask = np.logical_not(utils.band_mask(wavelengths, [[args.min_wavelength,args.max_wavelength]]))
         # Resample LUTs
         n_res = resampling.resample_n(wavelengths)
 
-
         ######################################################################
         ########## LOOP OVER ROWS ############################################
         ######################################################################
 
+        scname = os.path.basename(sys.argv[0])
+        rflhdr = hdr.copy()
+        rflhdr.description = \
+            "{}\nReflectance with glint removed (Gao model) using {}".format(
+                           hdr["description"],scname)
+        glinthdr = hdr.copy()
+        glinthdr.description = \
+            "{}\nGlint reflectance (Gao model) using {}".format(
+                           hdr["description"],scname)
 
         with rio.open(args.input_file, 'r') as src:
 
             # Get profile
             profile = src.profile
-            profile['driver'] = args.output_format
+            profile['driver'] = 'ENVI'
             profile['interleave'] = args.interleave
             profile['dtype'] = args.dtype
 
@@ -163,7 +171,11 @@ def main():
                 if dst_glint:
                     dst_glint.write(glint_reflectance.astype('float32'), window=wind)
                 dst_R_rs.write(R_rs, window=wind)
+                hdrname = os.path.splitext(args.output_file)[0]+".hdr"
+                hdr = spectral.envi.read_envi_header(outhdr,hdrname)
         if dst_glint:
+            hdrname = os.path.splitext(args.glint_out)[0]+".hdr"
+            hdr = spectral.envi.read_envi_header(glinthdr,hdrname)
             dst_glint.close()
         dst_R_rs.close()
 
