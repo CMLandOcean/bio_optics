@@ -100,7 +100,8 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
 
     if len(weights)==0:
         weights = np.ones(len(y_true))
-    
+    if method == 0:
+        return (y_pred-y_true) * weights
     if method == 1:
         # element-wise least squares
         return (y_pred-y_true)**2 * weights
