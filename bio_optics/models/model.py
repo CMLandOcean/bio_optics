@@ -680,5 +680,6 @@ def func2opt(params,
                        b_b_res=b_b_res,
                        n2_res = n2_res,
                        Ls_Ed=Ls_Ed)
-           
-    return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
+    
+    return R_rs_sim-R_rs
+    # return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
