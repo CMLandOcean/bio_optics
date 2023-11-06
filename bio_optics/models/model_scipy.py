@@ -183,7 +183,7 @@ def forward(parameters,
     else:
         a_sim = a_res
     
-    if len(b_b_sim) == 0:
+    if len(b_b_res) == 0:
         b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                             fresh=parameters["fresh"],
                             b_bphy_spec=parameters["b_bphy_spec"],
