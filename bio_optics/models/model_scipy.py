@@ -285,7 +285,7 @@ def forward_glint(parameters,
     if "rho_L" in parameters:
         rho_L = parameters["rho_L"].value
     else:
-        rho_L = air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2)
+        rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
     if len(Ls_Ed) == 0:
         Ls_Ed = np.zeros_like(wavelengths)
@@ -365,7 +365,7 @@ def dfun(parameters,
     if "rho_L" in parameters:
         rho_L = parameters["rho_L"].value
     else:
-        rho_L = air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2)
+        rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
     ctsp = np.cos(air_water.snell(parameters["theta_sun"], n1=parameters["n1"],  n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
