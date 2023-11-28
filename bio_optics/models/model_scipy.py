@@ -153,7 +153,8 @@ def forward(parameters,
         E_dsr_res=[],
         E_d_res=[],
         E_ds_res=[],
-        n2_res=[]):
+        n2_res=[],
+        Ls_Ed=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     """
@@ -161,6 +162,14 @@ def forward(parameters,
         n2 = parameters["n2"]
     else:
         n2 = n2_res
+
+    if "rho_L" in parameters:
+        rho_L = parameters["rho_L"].value
+    else:
+        rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
+
+    if len(Ls_Ed) == 0:
+        Ls_Ed = np.zeros_like(wavelengths)
 
     ctsp = np.cos(air_water.snell(parameters["theta_sun"],  n1=parameters["n1"], n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
@@ -243,7 +252,9 @@ def forward(parameters,
 
         L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
-        R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"], parameters["d_r"])
+        R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+
+        R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
         R_rs_sim = R_rs_water + R_rs_surface + parameters["offset"]
         return R_rs_sim
@@ -262,7 +273,23 @@ def forward_glint(parameters,
         E_dsa_res=[],
         E_dsr_res=[],
         E_d_res=[],
-        E_ds_res=[]):
+        E_ds_res=[],
+        n2_res=[],
+        Ls_Ed=[]):
+    
+    if len(n2_res) == 0:
+        n2 = parameters["n2"]
+    else:
+        n2 = n2_res
+    
+    if "rho_L" in parameters:
+        rho_L = parameters["rho_L"].value
+    else:
+        rho_L = air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2)
+
+    if len(Ls_Ed) == 0:
+        Ls_Ed = np.zeros_like(wavelengths)
+
     if len(E_dd_res) == 0:
         E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
     else:
@@ -290,7 +317,9 @@ def forward_glint(parameters,
 
     L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
-    R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"], parameters["d_r"])
+    R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+
+    R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
     return R_rs_surface
 
@@ -317,7 +346,8 @@ def dfun(parameters,
         E_dsr_res=[],
         E_d_res=[],
         E_ds_res=[],
-        n2_res=[]):
+        n2_res=[],
+        Ls_Ed=[]):
 
     fit_params = []
     partials   = {}
@@ -331,6 +361,11 @@ def dfun(parameters,
         n2 = parameters["n2"]
     else:
         n2 = n2_res
+
+    if "rho_L" in parameters:
+        rho_L = parameters["rho_L"].value
+    else:
+        rho_L = air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
     ctsp = np.cos(air_water.snell(parameters["theta_sun"], n1=parameters["n1"],  n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
@@ -711,15 +746,15 @@ def dfun(parameters,
     
     if parameters["fit_surface"].value:
         def df_div_dg_dd():
-            df_div_dg_dd  =  parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
+            df_div_dg_dd  =  rho_L * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
             return df_div_dg_dd
         
         def df_div_dg_dsr():
-            df_div_dg_dsr = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsr(E_dsr) / E_d)
+            df_div_dg_dsr = rho_L * (sky_radiance.d_LS_div_dg_dsr(E_dsr) / E_d)
             return df_div_dg_dsr
 
         def df_div_dg_dsa():
-            df_div_dg_dsa = parameters["rho_L"] * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
+            df_div_dg_dsa = rho_L * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
             return df_div_dg_dsa
     else:
         # A memoized instance of this variable will improve the relative speed gains
@@ -787,6 +822,7 @@ def invert(parameters: Parameters,
            E_d_res=[],
            E_ds_res=[],
            n2_res=[],
+           Ls_Ed=[],
            method="least-squares", 
            max_nfev=400,
            analytical=True
@@ -832,7 +868,8 @@ def invert(parameters: Parameters,
                                         "E_dsr_res": E_dsr_res,
                                         "E_d_res": E_d_res,
                                         "E_ds_res": E_ds_res,
-                                        "n2_res": n2_res
+                                        "n2_res": n2_res,
+                                        "Ls_Ed": Ls_Ed,
                                     },
                                     max_nfev=max_nfev)
         return analytical_fit, ret_params
@@ -860,7 +897,8 @@ def invert(parameters: Parameters,
                                         "E_dsr_res": E_dsr_res,
                                         "E_d_res": E_d_res,
                                         "E_ds_res": E_ds_res,
-                                        "n2_res": n2_res
+                                        "n2_res": n2_res,
+                                        "Ls_Ed": Ls_Ed,
                                     },
                                     max_nfev=max_nfev)
         return numerical_fit, ret_params

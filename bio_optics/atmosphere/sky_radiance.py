@@ -36,7 +36,7 @@
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
 
 
-def L_s(g_dd, E_dd,
+def L_s(g_dd,  E_dd,
         g_dsr, E_dsr,
         g_dsa, E_dsa):
     """
