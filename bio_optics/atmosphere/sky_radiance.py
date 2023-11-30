@@ -36,29 +36,9 @@
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
 
 
-import numpy as np
-from . import downwelling_irradiance
-
-
-def L_s(wavelengths=np.arange(400,800), 
-        theta_sun=np.radians(30), 
-        P=1013.25, 
-        AM=5, 
-        RH=80, 
-        H_oz=0.38, 
-        WV=2.5, 
-        alpha=1.317,
-        beta=0.2606,
-        g_dd=0.02,
-        g_dsr=1/np.pi,
-        g_dsa=1/np.pi,
-        E_0_res=[],
-        a_oz_res=[],
-        a_ox_res=[],
-        a_wv_res=[],
-        E_dd_res=[],
-        E_dsa_res=[],
-        E_dsr_res=[]):
+def L_s(g_dd,  E_dd,
+        g_dsr, E_dsr,
+        g_dsa, E_dsa):
     """
     Sky radiance in W/m2 nm sr [1]
     
@@ -69,30 +49,20 @@ def L_s(wavelengths=np.arange(400,800),
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
-    :param wavelengths: wavelengths to compute L_s for [nm], default: np.arange(400,800)
-    :param theta_sun: sun zenith angle [radians], default: np.radians(30)
-    :param P: atmospheric pressure [mbar], default: 1013.25
-    :param AM: air mass type (1: open ocean .. 10: continental), default: 5
-    :param RH: relative humidity [%], default: 80
-    :param H_oz: ozone scale height [cm], default: 0.38
-    :param WV: water vapor in units of precipitable water [cm], default: 2.5
-    :param alpha: Angström exponent of aerosol optical thickness
-    :param beta: turbidity coefficient of aerosol optical thickness
-    :param g_dd: intensity of direct component of E_d [sr-1], default: 0.02
-    :param g_dsr: intensity of Rayleigh scattering part of diffuse component of E_d [sr-1], default: 1/np.pi()
-    :param g_dsa: intensity of aerosol scattering part of diffuse component of E_d [sr-1], default: 1/np.pi()
-    :param E_0_res: optional, preresampling E_0 before inversion saves a lot of time.
-    :param a_oz_res: optional, preresampling a_oz before inversion saves a lot of time.
-    :param a_ox_res: optional, preresampling a_ox before inversion saves a lot of time.
-    :param a_wv_res: optional, preresampling a_wv before inversion saves a lot of time.
-    :param E_dd_res: optional, preresampling E_dd before inversion saves a lot of time.
-    :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time.
-    :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time.
     :return: sky radiance in W/m2 nm sr
     
     """
-    L_s = g_dd * downwelling_irradiance.E_dd(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, beta=beta, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dd_res=E_dd_res) + \
-          g_dsr * downwelling_irradiance.E_dsr(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dsr_res=E_dsr_res) + \
-          g_dsa * downwelling_irradiance.E_dsa(wavelengths=wavelengths, theta_sun=theta_sun, P=P, AM=AM, RH=RH, H_oz=H_oz, WV=WV, alpha=alpha, E_0_res=E_0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res, E_dsa_res=E_dsa_res)
+    L_s = g_dd  * E_dd + \
+          g_dsr * E_dsr + \
+          g_dsa * E_dsa
     
     return L_s
+
+def d_LS_div_dg_dd(E_dd):
+    return E_dd
+
+def d_LS_div_dg_dsr(E_dsr):
+    return E_dsr
+
+def d_LS_div_dg_dsa(E_dsa):
+    return E_dsa
