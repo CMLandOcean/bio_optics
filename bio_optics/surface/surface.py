@@ -35,11 +35,11 @@
 # [5] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6. 
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
 
-def L_s(L_s, rho_L):
+def L_surf(L_s, rho_L):
     return rho_L * L_s
 
 def R_rs_surf(L_s, E_d, rho_L=0.02, d_r=0):
-    return rho_L * (L_s / E_d) + d_r
+    return (L_surf(L_s, rho_L) / E_d) + d_r
 
 def dR_rs_surf_dp(L_s, dL_s_div_dp, E_d, dE_d_div_dp, rho_L):
     return rho_L * ((dL_s_div_dp / E_d) + (L_s * E_d**-2 * dE_d_div_dp))
