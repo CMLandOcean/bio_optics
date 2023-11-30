@@ -353,6 +353,8 @@ def dfun(parameters,
     partials   = {}
     jacobian   = []
 
+    ones = np.ones_like(wavelengths)
+
     for param in parameters.keys():
         if parameters[param].vary:
             fit_params.append(param)
@@ -630,6 +632,9 @@ def dfun(parameters,
                     )
         return df_div_dC_Mie
 
+    def df_div_dd_r():
+        return ones
+
     def df_div_df_0():
         df_div_df_0 = air_water.dbelow2above_div_dp(R_rs_water,
                                                 water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
@@ -779,6 +784,7 @@ def dfun(parameters,
         "C_Y":   df_div_dC_Y,
         "C_X":   df_div_dC_X,
         "C_Mie": df_div_dC_Mie,
+        "d_r":   df_div_dd_r,
         "f_0":   df_div_df_0,
         "f_1":   df_div_df_1,
         "f_2":   df_div_df_2,

@@ -71,6 +71,7 @@ def invert(params,
            E_d_res=[],
            E_ds_res=[],
            n2_res=[],
+           Ls_Ed=[],
            method="least-squares", 
            max_nfev=400
            ):
@@ -125,16 +126,17 @@ def invert(params,
                              b_Mie_norm_res, 
                              R_i_b_res, 
                              da_W_div_dT_res,
-                             E_0_res, 
-                             a_oz_res, 
-                             a_ox_res, 
+                             E_0_res,
+                             a_oz_res,
+                             a_ox_res,
                              a_wv_res,
                              E_dd_res,
                              E_dsa_res,
                              E_dsr_res,
                              E_d_res,
                              E_ds_res,
-                             n2_res), 
+                             n2_res,
+                             Ls_Ed), 
                        method=method, 
                        max_nfev=max_nfev) 
                        
@@ -169,11 +171,20 @@ def invert(params,
                              b_Mie_norm_res, 
                              R_i_b_res, 
                              da_W_div_dT_res,
-                             n2_res), 
+                             E_0_res,
+                             a_oz_res,
+                             a_ox_res,
+                             a_wv_res,
+                             E_dd_res,
+                             E_dsa_res,
+                             E_dsr_res,
+                             E_d_res,
+                             E_ds_res,
+                             n2_res,
+                             Ls_Ed), 
                        method=method, 
                        max_nfev=max_nfev) 
     return res
-
 
 def forward(parameters,
         wavelengths,
@@ -198,15 +209,23 @@ def forward(parameters,
         E_dsr_res=[],
         E_d_res=[],
         E_ds_res=[],
-        n2_res=[]):
+        n2_res=[],
+        Ls_Ed=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     """
-
     if len(n2_res) == 0:
         n2 = parameters["n2"]
     else:
         n2 = n2_res
+
+    if "rho_L" in parameters:
+        rho_L = parameters["rho_L"].value
+    else:
+        rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
+
+    if len(Ls_Ed) == 0:
+        Ls_Ed = np.zeros_like(wavelengths)
 
     ctsp = np.cos(air_water.snell(parameters["theta_sun"],  n1=parameters["n1"], n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
@@ -228,7 +247,7 @@ def forward(parameters,
                             a_NAP_N_res=a_NAP_N_res)
     else:
         a_sim = a_res
-
+    
     if len(b_b_res) == 0:
         b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                             fresh=parameters["fresh"],
@@ -261,7 +280,7 @@ def forward(parameters,
 
     R_rs_water = air_water.below2above(water_alg.r_rs_shallow(r_rs_deep=rrsd, K_d=Kd, k_uW=kuW, zB=parameters["zB"], R_rs_b=Rrsb, k_uB=kuB)) # zeta & gamma
 
-    if parameters["fit_surface"].value:        
+    if parameters["fit_surface"].value:
         if len(E_dd_res) == 0:
             E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
         else:
@@ -289,7 +308,9 @@ def forward(parameters,
 
         L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
-        R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"], parameters["d_r"])
+        R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+
+        R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
         R_rs_sim = R_rs_water + R_rs_surface + parameters["offset"]
         return R_rs_sim
@@ -308,7 +329,23 @@ def forward_glint(parameters,
         E_dsa_res=[],
         E_dsr_res=[],
         E_d_res=[],
-        E_ds_res=[]):
+        E_ds_res=[],
+        n2_res=[],
+        Ls_Ed=[]):
+    
+    if len(n2_res) == 0:
+        n2 = parameters["n2"]
+    else:
+        n2 = n2_res
+    
+    if "rho_L" in parameters:
+        rho_L = parameters["rho_L"].value
+    else:
+        rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
+
+    if len(Ls_Ed) == 0:
+        Ls_Ed = np.zeros_like(wavelengths)
+
     if len(E_dd_res) == 0:
         E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
     else:
@@ -336,16 +373,18 @@ def forward_glint(parameters,
 
     L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
-    R_rs_surface = surface.R_rs_surf(L_s, E_d, parameters["rho_L"], parameters["d_r"])
+    R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+
+    R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
     return R_rs_surface
 
-def func2opt(params, 
+def func2opt(parameters, 
              R_rs,
              wavelengths,
+             weights=[],
              a_res=[],
              b_b_res=[],
-             weights = [],
              a_i_spec_res=[],
              a_w_res=[],
              a_Y_N_res = [],
@@ -365,7 +404,9 @@ def func2opt(params,
              E_dsr_res=[],
              E_d_res=[],
              E_ds_res=[],
-             n2_res=[]):
+             n2_res=[],
+             Ls_Ed=[],
+             ):
     """
     Error function around model to be minimized by changing fit parameters.
     
@@ -397,11 +438,19 @@ def func2opt(params,
         weights = np.ones(len(wavelengths))
 
     if len(n2_res) == 0:
-        n2 = params["n2"]
+        n2 = parameters["n2"]
     else:
         n2 = n2_res
+    
+    if "rho_L" in parameters:
+        rho_L = parameters["rho_L"].value
+    else:
+        rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
-    R_rs_sim = forward(parameters=params,
+    if len(Ls_Ed) == 0:
+        Ls_Ed = np.zeros_like(wavelengths)
+
+    R_rs_sim = forward(parameters=parameters,
                        wavelengths=wavelengths,
                        a_res=a_res,
                        b_b_res=b_b_res,
@@ -424,7 +473,8 @@ def func2opt(params,
                        E_dsr_res=E_dsr_res,
                        E_d_res=E_d_res,
                        E_ds_res=E_ds_res,
-                       n2_res=n2_res)
+                       n2_res=n2_res,
+                       Ls_Ed=Ls_Ed)
            
     # return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
     return (R_rs - R_rs_sim) * weights
