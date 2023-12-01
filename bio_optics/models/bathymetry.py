@@ -12,7 +12,7 @@ def stumpf(R_w,
            n = 1,
            normalized = True):
     """
-    Relative water depth [1] 
+    Relative water depth following Stumpf et al. (2003) [1]. 
     
     [1] Stumpf et al. (2003): Determination of water depth with high-resolution satellite imagery over variable bottom types [10.4319/lo.2003.48.1_part_2.0547]
     
@@ -31,17 +31,17 @@ def stumpf(R_w,
     band2 = R_w[find_closest(wavelengths, lambda2)[1]]
     
     # Eq. 9
-    Z = m1 * (np.log(n * band1) / np.log(n * band2)) - m0
+    zB = m1 * (np.log(n * band1) / np.log(n * band2)) - m0
     
     if normalized:
-        Z *= 1/Z.max()
+        zB *= 1/zB.max()
     
-    return Z
+    return zB
 
 
 def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1000, normalized=False):
     """
-    Adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters)
+    Adaptive bathymetry estimation for shallow coastal chl-a dominated waters (Case-I waters) following Li et al. (2019) [1].
      
     [1] Li et al. (2019): Adaptive bathymetry estimation for shallow coastal waters using Planet Dove satellites [10.1016/j.rse.2019.111302]
             
@@ -69,4 +69,6 @@ def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1
     m1 = 52.083 * np.exp(0.957 * chl_a)
 
     # Note that depth is computed with subsurface r_rs in [1] instead of R_w as in stumpf()
-    return stumpf(above2below(R_rs), wavelengths=wavelengths, m1=m1, m0=m0, n=n, normalized=normalized)
+    zB = stumpf(above2below(R_rs), wavelengths=wavelengths, m1=m1, m0=m0, n=n, normalized=normalized)
+
+    return zB
