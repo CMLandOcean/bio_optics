@@ -71,7 +71,7 @@ def hico(R_rs, wavelengths, a=17.477, b=6.152, lambda1 = 686, lambda2 = 703, lam
 def flh(R_rs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     """
     Fluorescence Line Height (FLH) also known as Maximum Chlorophyll Index (MCI) (FLI/MCI) [1,2]
-    Estimates magnitude of sun induces chlorophyll fluorescence at 681 nm above a baseline between 665 and 705 nm.
+    Estimates magnitude of sun induced chlorophyll fluorescence at 681 nm above a baseline between 665 and 705 nm.
 
     [1] Gower et al. (2010): Interpretation of the 685nm peak in water-leaving radiance spectra in terms of fluorescence, absorption and scattering, and its observation by MERIS [doi.org/10.1080/014311699212470].
     [2] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters, p. 211., Eq. 7.39
@@ -141,8 +141,8 @@ def slh(R_rs, wavelengths, lambda1=654, lambda2=714, lambda3=754):
 
 def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=194.325):
     """
-    Normalized Difference Chlorophyll Index [1]
-    Coefficients are from Table 2, 2nd box [1]
+    Normalized Difference Chlorophyll Index [1].
+    Coefficients are from Table 2, 2nd box [1].
     
     [1] Mishra & Mishra (2012): Normalized difference chlorophyll index: A novel model for remote estimation of chlorophyll-a concentration in turbid productive waters [10.1016/j.rse.2011.10.016]
 
@@ -260,6 +260,7 @@ def guc2(R_rs, wavelengths, lambda1=663, lambda2=623, a=113.112, b=58.408, c=8.6
     band2 = R_rs[find_closest(wavelengths,lambda2)[1]]    
 
     x = (band1**(-1) - band2**(-1)) * band2
+
     return a*x**3 - b*x**2 + c*x - d 
 
 
@@ -374,6 +375,7 @@ def gurlin_three_band(R_rs, wavelengths, lambda1=665, lambda2=708, lambda3=753, 
     band3 = R_rs[find_closest(wavelengths,lambda3)[1]]   
 
     Chla = a * (band3/(band1-band2))**2 + b * (band3/(band1-band2)) + c
+
     return Chla
 
 
