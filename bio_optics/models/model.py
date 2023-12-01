@@ -16,17 +16,17 @@
 #
 #
 # Translated to Python by:
-#  Marcel KÃ¶nig, mkoenig3 AT asu.edu 
+#  Marcel König, mkoenig3 AT asu.edu 
+#  Phillip Noel, pnoel1 AT asu.edu
 #
 # bio_optics
-#  A former version of this code was provided to Planet, PBC as part of the CarbonMapper Land and Ocean Program.
-#  It builds on the extensive work of many researchers. For example, models were developed  
-#  by Albert & Mobley [1] and Gege [2]; the methodology was mainly developed 
-#  by Gege [3,4,5] and Albert & Gege [6].
+#  This code base builds on the extensive work of many researchers. For example, models were developed by Albert & Mobley [1] and Gege [2]; 
+#  and the methodology was mainly developed by Gege [3,4,5] and Albert & Gege [6]. Please give proper attribution when using this code for publication.
+#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7].
 #
-#  Please give proper attribution when using this code for publication:
+#  When using this code, please use the following citation:
 #
-#  KÃ¶nig, M., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): bio_optics python package (Version x) [Software]. Available from https://github.com/CMLandOcean/bio_optics
+#  König, M., Noel, P., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): bio_optics python package (Version x) [Software]. Available from https://github.com/CMLandOcean/bio_optics
 #
 # [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 # [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spectral irradiance in water. [10.1364/AO.51.001407]
@@ -34,6 +34,7 @@
 # [4] Gege (2014): WASI-2D: A software tool for regionally optimized analysis of imaging spectrometer data from deep and shallow waters. [10.1016/j.cageo.2013.07.022]
 # [5] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6. 
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
+# [7] König et al. (2023): WaterQuality python package (Version 1.2.0) [Software]. Available from https://github.com/CMLandOcean/WaterQuality. [10.5281/zenodo.7967294]
 
 
 import numpy as np
@@ -186,6 +187,7 @@ def invert(params,
                        max_nfev=max_nfev) 
     return res
 
+
 def forward(parameters,
         wavelengths,
         a_res=[],
@@ -213,6 +215,36 @@ def forward(parameters,
         Ls_Ed=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
+
+    Args:
+        parameters (_type_): _description_
+        wavelengths (_type_): _description_
+        a_res (list, optional): _description_. Defaults to [].
+        b_b_res (list, optional): _description_. Defaults to [].
+        a_w_res (list, optional): _description_. Defaults to [].
+        da_W_div_dT_res (list, optional): _description_. Defaults to [].
+        a_i_spec_res (list, optional): _description_. Defaults to [].
+        a_Y_N_res (list, optional): _description_. Defaults to [].
+        a_NAP_N_res (list, optional): _description_. Defaults to [].
+        b_phy_norm_res (list, optional): _description_. Defaults to [].
+        b_bw_res (list, optional): _description_. Defaults to [].
+        b_X_norm_res (list, optional): _description_. Defaults to [].
+        b_Mie_norm_res (list, optional): _description_. Defaults to [].
+        R_i_b_res (list, optional): _description_. Defaults to [].
+        E_0_res (list, optional): _description_. Defaults to [].
+        a_oz_res (list, optional): _description_. Defaults to [].
+        a_ox_res (list, optional): _description_. Defaults to [].
+        a_wv_res (list, optional): _description_. Defaults to [].
+        E_dd_res (list, optional): _description_. Defaults to [].
+        E_dsa_res (list, optional): _description_. Defaults to [].
+        E_dsr_res (list, optional): _description_. Defaults to [].
+        E_d_res (list, optional): _description_. Defaults to [].
+        E_ds_res (list, optional): _description_. Defaults to [].
+        n2_res (list, optional): _description_. Defaults to [].
+        Ls_Ed (list, optional): _description_. Defaults to [].
+
+    Returns:
+        _type_: _description_
     """
     if len(n2_res) == 0:
         n2 = parameters["n2"]
@@ -319,6 +351,7 @@ def forward(parameters,
         R_rs_sim = R_rs_water + parameters["offset"]
         return R_rs_sim
 
+
 def forward_glint(parameters,
         wavelengths,
         E_0_res=[],
@@ -332,6 +365,26 @@ def forward_glint(parameters,
         E_ds_res=[],
         n2_res=[],
         Ls_Ed=[]):
+    """_summary_
+
+    Args:
+        parameters (_type_): _description_
+        wavelengths (_type_): _description_
+        E_0_res (list, optional): _description_. Defaults to [].
+        a_oz_res (list, optional): _description_. Defaults to [].
+        a_ox_res (list, optional): _description_. Defaults to [].
+        a_wv_res (list, optional): _description_. Defaults to [].
+        E_dd_res (list, optional): _description_. Defaults to [].
+        E_dsa_res (list, optional): _description_. Defaults to [].
+        E_dsr_res (list, optional): _description_. Defaults to [].
+        E_d_res (list, optional): _description_. Defaults to [].
+        E_ds_res (list, optional): _description_. Defaults to [].
+        n2_res (list, optional): _description_. Defaults to [].
+        Ls_Ed (list, optional): _description_. Defaults to [].
+
+    Returns:
+        _type_: _description_
+    """
     
     if len(n2_res) == 0:
         n2 = parameters["n2"]
@@ -378,6 +431,7 @@ def forward_glint(parameters,
     R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
     return R_rs_surface
+
 
 def func2opt(parameters, 
              R_rs,
