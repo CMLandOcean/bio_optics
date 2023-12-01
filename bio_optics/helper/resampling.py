@@ -255,6 +255,8 @@ def resample_E_0(wavelengths = np.arange(400,800)):
     return E_0_res
 
 
+### Other
+
 def resample_n(wavelengths = np.arange(400,800)):
     """
     Real part of the refractive index of liquid water at a reference temperature of 25 degC after Segelstein [1] from the refractiveindex.info database.
@@ -280,7 +282,7 @@ def resample_n(wavelengths = np.arange(400,800)):
 
 def resample_A(wavelengths = np.arange(400,800)):
     """
-    Spectral parameters for the empirical a_Phy() simulation after [1,2].
+    Spectral parameters for the empirical a_Phy() simulation after Lee [1,2].
  
     [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1 A semianalytical model [10.1364/AO.37.006329]
     [2] Lee (1994): VISIBLE-INFRARED REMOTE-SENSING MODEL AND APPLICATIONS FOR OCEAN WATERS. Dissertation.
@@ -300,6 +302,18 @@ def resample_A(wavelengths = np.arange(400,800)):
     a_1 = band_resampler(np.asarray(a["a_1"]))
     
     return a_0, a_1
+
+
+### Generic
+
+def resample_spectra(spectra, in_wavelengths, out_wavelengths):
+    """
+    Generic resampling function
+    """    
+    band_resampler = BandResampler(in_wavelengths, out_wavelengths)
+    resampled_spectra = band_resampler(spectra)
+
+    return resampled_spectra
 
 
 def resample_srf(srf_wavelengths, srf_factors, input_wavelengths, input_spectrum, kind='slinear', fill_value='extrapolate'):
