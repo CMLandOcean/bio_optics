@@ -153,13 +153,13 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
         return distance.chebyshev_distance(y_true, y_pred) 
     
 
-    def get_solar_zenith_angle(lat, lon, timestamp_utc):
-        """
-        Compute solar zenith angle from lat, lon and time (in UTC) using get_altitude() from the pysolar package.
-        
-        :param lat: latitude in decimal degrees
-        :param lon: longitude in decimal degrees
-        :param timestamp_utc: UTC time as datetime object 
-        :return: solar zenith angle respective for time and location
-        """
-        return 90 - get_altitude(lat, lon, timestamp_utc)
+def get_solar_zenith_angle(lat, lon, timestamp_utc):
+    """
+    Compute solar zenith angle from lat, lon and time (in UTC) using get_altitude() from the pysolar package.
+    
+    :param lat: latitude in decimal degrees
+    :param lon: longitude in decimal degrees
+    :param timestamp_utc: UTC time as datetime object 
+    :return: solar zenith angle respective for time and location
+    """
+    return 90 - get_altitude(lat, lon, timestamp_utc)
