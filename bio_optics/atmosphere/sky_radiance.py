@@ -36,14 +36,14 @@
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
 
 
-def L_s(g_dd,  E_dd,
-        g_dsr, E_dsr,
+def L_s(f_dd, g_dd,  E_dd,
+        f_ds, g_dsr, E_dsr,
         g_dsa, E_dsa):
     """
     Sky radiance in W/m2 nm sr [1]
     
     "A parameterization similar to E_d is implemented for the sky radiance, L_s. The radiance downwelling from a part of the sky is treated 
-    as a weighted sum of three wavelength dependent functions, E_dd, E_dsr and E_dsa.In contrast to E_d, the two diffuse components are treated 
+    as a weighted sum of three wavelength dependent functions, E_dd, E_dsr and E_dsa. In contrast to E_d, the two diffuse components are treated 
     separately since Rayleigh scattering has a much stronger angle dependency than aerosol scattering. The parameters g_dd, g_dsr and g_dsa are 
     the intensities (in units of sr−1) of E_dd, E_dsr and E_dsa, respectively." [1]
     
@@ -52,9 +52,7 @@ def L_s(g_dd,  E_dd,
     :return: sky radiance in W/m2 nm sr
     
     """
-    L_s = g_dd  * E_dd + \
-          g_dsr * E_dsr + \
-          g_dsa * E_dsa
+    L_s = f_dd * (g_dd  * E_dd) + f_ds * (g_dsr * E_dsr + g_dsa * E_dsa)
     
     return L_s
 
