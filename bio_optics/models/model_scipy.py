@@ -250,7 +250,7 @@ def forward(parameters,
         else:
             E_d = E_d_res
 
-        L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
+        L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], E_dd, parameters["f_ds"], parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
         R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
 
@@ -315,7 +315,7 @@ def forward_glint(parameters,
     else:
         E_d = E_d_res
 
-    L_s = sky_radiance.L_s(parameters["g_dd"], E_dd, parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
+    L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], E_dd, parameters["f_ds"], parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
 
     R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
 
