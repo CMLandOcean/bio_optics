@@ -178,7 +178,7 @@ def T_r(wavelengths=np.arange(400,800), theta_sun=np.radians(30), P=1013.25):
     return T_r
     
     
-def T_aa(wavelengths=np.arange(400,800), theta_sun=np.radians(30), AM=5, RH=80):
+def T_aa(wavelengths=np.arange(400,800), theta_sun=np.radians(30), AM=5, RH=80, lambda_a=550, alpha=1.317, beta=0.2606):
     """
     Aerosol absorption [1]
     
@@ -190,7 +190,7 @@ def T_aa(wavelengths=np.arange(400,800), theta_sun=np.radians(30), AM=5, RH=80):
     :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
     :return: aerosol absorption
     """
-    T_aa = np.exp(-(1-omega_a(AM=AM, RH=RH)) * tau_a(wavelengths) * M(theta_sun=theta_sun))
+    T_aa = np.exp(-(1-omega_a(AM=AM, RH=RH)) * tau_a(wavelengths, lambda_a=lambda_a, alpha=alpha, beta=beta) * M(theta_sun=theta_sun))
     return T_aa
     
     
