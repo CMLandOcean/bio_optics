@@ -77,7 +77,7 @@ def E_dd(wavelengths=np.arange(400,800),
     if len(E_dd_res)==0:
         E_dd = ET_solar_irradiance.E_0(wavelengths,E_0_res=E_0_res) * np.cos(theta_sun) * \
                transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P) * \
-               transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH) * \
+               transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
                transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
@@ -94,6 +94,8 @@ def E_dsr(wavelengths=np.arange(400,800),
           RH=80, 
           H_oz=0.380, 
           WV=2.5, 
+          alpha=1.317, 
+          beta=0.2602, 
           E_0_res=[],
           a_oz_res=[],
           a_ox_res=[],
@@ -120,7 +122,7 @@ def E_dsr(wavelengths=np.arange(400,800),
     if len(E_dsr_res)==0:
         E_dsr = 0.5 * ET_solar_irradiance.E_0(wavelengths, E_0_res=E_0_res) * np.cos(theta_sun) * \
                 (1 - transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**0.95) * \
-                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH) * \
+                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                 transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
                 transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
                 transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
@@ -166,7 +168,7 @@ def E_dsa(wavelengths=np.arange(400,800),
     if len(E_dsa_res)==0:
         E_dsa = ET_solar_irradiance.E_0(wavelengths, E_0_res=E_0_res) * np.cos(theta_sun) * \
                 transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**1.5 * \
-                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH) * \
+                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                 transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
                 transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
                 transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res) * \
