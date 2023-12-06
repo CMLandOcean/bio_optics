@@ -324,7 +324,7 @@ def forward(parameters,
             E_dsa = E_dsa_res
 
         if len(E_dsr_res) == 0:
-            E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+            E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
         else:
             E_dsr = E_dsr_res
 
@@ -410,7 +410,7 @@ def forward_glint(parameters,
         E_dsa = E_dsa_res
 
     if len(E_dsr_res) == 0:
-        E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+        E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
     else:
         E_dsr = E_dsr_res
 
