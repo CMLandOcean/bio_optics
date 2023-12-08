@@ -165,6 +165,5 @@ def forel_ule(R_rs, wavelengths, kind='slinear'):
 
     fu_class = idx + 1
     dominant_wavelength = fu_scale["dominant_wl"].values[idx]
-    plotcolor = fu_scale["plotcolor"].values[idx]
     
-    return fu_class, dominant_wavelength, plotcolor
+    return fu_class, dominant_wavelength
