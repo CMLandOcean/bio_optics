@@ -18,12 +18,16 @@
 # Translated to Python by:
 #  Marcel König, mkoenig3 AT asu.edu 
 
-
+import os
 import numpy as np
 import pandas as pd
 from . resampling import resample_srf
 from . utils import find_closest
 from . indices import ndi
+
+
+# get absolute path to data folder
+data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
 
 def avw(R_rs, wavelengths):
@@ -122,20 +126,20 @@ def jiang(R_rs, wavelengths):
 
 def forel_ule(R_rs, wavelengths, kind='slinear'):
     """
-    Discrete Forel-Ule scale [1,2,3]
+    Discrete Forel-Ule scale [1,2,3,4]
 
     [1] Wernand & Woerd (2010): Spectral analysis of the Forel-Ule ocean colour comparator scale [10.2971/jeos.2010.10014s]
     [2] Novoa et al. (2013): The Forel-Ule scale revisited spectrally: preparation protocol, transmission measurements and chromaticity [10.2971/jeos.2013.13057]
     [3] Wernand et al. (2013): MERIS-based ocean colour classification with the discrete Forel-Ule scale [10.5194/os-9-477-2013]
+    [4] Wang et al. (2021): A dataset of remote-sensed Forel-Ule Index for global inland waters during 2000–2018. [10.1038/s41597-021-00807-z]
 
     :param R_rs: array of remote sensing reflectance, if more than 1D, first axis needs to be bands
     :param wavelengths: corresponding wavelengths [nm]
     :param kind: specifies kind of interpolation, parameter for interp1d, default: 'slinear'
 
     """
-    # !!! to do: change paths to data folder !!!
-    fu_scale = pd.read_csv(r"C:\Users\mkoenig3\Dropbox (ASU)\Backup\Documents\Github\InHouse\orig\utils\fu_scale\FU_scale.csv")
-    cie = pd.read_csv(r"C:\Users\mkoenig3\Dropbox (ASU)\Backup\Documents\Github\InHouse\orig\utils\fu_scale\CIE.csv")
+    fu_scale = pd.read_csv(os.path.join(data_dir, 'fu_scale.txt'), skiprows=7)
+    cie = pd.read_csv(os.path.join(data_dir, 'cie.txt'), skiprows=5, sep='\t')
 
     xyz =resample_srf(srf_wavelengths=cie.iloc[:,0].values, 
                       srf_factors = cie.iloc[:,1:].values, 
@@ -161,5 +165,6 @@ def forel_ule(R_rs, wavelengths, kind='slinear'):
 
     fu_class = idx + 1
     dominant_wavelength = fu_scale["dominant_wl"].values[idx]
+    plotcolor = fu_scale["plotcolor"].values[idx]
     
-    return fu_class, dominant_wavelength
+    return fu_class, dominant_wavelength, plotcolor
