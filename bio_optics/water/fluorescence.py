@@ -40,7 +40,7 @@
 import numpy as np
 
 
-def R_rs_fl(wavelengths=np.arange(400,800), lambda0=685, L_fl_lambda0=0.001):
+def R_rs_fl(wavelengths=np.arange(400,800), lambda_fl=685, L_fl_lambda0=0.001):
     """
     Fluorescence reflectance accounting for Chl a pigment fluorescence as presented in Eq. 8 in 
     Groetsch et al. (2020) [1] following Eq. 7.36 in Gilerson & Huot (2017) [2, 3].
@@ -51,13 +51,13 @@ def R_rs_fl(wavelengths=np.arange(400,800), lambda0=685, L_fl_lambda0=0.001):
 
     Args:
         wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
-        lambda0: wavelength of fluorescence peak [nm]. Defaults to 685.
+        lambda_fl: wavelength of fluorescence peak [nm]. Defaults to 685.
         L_fl_lambda0: Fluorescence radiance at lambda0 [W m-2 nm-1 sr-1]. Defaults to 1.
 
     Returns:
         Fluorescence radiance reflectance [sr-1]
     """
     
-    R_rs_fl = L_fl_lambda0 * np.exp(-4 * np.log(2) * ((wavelengths - lambda0) / 25)**2 / 1.1)
+    R_rs_fl = L_fl_lambda0 * np.exp(-4 * np.log(2) * ((wavelengths - lambda_fl) / 25)**2 / 1.1)
     
     return R_rs_fl
