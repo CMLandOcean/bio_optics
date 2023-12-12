@@ -356,7 +356,7 @@ def dfun(parameters,
     ones = np.ones_like(wavelengths)
 
     for param in parameters.keys():
-        if parameters[param].vary:
+        if parameters[param].vary or parameters[param].expr:
             fit_params.append(param)
     
     if len(n2_res) == 0:
