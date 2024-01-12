@@ -86,6 +86,34 @@ def estimate_y(R_rs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.
     return y
 
 
+def estimate_S_dg(R_rs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.002, c=0.6, d=-1.0):
+    """
+    Two-band estimation of spectral shape parameter of CDOM and NAP absorption [1,2] (named S_dg in [2]) when using the exponental approximation.
+    Default for lambda1 and lambda2, and coefficients a, b, c, d are from Erickson et al. (2023) [2].
+    
+    
+    [1] Lee et al. (2002): Deriving inherent optical properties from water color: A multiband quasi-analytical algorithm for optically deep waters [10.1364/ao.41.005755]
+    [4] Erickson et al. (2023): Bayesian approach to a generalized inherent optical property model [10.1364/oe.486581]
+
+    Args:
+        R_rs (_type_): Remote sensing reflectance [sr-1]
+        wavelengths (_type_): corresponding wavelengths [nm]
+        lambda1 (float, optional): wavelength of first band [nm]. Defaults to 443.
+        lambda2 (float, optional): wavelength of second band [nm]. Defaults to 555.
+        a (float, optional): Defaults to 0.015.
+        b (float, optional): Defaults to 0.002.
+        c (float, optional): Defaults to 0.6.
+        d (float, optional): Defaults to -1.0.
+
+    Returns:
+        S_dg: spectral shape paramter for absorption coefficient of CDOM and NAP when using the exponential approximation
+    """
+    S_dg = a + b * (c + (R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]]))**d)
+    
+    return S_dg
+
+
+
 def compute_residual(y_true, y_pred, method=2, weights=[]):
     """
     Residual computation for comparison of measured and simulated data.
