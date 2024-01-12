@@ -108,7 +108,7 @@ def estimate_S_dg(R_rs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.00
     Returns:
         S_dg: spectral shape paramter for absorption coefficient of CDOM and NAP when using the exponential approximation
     """
-    S_dg = a + b * (c + (R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]]))**d)
+    S_dg = a + b * (c + (R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]])**d)
     
     return S_dg
 
