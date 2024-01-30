@@ -174,7 +174,7 @@ def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, 
     Returns:
         chl concentration [mg m-3]
     """
-    ci = R_rs[find_closest(wavelengths, lambda2)[1]] - x * R_rs[find_closest(wavelengths, lambda1)[1]] + y * R_rs[find_closest(wavelengths, lambda3)[1]]
+    ci = R_rs[find_closest(wavelengths, lambda2)[1]] - x * (R_rs[find_closest(wavelengths, lambda1)[1]] + y * R_rs[find_closest(wavelengths, lambda3)[1]])
 
     return ci
 
