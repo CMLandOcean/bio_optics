@@ -160,7 +160,7 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
 
 def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
     """
-    Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3.
+    Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3. Relative height of Rrs(555) from a background baseline formed linearly between Rrs(443) and Rrs(670)
 
     [1] Hu et al. (2012): Chlorophyll algorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
 
@@ -172,20 +172,21 @@ def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, 
         lambda3 (float, optional): Wavelength of red band [nm]. Defaults to 670.0
 
     Returns:
-        chl concentration [mg m-3]
+        color index [sr-1]
     """
     ci = R_rs[find_closest(wavelengths, lambda2)[1]] - x * (R_rs[find_closest(wavelengths, lambda1)[1]] + y * R_rs[find_closest(wavelengths, lambda3)[1]])
 
     return ci
 
 
-def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0, a=-0.4909, b=191.659):
+def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0, a=-0.4287, b=230.47):
     """
     Color index-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
 
-    !!! Only valid for CI <= 0.0005 sr-1 !!!
+    !!! Only valid for CI <= - 0.0005 sr-1 !!! At higher chl concentrations (approx 0.4 mg/m3), use Ocx [1]
 
-    [1] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+    [1] Hu et al. (2012): Chlorophyll a algorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
+    [2] Hu et al. (2019): Improving Satellite Global Chlorophyll a Data Products Through Algorithm Refinement and Data Recovery [10.1029/2019JC014941]
 
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
@@ -195,8 +196,8 @@ def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y
         lambda3 (float, optional): Wavelength of red band [nm]. Defaults to 670.0
         x (float, optional): Factor for blue band. Defaults to 0.5.
         y (float, optional): Factor for red band. Defaults to 1.0.
-        a (float, optional): Empirical component. Defaults to -0.4909.
-        b (float, optional): Empirical component. Defaults to 191.659.
+        a (float, optional): Empirical component. Defaults to -0.4287 [2] (use -0.4909 for [1]).
+        b (float, optional): Empirical component. Defaults to 230.47 [2] (use 191.659 for [1]).
     
     Returns:
         chl concentration [mg m-3]
