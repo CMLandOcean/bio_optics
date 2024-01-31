@@ -23,7 +23,7 @@ def pigment_concentration(band1, band2, band3):
     return (band1**(-1) - band2**(-1)) * band3
 
 
-def gitelson(R, wavelengths, a=117.42, b=23.09, lambda1=660, lambda2=715, lambda3=750):
+def gitelson(R, wavelengths, a=117.42, b=23.09, lambda1=665, lambda2=715, lambda3=750):
     """
     Semi-analytical model that relates chlorophyll-a pigment concentration to reflectance R in three spectral bands [1].
 
@@ -32,9 +32,9 @@ def gitelson(R, wavelengths, a=117.42, b=23.09, lambda1=660, lambda2=715, lambda
     Args:
         R (_type_): irradiance reflectance [-] spectrum
         wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 675.
-        lambda2: _description_. Defaults to 720.
-        lambda3: _description_. Defaults to 748.
+        lambda1: sensitive to chl a but also other factors. Defaults to 665.
+        lambda2: close to lambda 1 but minimally sensitive to chl a abs. Defaults to 715.
+        lambda3: wavelength where abs approx by a_water, to account for variability in backscattering. Defaults to 748.
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
