@@ -88,7 +88,7 @@ def potes(R, wavelengths, lambda1= 412.5, lambda2=560, a=8.93, b=-6.39):
     Empirical algorithm for turbidity [NTU] estimation as reported in Petus et al. (2018) [1].
     Originally developed for MERIS but proven to work for Sentinel-2 as well.
 
-    [1] Petus et al. (2018): Use of Sentinel 2-MSI for water quality monitoring at Alqueva reservoir, Portugal [10.5194/piahs-380-73-2018]
+    [1] Potes et al. (2018): Use of Sentinel 2-MSI for water quality monitoring at Alqueva reservoir, Portugal [10.5194/piahs-380-73-2018]
 
     Args:
         R: Water reflectance [-] spectrum
