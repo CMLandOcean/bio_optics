@@ -469,6 +469,6 @@ def potes_chl(R, wavelengths, lambda1=442.5, lambda2=560, a=4.23, b=3.94):
         wavelengths: correspondong wavelengths [nm]
 
     Returns:
-        Cyanobacteria concentration [10**3 cells mL-1]
+        Chl a concentration [mg m-3]
     """
     return a * (R[find_closest(wavelengths, lambda2)[1]] / R[find_closest(wavelengths, lambda1)[1]])**b 
