@@ -53,7 +53,7 @@ def loisel(R_rs, wavelengths, lambda1=412, lambda2=555, sza=0):
     return a_CDOM412
 
 
-def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
+def mannino(R_rs, wavelengths, lambda0=355, lambda1=490, lambda2=551):
     """
     Empirical model to estimate CDOM absorption [m-1] at a reference wavelengths (lambda0) at 443 nm, 412 nm or 355 nm.
     Coefficients are for MODIS-Aqua.
@@ -64,12 +64,15 @@ def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
 
     [1] Mannino et al. (2008): Algorithm development and validation for satellite-derived distributions of DOC and CDOM in the U.S. Middle Atlantic Bight [10.1029/2007JC004493]
 
+    Original coefficients for lambda0 = 355 from [1] are: a, b, c = 0.4934, 2.731, 3.512
+    Updated lambda0 = 355 coefficients based on Hawaii CM field data. 
+
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
         lambda0: reference wavelength [nm] to compute a_cdom for. Defaults to 443. Alternatives are 355 and 412.
-        lambda1: TBD
-        lambda2: TBD      
+        lambda1: Band 1 for band ratio
+        lambda2: Band 2 for band ratio
     Returns: 
         CDOM absorption [m-1] at a reference wavelength (lambda0) 
     """
@@ -80,7 +83,7 @@ def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
         a, b, c = 0.4553, 2.345, 8.045
 
     elif lambda0==355:
-        a, b, c = 0.4934, 2.731, 3.512
+        a, b, c = -2.989, 5.004, 1.122 
 
     band1 = R_rs[find_closest(wavelengths, lambda1)[1]]
     band2 = R_rs[find_closest(wavelengths, lambda2)[1]]
