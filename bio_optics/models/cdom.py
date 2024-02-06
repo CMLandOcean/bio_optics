@@ -53,7 +53,7 @@ def loisel(R_rs, wavelengths, lambda1=412, lambda2=555, sza=0):
     return a_CDOM412
 
 
-def mannino(R_rs, wavelengths, lambda0=355, lambda1=490, lambda2=551):
+def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
     """
     Empirical model to estimate CDOM absorption [m-1] at a reference wavelengths (lambda0) at 443 nm, 412 nm or 355 nm.
     Coefficients are for MODIS-Aqua.
@@ -65,7 +65,8 @@ def mannino(R_rs, wavelengths, lambda0=355, lambda1=490, lambda2=551):
     [1] Mannino et al. (2008): Algorithm development and validation for satellite-derived distributions of DOC and CDOM in the U.S. Middle Atlantic Bight [10.1029/2007JC004493]
 
     Original coefficients for lambda0 = 355 from [1] are: a, b, c = 0.4934, 2.731, 3.512
-    Updated lambda0 = 355 coefficients based on Hawaii CM field data. 
+    Original coefficients for lambda0 = 443 from [1] are: a, b, c = 0.4363, 2.221, 13.126
+    Updated lambda0 = 355 and 443 coefficients based on Hawaii CM field data. 
 
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
@@ -77,7 +78,7 @@ def mannino(R_rs, wavelengths, lambda0=355, lambda1=490, lambda2=551):
         CDOM absorption [m-1] at a reference wavelength (lambda0) 
     """
     if lambda0==443:
-        a, b, c = 0.4363, 2.221, 13.126
+        a, b, c = -1852, 1854, 0.01105
 
     elif lambda0==412:
         a, b, c = 0.4553, 2.345, 8.045
