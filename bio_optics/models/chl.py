@@ -475,6 +475,17 @@ def potes_chl(R, wavelengths, lambda1=442.5, lambda2=560, a=4.23, b=3.94):
 
 def ocx(R_rs, wavelengths, algorithm_name='OC6_ENMAP'):
     """
+    Empirical ocean color algorithms for Chlorophyll retrieval as described in O'Reilly & Werdell (2019) [1]
+
+    [1] O'Reilly & Werdell (2019): Chlorophyll algorithms for ocean color sensors - OC4, OC5 & OC6 [10.1016/j.rse.2019.04.021]
+
+    Args:
+        R_rs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        algorithm_name: algorithm name as described in Tab. 6 [1]. Defaults to 'OC6_ENMAP'.
+
+    Returns:
+        Chl: Chlorophyll concentration in mg m-3
     """
     algorithm_names = np.array(
         ['OC6_SEAWIFS', 'OC6_MODIS', 'OC6_MERIS', 'OC6_COCTS', 'OC6_SGLI',
