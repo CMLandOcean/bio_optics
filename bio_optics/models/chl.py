@@ -631,8 +631,8 @@ def ocx(R_rs, wavelengths, algorithm_name='OC6_ENMAP'):
 
     a = A[selected_model_idx]
 
-    selected_wavelengths1, selected_band_idx1 = np.array([utils.find_closest(wavelengths, wl) for wl in wavelengths1]).T 
-    selected_wavelengths2, selected_band_idx2 = np.array([utils.find_closest(wavelengths, wl) for wl in wavelengths2]).T
+    selected_wavelengths1, selected_band_idx1 = np.array([find_closest(wavelengths, wl) for wl in wavelengths1]).T 
+    selected_wavelengths2, selected_band_idx2 = np.array([find_closest(wavelengths, wl) for wl in wavelengths2]).T
 
     X = np.max(R_rs.T[selected_band_idx1], axis=0) / np.mean(R_rs.T[selected_band_idx2], axis=0)
 
