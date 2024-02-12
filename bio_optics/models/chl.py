@@ -180,7 +180,7 @@ def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0):
     return ci
 
 
-def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0, a=-0.8204, b=49.3352):
+def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, a=-0.8204, b=49.3352):
     """
     Color index-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
 
@@ -195,15 +195,13 @@ def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y
         lambda1 (float, optional): Wavelength of blue band [nm]. Defaults to 443.0
         lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 555.0
         lambda3 (float, optional): Wavelength of red band [nm]. Defaults to 670.0
-        x (float, optional): Factor for blue band. Defaults to 0.5.
-        y (float, optional): Factor for red band. Defaults to 1.0.
         a (float, optional): Empirical component. Defaults to -0.8204 based on fluorometric Jan 2023 CM data (Use -0.4287 for [2] or -0.4909 for [1]).
         b (float, optional): Empirical component. Defaults to 49.3352 based on fluorometric Jan 2023 CM data (Use 230.47 for [2] or 191.659 for [1]).
     
     Returns:
         chl concentration [mg m-3]
     """
-    cia = 10**(a + b * color_index(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y))
+    cia = 10**(a + b * color_index(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3))
 
     return cia 
 
