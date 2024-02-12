@@ -158,24 +158,25 @@ def ndci(R_rs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=1
     return a0 + a1 *  ndi(band2, band1) + a2 * ndi(band2, band1)**2
 
 
-def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, x=0.5, y=1.0):
+def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0):
     """
     Color Index (CI) as described in Hu et al. (2012) [1] Eq. 3. Relative height of Rrs(555) from a background baseline formed linearly between Rrs(443) and Rrs(670)
 
     [1] Hu et al. (2012): Chlorophyll algorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
-
+    
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
         lambda1 (float, optional): Wavelength of blue band [nm]. Defaults to 443.0
         lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 555.0
         lambda3 (float, optional): Wavelength of red band [nm]. Defaults to 670.0
-
+    
     Returns:
         color index [sr-1]
     """
-    ci = R_rs[find_closest(wavelengths, lambda2)[1]] - x * (R_rs[find_closest(wavelengths, lambda1)[1]] + y * R_rs[find_closest(wavelengths, lambda3)[1]])
 
+    ci = R_rs[find_closest(wavelengths, lambda2)[1]] - (R_rs[find_closest(wavelengths, lambda1)[1]] + (lambda2-lambda1)/(lambda3-lambda1) * (R_rs[find_closest(wavelengths, lambda3)[1]] - R_rs[find_closest(wavelengths, lambda1)[1]]))
+        
     return ci
 
 
