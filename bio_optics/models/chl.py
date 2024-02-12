@@ -184,7 +184,7 @@ def color_index(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, 
     return ci
 
 
-def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, a=-0.8204, b=49.3352, simple=False):
+def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, a=-0.8204, b=49.3352, x=0.5, y=1.0, simple=False):
     """
     Color index-based Algorithm (CIA) to retrieve Chlorophyll a concentration in oligotrophic oceans [1]
 
@@ -205,7 +205,7 @@ def cia(R_rs, wavelengths, lambda1=443.0, lambda2=555.0, lambda3=670.0, a=-0.820
     Returns:
         chl concentration [mg m-3]
     """
-    cia = 10**(a + b * color_index(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, simple=simple))
+    cia = 10**(a + b * color_index(R_rs=R_rs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3, x=x, y=y, simple=simple))
 
     return cia 
 
