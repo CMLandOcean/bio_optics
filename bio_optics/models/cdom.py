@@ -96,7 +96,7 @@ def ficek(R_rs, wavelengths, a=3.65, b=-1.93, lambda1=570, lambda2=655):
     """
     Empirical model to estimate CDOM absorption [m-1] at 440 nm [1]
 
-    [1] Ficek et al. (2011): Remote sensing reflectance of Pomeranian lakes and the Baltic [10.1016/j.csr.2009.12.007]
+    [1] Ficek et al. (2011): Remote sensing reflectance of Pomeranian lakes and the Baltic [10.5697/oc.53-4.959]
 
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
