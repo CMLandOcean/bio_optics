@@ -314,12 +314,12 @@ def da_NAP_div_dC_Mie(
     return da_NAP_div_dC_Mie
 
 def da_NAP_div_dS_NAP(C_X = 0,
-          C_Mie = 0,
-          wavelengths = np.arange(400,800), 
-          lambda_0 = 440,
-          a_NAP_spec_lambda_0 = 0.041,
-          S_NAP = 0.011,
-          a_NAP_N_res=[]):
+                      C_Mie = 0,
+                      wavelengths = np.arange(400,800), 
+                      lambda_0 = 440,
+                      a_NAP_spec_lambda_0 = 0.041,
+                      S_NAP = 0.011,
+                      a_NAP_N_res=[]):
     """
     # Math: \frac{\partial}{\partial S_{NAP}}a_{NAP} = C_{NAP} * a_{NAP}^*(\lambda_0) * \frac{\partial}{\partial S_{NAP}}e^{-S(\lambda - \lambda_0)}
     # Math: = C_{NAP} * a_{NAP}^*(\lambda_0) * (\lambda_0 - \lambda) * e^{-S(\lambda - \lambda_0)}
