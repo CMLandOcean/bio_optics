@@ -38,7 +38,7 @@
 
 import numpy as np
 import pandas as pd
-from .. helper import resampling
+from .. helper import resampling, utils
 
 
 def a_w(wavelengths = np.arange(400,800), a_w_res=[]):
@@ -552,3 +552,247 @@ def a_Y_exp_gauss(C_Y=0, wavelengths=np.arange(400,800), S=0.014, lambda_0=440, 
     return a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S, lambda_0=lambda_0, K=K) + \
            phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
            phi2 * np.exp(-np.power(wavelengths - mu2, 2.) / (2 * np.power(sigma2, 2.)))
+
+
+################
+#### HEREON ####
+################
+
+
+def a_xd_spec(wavelengths=np.arange(400,800),
+              A_xd=0,
+              S_xd=0,
+              C_xd=0,
+              lambda_0=550.):
+    """
+    Generic exponential function incl. offset. 
+    E.g., for specific absorption coefficients (Eq. 20 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        A_xd (int, optional): _description_. Defaults to 0.
+        S_xd (int, optional): _description_. Defaults to 0.
+        C_xd (int, optional): Constant. Defaults to 0.
+        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+    """
+    a_xd_spec = A_xd * np.exp(-S_xd * (wavelengths - lambda_0)) + C_xd
+    return a_xd_spec
+    
+
+def a_md_spec(wavelengths=np.arange(400,800), 
+              A_md=13.4685e-3, 
+              S_md=10.3845e-3, 
+              C_md=12.1700e-3,
+              lambda_0=550.):
+    """    
+    Mass-specific absorption coefficient of minerogenic detritus [m2/g] [1]
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+
+    Returns:
+        a_md_spec: Mass-specific absorption coefficient of minerogenic detritus [m2/g]
+    """
+    a_md_spec = a_xd_spec(wavelengths=wavelengths, A_xd=A_md, S_xd=S_md, C_xd=C_md, lambda_0=lambda_0) 
+    return a_md_spec
+
+
+def a_bd_spec(wavelengths=np.arange(400,800), 
+              A_bd=0.3893e-3, 
+              S_bd=15.7621e-3, 
+              C_bd= 0.9994e-3, 
+              lambda_0=550.):
+    """
+    Chl-specific absorption coefficient of biogenic detritus [m2/mg] [1]
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+
+    Returns:
+        a_bd_spec: Chl-specific absorption coefficient of biogenic detritus [m2/mg]
+    """
+    a_bd_spec = a_xd_spec(wavelengths=wavelengths, A_xd=A_bd, S_xd=S_bd, C_xd=C_bd, lambda_0=lambda_0)
+    return a_bd_spec
+
+
+def a_d(wavelengths=np.arange(400,800), 
+        C_ism=1., 
+        C_phy=1.,
+        A_md=13.4685e-3, 
+        A_bd=0.3893e-3, 
+        S_md=10.3845e-3, 
+        S_bd=15.7621e-3, 
+        C_md=12.1700e-3,
+        C_bd= 0.9994e-3, 
+        lambda_0_md=550., 
+        lambda_0_bd=550., 
+        a_md_spec_res=[],
+        a_bd_spec_res=[]):
+    """
+    Absorption coefficient of detritus (Eq. 7 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_): _description_. Defaults to np.arange(400,800).
+        C_ism (_type_, optional): Concentration of inorganic suspended matter. Defaults to 1..
+        C_phy (_type_, optional): Concentration of chlorophyll a. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        a_d: Absorption coefficient of detritus [m-1].
+    """
+    a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md) if len(a_md_spec_res)==0 else a_md_spec_res
+    a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)  if len(a_bd_spec_res)==0 else a_bd_spec_res
+
+    a_d = C_ism * a_md_spec_res + C_phy * a_bd_spec_res
+
+    return a_d
+
+
+def a_phy(C_0 = 0,
+          C_1 = 0,
+          C_2 = 0,
+          C_3 = 0,
+          C_4 = 0,
+          C_5 = 0,
+          wavelengths = np.arange(400,800),
+          a_i_spec_res = []):
+    """
+    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_5).
+    
+    :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+    :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+    :param C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+    :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+    :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+    :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+    :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
+    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_5) before inversion saves a lot of time.
+    :return: spectral scattering coefficient of phytoplankton mixture
+    """
+    C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5])
+   
+    if len(a_i_spec_res)==0:
+        a_i_spec = resampling.resample_a_i_spec_bi23(wavelengths=wavelengths)
+    else:
+        a_i_spec = a_i_spec_res
+    
+    a_phy = 0
+    # shape-1 because there are 7 classes in the sli
+    for i in range(a_i_spec.shape[1]): a_phy += C_i[i] * a_i_spec[:, i]
+    
+    return a_phy
+
+
+def correct_a_phy(a_phy_res, 
+                  wavelengths=np.arange(400,800), 
+                  C_phy=1., 
+                  A=0.0237, 
+                  E0=1., 
+                  E1=0.8987, 
+                  lambda_0_C_phy=676.,
+                  interpolate=True):
+    """
+    Correct a_ph for non-linear concentration-related effects (e.g., packaging) following [1] (Eqs. 14 and 21)
+
+     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        a_ph (np.array): Spectral absorption coefficient of phytoplankton.
+        wavelengths (np.array, optional): Corresponding wavelengths [nm]. Defaults to np.arange(400,800).
+        C_phy (float, optional): Concentration of phytoplankton [ug/L]. Defaults to 1..
+        A (float, optional): Scale factor. Defaults to 0.0237. Between 0.0112 ~ 0.0501.
+        E0 (float, optional): Power exponent E0 represents the effects of pigment packaging and its interaction with phytoplankton cell size for phytoplankton concentrations <= 1.. Defaults to 1..
+        E1 (float, optional): Power exponent E1 represents the effects of pigment packaging and its interaction with phytoplankton cell size for phytoplankton concentrations > 1.. Defaults to 0.8987.
+        lambda_0 (float, optional): Reference wavelength [nm]. Defaults to 676..
+        interpolate (bool, optional): Boolean to decide if a_ph at lambda_0 is to be interpolated. If False, a_ph at the closest wavelength will be chosen. Defaults to True.
+
+    Returns:
+        a_ph: Spectral absorption coefficient of phytoplankton corrected for non-linear concentration-related effects.
+    """
+    if interpolate:
+        a_phy_lambda_0 = np.interp(lambda_0_C_phy, wavelengths, a_phy_res)
+    else:
+        a_phy_lambda_0 = a_phy_res[utils.find_closest(wavelengths, lambda_0_C_phy)[1]] 
+
+    E = E0 if C_phy <= 1. else E1
+    a_phy_res *= (A * C_phy**E) / a_phy_lambda_0  
+
+    return a_phy_res
+
+
+def a_hereon(wavelengths=np.arange(400,800), 
+            C_0=0., 
+            C_1=0., 
+            C_2=0., 
+            C_3=0., 
+            C_4=0., 
+            C_5=0.,
+            C_Y=0.,
+            C_ism=0.,
+            A_md=13.4685e-3, 
+            A_bd=0.3893e-3, 
+            S_md=10.3845e-3, 
+            S_bd=15.7621e-3, 
+            S_cdom = 0.014,
+            C_md=12.1700e-3,
+            C_bd= 0.9994e-3,
+            K=0,
+            lambda_0_cdom = 440,
+            lambda_0_md=550., 
+            lambda_0_bd=550.,
+            lambda_0_C_phy=676.,
+            A=0.0237, 
+            E0=1., 
+            E1=0.8987, 
+            interpolate=True, 
+            T_W=20,
+            T_W_0=20,
+            a_d_res=[],
+            a_md_spec_res=[],
+            a_bd_spec_res=[],
+            a_i_spec_res=[],
+            a_phy_res=[],
+            a_Y_N_res=[],
+            a_w_res=[],
+            da_W_div_dT_res=[]):
+    
+    C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5])
+
+    if len(a_d_res)==0:
+        a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
+    
+    if len(a_phy_res)==0:
+        a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, a_i_spec_res=a_i_spec_res)
+
+    a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_C_phy=lambda_0_C_phy, interpolate=interpolate) + \
+           a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
+           a_d_res
+    
+    a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res) + a_wc
+
+    return a
