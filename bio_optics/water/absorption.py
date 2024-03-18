@@ -745,7 +745,7 @@ def correct_a_phy(a_phy_res,
     return a_phy_res
 
 
-def a_hereon(wavelengths=np.arange(400,800), 
+def a_total(wavelengths=np.arange(400,800), 
             C_0=0., 
             C_1=0., 
             C_2=0., 
