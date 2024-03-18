@@ -38,6 +38,7 @@
 
 import numpy as np
 from .. surface import air_water
+from . import absorption
 
 def omega_b(a, b_b):
     """
@@ -147,3 +148,174 @@ def dk_uB_div_dp(a,
              (a + b_b) * (2.2658 * (1 + omega_b)**(1.2658) * domega_b_div_dp))
           ) * \
           (1 + 0.0577 / cos_t_view_p)
+
+
+################
+#### HEREON ####
+################
+
+
+def omega_d_lambda_0(x0=1., 
+                     x1=10, 
+                     x2=-1.3390):
+    """
+    Single scattering albedo of detritus at a reference wavelength.
+
+    Args:
+        x0 (_type_, optional): Minuend. Defaults to 1..
+        x1 (int, optional): Base of the power-law function. Defaults to -10.
+        x2 (float, optional): Exponent of the power-law function. Defaults to -1.3390 (± 0.0618).
+
+    Returns:
+        omega_d_lambda_0: Single scattering albedo of detritus at a reference wavelength.
+    """
+    omega_d_lambda_0 = x0 - np.power(x1, x2)
+
+    return omega_d_lambda_0
+
+
+def estimate_c_d_lambda_0(C_ism=1., 
+                          C_phy=1.,
+                          A_md=13.4685e-3, 
+                          A_bd=0.3893e-3, 
+                          S_md=10.3845e-3,
+                          S_bd=15.7621e-3, 
+                          C_md=12.1700e-3,
+                          C_bd= 0.9994e-3, 
+                          lambda_0_cd=550., 
+                          lambda_0_md=550., 
+                          lambda_0_bd=550., 
+                          x0=1.,
+                          x1=10,
+                          x2=-1.3390,
+                          omega_d_lambda_0_res=None,
+                          a_d_lambda_0_res = None,
+                          a_md_spec_res=[],
+                          a_bd_spec_res=[]):
+    """
+    Helper function to estimate the attenuation coefficient of detritus at a reference wavelength (Eq. 10 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        lambda_0 (int, optional): _description_. Defaults to 550.
+        C_ism (_type_, optional): _description_. Defaults to 1..
+        C_phy (_type_, optional): _description_. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): _description_. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 500..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 500..
+        x0 (int, optional): _description_. Defaults to -1.
+        x1 (int, optional): _description_. Defaults to 10.
+        x2 (float, optional): _description_. Defaults to -1.3390.
+        omega_d_lambda_0_pre (_type_, optional): _description_. Defaults to None.
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        c_d_lambda_0: estimated attenuation coefficient of detritus at reference wavelength [m-1]
+    """
+    if omega_d_lambda_0_res is None:
+        omega_d_550 = omega_d_lambda_0(x0=x0,x1=x1,x2=x2)
+    else:
+        omega_d_550 = omega_d_lambda_0_res
+
+    if a_d_lambda_0_res is None:
+        a_d_lambda_0 = absorption.a_d(wavelengths=lambda_0_cd,
+                                      C_phy=C_phy, 
+                                      C_ism=C_ism,
+                                      A_md=A_md,
+                                      A_bd=A_bd,
+                                      S_md=S_md,
+                                      S_bd=S_bd,
+                                      C_md=C_md,
+                                      C_bd= C_bd,
+                                      lambda_0_md=lambda_0_md,
+                                      lambda_0_bd=lambda_0_bd,
+                                      a_md_spec_res=a_md_spec_res,
+                                      a_bd_spec_res=a_bd_spec_res)
+    else:
+        a_d_lambda_0 = a_d_lambda_0_res
+           
+    c_d_lambda_0 =  a_d_lambda_0 / (1 - omega_d_550)
+    
+    return c_d_lambda_0
+
+
+def c_d(wavelengths=np.arange(400,800), 
+        C_ism=1., 
+        C_phy=1.,
+        A_md=13.4685e-3, 
+        A_bd=0.3893e-3, 
+        S_md=10.3845e-3,
+        S_bd=15.7621e-3, 
+        C_md=12.1700e-3,
+        C_bd= 0.9994e-3, 
+        lambda_0_cd=550., 
+        lambda_0_md=550., 
+        lambda_0_bd=550., 
+        gamma_d=0.3835,
+        x0=1,
+        x1=10,
+        x2=-1.3390,
+        c_d_lambda_0_res=None,
+        omega_d_lambda_0_res=None,
+        a_d_lambda_0_res = None,
+        a_md_spec_res=[],
+        a_bd_spec_res=[]):
+    """
+    Attenuation coefficient of detritus (Eq. 9 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        C_ism (_type_, optional): _description_. Defaults to 1..
+        C_phy (_type_, optional): _description_. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): _description_. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
+        lambda_0 (_type_, optional): _description_. Defaults to 550..
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        gamma_d (float, optional): Exponential of power-law function [nm-1]. Defaults to 0.3835 (± 0.1277)
+        x0 (int, optional): _description_. Defaults to -1.
+        x1 (int, optional): _description_. Defaults to 10.
+        x2 (float, optional): _description_. Defaults to –1.3390 (± 0.0618).
+        c_d_lambda_0 (_type_, optional): _description_. Defaults to None.
+        omega_d_lambda_0_pre (_type_, optional): _description_. Defaults to None.
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        c_d: spectral attenuation coefficient of detritus [m-1]
+    """
+    if c_d_lambda_0_res is None:
+        c_d_lambda_0_res = estimate_c_d_lambda_0(C_ism=C_ism,
+                                             C_phy=C_phy,
+                                             A_md=A_md,
+                                             A_bd=A_bd,
+                                             S_md=S_md,
+                                             S_bd=S_bd,
+                                             C_md=C_md,
+                                             C_bd=C_bd,
+                                             lambda_0_md=lambda_0_md,
+                                             lambda_0_bd=lambda_0_bd,
+                                             lambda_0_cd=lambda_0_cd,
+                                             x0=x0,
+                                             x1=x1,
+                                             x2=x2,
+                                             omega_d_lambda_0_res=omega_d_lambda_0_res,
+                                             a_d_lambda_0_res = a_d_lambda_0_res,
+                                             a_md_spec_res=[], # needs to be empty so function does not return a vector 
+                                             a_bd_spec_res=[]) # needs to be empty so function does not return a vector 
+
+    c_d = c_d_lambda_0_res * (lambda_0_cd / wavelengths)**gamma_d
+    return c_d 
