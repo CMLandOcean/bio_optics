@@ -38,7 +38,8 @@
 
 import numpy as np
 import pandas as pd
-from .. helper import resampling
+from .. helper import resampling, utils
+from . import absorption, attenuation, scattering
 
 
 def morel(wavelengths: np.array = np.arange(400,800), 
@@ -406,3 +407,228 @@ def db_b_div_dC_phy(wavelengths: np.array = np.arange(400,800),
     db_b_div_dC_phy = db_bphy_div_dC_phy(wavelengths=wavelengths, b_bphy_spec=b_bphy_spec, b_phy_norm_res=b_phy_norm_res)
     
     return db_b_div_dC_phy
+
+
+################
+#### HEREON ####
+################
+
+
+def b_bphy_hereon(C_0 = 0,
+                  C_1 = 0,
+                  C_2 = 0,
+                  C_3 = 0,
+                  C_4 = 0,
+                  C_5 = 0,
+                  b_ratio_C_0 = 0.002,
+                  b_ratio_C_1 = 0.002,
+                  b_ratio_C_2 = 0.002,
+                  b_ratio_C_3 = 0.002,
+                  b_ratio_C_4 = 0.002, 
+                  b_ratio_C_5 = 0.002, 
+                  wavelengths = np.arange(400,800),
+                  b_i_spec_res = []):
+    """
+    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_5).
+    
+    :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+    :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+    :param C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+    :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+    :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+    :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+    :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
+    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_5) before inversion saves a lot of time.
+    :return: spectral scattering coefficient of phytoplankton mixture
+    """
+    C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5])
+
+    b_ratio_C_i = np.array([b_ratio_C_0, b_ratio_C_1, b_ratio_C_2, b_ratio_C_3, b_ratio_C_4, b_ratio_C_5])
+    
+    if len(b_i_spec_res)==0:
+        b_i_spec = resampling.resample_b_i_spec_bi23(wavelengths=wavelengths)
+    else:
+        b_i_spec = b_i_spec_res
+    
+    b_bphy = 0
+    # shape-1 because there are 7 classes in the sli
+    for i in range(b_i_spec.shape[1]-1): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
+    
+    return b_bphy
+
+
+def b_bd(b_d, b_ratio_d=0.0216):
+    """
+    Backscattering coefficient of detritus [m-1]
+
+    Args:
+        b_d (np.array): Scattering coefficient of detritus [m-1]
+        b_ratio_d (float, optional): Backscattering ratio or backscattering probability of detritus. Defaults to 0.0216.
+
+    Returns:
+        np.array: Backscattering coefficient of detritus [m-1]
+    """
+    return b_ratio_d * b_d
+
+
+def b_b_total(wavelengths = np.arange(400,800),
+         C_0 = 0,
+         C_1 = 0,
+         C_2 = 0,
+         C_3 = 0,
+         C_4 = 0,
+         C_5 = 0,
+         C_ism = 0,
+         b_ratio_C_0 = 0.002,
+         b_ratio_C_1 = 0.002,
+         b_ratio_C_2 = 0.002,
+         b_ratio_C_3 = 0.002,
+         b_ratio_C_4 = 0.002, 
+         b_ratio_C_5 = 0.002, 
+         b_ratio_d = 0.0216,
+         fresh=False,
+         A_md=13.4685e-3, 
+         A_bd=0.3893e-3, 
+         S_md=10.3845e-3, 
+         S_bd=15.7621e-3, 
+         C_md=12.1700e-3,
+         C_bd= 0.9994e-3, 
+         lambda_0_md=550., 
+         lambda_0_bd=550., 
+         lambda_0_cd=550., 
+         gamma_d=0.3835,
+         x0=1,
+         x1=10,
+         x2=-1.3390,
+         c_d_lambda_0_res=None,
+         a_d_lambda_0_res=None,
+         omega_d_lambda_0_res=None,
+         interpolate=True,
+         a_d_res=[],
+         a_md_spec_res=[],
+         a_bd_spec_res=[],
+         b_d_res = [],
+         b_bd_res = [],
+         b_bp_res = [],
+         b_bw_res = [],
+         b_i_spec_res = [],
+         c_d_res = []):
+    """
+    Total backscattering coefficient of natural water and water constituents following [1]
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        C_0 (int, optional): _description_. Defaults to 0.
+        C_1 (int, optional): _description_. Defaults to 0.
+        C_2 (int, optional): _description_. Defaults to 0.
+        C_3 (int, optional): _description_. Defaults to 0.
+        C_4 (int, optional): _description_. Defaults to 0.
+        C_5 (int, optional): _description_. Defaults to 0.
+        C_ism (int, optional): _description_. Defaults to 0.
+        b_ratio_C_0 (float, optional): _description_. Defaults to 0.002.
+        b_ratio_C_1 (float, optional): _description_. Defaults to 0.002.
+        b_ratio_C_2 (float, optional): _description_. Defaults to 0.002.
+        b_ratio_C_3 (float, optional): _description_. Defaults to 0.002.
+        b_ratio_C_4 (float, optional): _description_. Defaults to 0.002.
+        b_ratio_C_5 (float, optional): _description_. Defaults to 0.002.
+        b_ratio_d (float, optional): _description_. Defaults to 0.0216.
+        fresh (bool, optional): _description_. Defaults to False.
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): _description_. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        lambda_0_cd (_type_, optional): _description_. Defaults to 550..
+        gamma_d (float, optional): _description_. Defaults to 0.3835.
+        x0 (int, optional): _description_. Defaults to 1.
+        x1 (int, optional): _description_. Defaults to 10.
+        x2 (float, optional): _description_. Defaults to -1.3390.
+        c_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
+        a_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
+        omega_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
+        interpolate (bool, optional): _description_. Defaults to True.
+        a_d_res (list, optional): _description_. Defaults to [].
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+        b_d_res (list, optional): _description_. Defaults to [].
+        b_bd_res (list, optional): _description_. Defaults to [].
+        b_bp_res (list, optional): _description_. Defaults to [].
+        b_bw_res (list, optional): _description_. Defaults to [].
+        b_i_spec_res (list, optional): _description_. Defaults to [].
+        c_d_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        np.array: Total backscattering coefficient of natural water and water constituents [m-1]
+    """
+    C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5])
+
+    if len(b_bp_res)==0:
+      # compute b_bp
+      if len(b_bd_res)==0:
+        # compute b_bd
+        if len(b_d_res)==0:
+          # compute b_d
+          if len(a_d_res)==0:
+            # compute a_d
+            a_d_res = absorption.a_d(wavelengths=wavelengths,
+                                     C_phy=C_phy, 
+                                     C_ism=C_ism, 
+                                     A_md=A_md, 
+                                     A_bd=A_bd, 
+                                     S_md=S_md, 
+                                     S_bd=S_bd, 
+                                     C_md=C_md, 
+                                     C_bd=C_bd, 
+                                     lambda_0_md=lambda_0_md, 
+                                     lambda_0_bd=lambda_0_bd, 
+                                     a_md_spec_res=a_md_spec_res, 
+                                     a_bd_spec_res=a_bd_spec_res)
+            
+          a_d_lambda_0_res = np.interp(lambda_0_cd, wavelengths, a_d_res) if interpolate else a_d_res[utils.find_closest(wavelengths, lambda_0_cd)[1]]
+          
+          if len(c_d_res)==0:
+            c_d_res = attenuation.c_d(wavelengths=wavelengths, 
+                                      C_ism=C_ism, 
+                                      C_phy=C_phy,
+                                      A_md=A_md, 
+                                      A_bd=A_bd, 
+                                      S_md=S_md,
+                                      S_bd=S_bd, 
+                                      C_md=C_md,
+                                      C_bd=C_bd, 
+                                      lambda_0_cd=lambda_0_cd,
+                                      lambda_0_md=lambda_0_md, 
+                                      lambda_0_bd=lambda_0_bd, 
+                                      gamma_d=gamma_d,
+                                      x0=x0,
+                                      x1=x1,
+                                      x2=x2,
+                                      c_d_lambda_0_res=c_d_lambda_0_res,
+                                      a_d_lambda_0_res=a_d_lambda_0_res,
+                                      omega_d_lambda_0_res=omega_d_lambda_0_res,
+                                      a_md_spec_res=a_md_spec_res,
+                                      a_bd_spec_res=a_bd_spec_res)
+          b_d_res = scattering.b(a_d_res, c_d_res)
+        b_bd_res = b_bd(b_d_res, b_ratio_d=b_ratio_d)
+      b_bp_res = b_bphy_hereon(C_0=C_0, 
+                               C_1=C_1, 
+                               C_2=C_2, 
+                               C_3=C_3, 
+                               C_4=C_4, 
+                               C_5=C_5, 
+                               b_ratio_C_0=b_ratio_C_0, 
+                               b_ratio_C_1=b_ratio_C_1, 
+                               b_ratio_C_2=b_ratio_C_2, 
+                               b_ratio_C_3=b_ratio_C_3, 
+                               b_ratio_C_4=b_ratio_C_4, 
+                               b_ratio_C_5=b_ratio_C_5, 
+                               wavelengths=wavelengths, 
+                               b_i_spec_res=b_i_spec_res) + b_bd_res
+    b_b = b_bp_res + b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res)
+
+    return b_b
