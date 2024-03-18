@@ -1,4 +1,4 @@
-Specific absorption coefficients of seven phytoplankton types from the supplemental data of [1].
+Specific absorption coefficients of seven phytoplankton types from the supplemental data of [1]. Values > 720 nm are filled using the closest value.
 
 [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
 
