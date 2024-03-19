@@ -27,7 +27,7 @@ from . import distance
 from pysolar.solar import get_altitude
 
 
-def find_closest(arr: np.array or list, val: int):  
+def find_closest(arr: np.array, val: int):  
   """ 
   Find the closest value to a number in an array.
   
