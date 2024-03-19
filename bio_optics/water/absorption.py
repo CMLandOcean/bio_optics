@@ -714,7 +714,7 @@ def correct_a_phy(a_phy_res,
                   A=0.0237, 
                   E0=1., 
                   E1=0.8987, 
-                  lambda_0_C_phy=676.,
+                  lambda_0_phy=676.,
                   interpolate=True):
     """
     Correct a_ph for non-linear concentration-related effects (e.g., packaging) following [1] (Eqs. 14 and 21)
@@ -735,9 +735,9 @@ def correct_a_phy(a_phy_res,
         a_ph: Spectral absorption coefficient of phytoplankton corrected for non-linear concentration-related effects.
     """
     if interpolate:
-        a_phy_lambda_0 = np.interp(lambda_0_C_phy, wavelengths, a_phy_res)
+        a_phy_lambda_0 = np.interp(lambda_0_phy, wavelengths, a_phy_res)
     else:
-        a_phy_lambda_0 = a_phy_res[utils.find_closest(wavelengths, lambda_0_C_phy)[1]] 
+        a_phy_lambda_0 = a_phy_res[utils.find_closest(wavelengths, lambda_0_phy)[1]] 
 
     E = E0 if C_phy <= 1. else E1
     a_phy_res *= (A * C_phy**E) / a_phy_lambda_0  
@@ -765,7 +765,7 @@ def a_total(wavelengths=np.arange(400,800),
             lambda_0_cdom = 440,
             lambda_0_md=550., 
             lambda_0_bd=550.,
-            lambda_0_C_phy=676.,
+            lambda_0_phy=676.,
             A=0.0237, 
             E0=1., 
             E1=0.8987, 
@@ -789,7 +789,7 @@ def a_total(wavelengths=np.arange(400,800),
     if len(a_phy_res)==0:
         a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, a_i_spec_res=a_i_spec_res)
 
-    a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_C_phy=lambda_0_C_phy, interpolate=interpolate) + \
+    a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate) + \
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
            a_d_res
     
