@@ -103,7 +103,7 @@ def forward(parameters,
                                  lambda_0_bd=parameters["lambda_0_bd"], 
                                  a_bd_spec_res=a_bd_spec_res, 
                                  a_md_spec_res=a_md_spec_res)
-    a_d_lambda_0_res = np.interp(parameters["lambda_0_cd"].value, wavelengths, a_d_res) if parameters["interpolate"].value else a_d_res[utils.find_closest(wavelengths, parameters["lambda_0_cd"])[1]]
+    a_d_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, a_d_res) if parameters["interpolate"].value else a_d_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
 
     if len(c_d_res)==0:
         c_d_res = attenuation.c_d(wavelengths=wavelengths, 
@@ -115,7 +115,7 @@ def forward(parameters,
                                   S_bd=parameters["S_bd"], 
                                   C_md=parameters["C_md"], 
                                   C_bd=parameters["C_bd"], 
-                                  lambda_0_cd=parameters["lambda_0_cd"], 
+                                  lambda_0_cd=parameters["lambda_0_c_d"], 
                                   lambda_0_md=parameters["lambda_0_md"], 
                                   lambda_0_bd=parameters["lambda_0_bd"], 
                                   gamma_d=parameters["gamma_d"], 
@@ -210,7 +210,7 @@ def forward(parameters,
                                            C_bd=parameters["C_bd"],
                                            lambda_0_md=parameters["lambda_0_md"], 
                                            lambda_0_bd=parameters["lambda_0_bd"], 
-                                           lambda_0_cd=parameters["lambda_0_cd"], 
+                                           lambda_0_cd=parameters["lambda_0_c_d"], 
                                            gamma_d=parameters["gamma_d"], 
                                            x0=parameters["x0"], 
                                            x1=parameters["x1"], 

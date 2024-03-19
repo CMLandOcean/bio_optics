@@ -495,7 +495,7 @@ def b_b_total(wavelengths = np.arange(400,800),
          C_bd= 0.9994e-3, 
          lambda_0_md=550., 
          lambda_0_bd=550., 
-         lambda_0_cd=550., 
+         lambda_0_c_d=550., 
          gamma_d=0.3835,
          x0=1,
          x1=10,
@@ -543,7 +543,7 @@ def b_b_total(wavelengths = np.arange(400,800),
         C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
         lambda_0_md (_type_, optional): _description_. Defaults to 550..
         lambda_0_bd (_type_, optional): _description_. Defaults to 550..
-        lambda_0_cd (_type_, optional): _description_. Defaults to 550..
+        lambda_0_c_d (_type_, optional): _description_. Defaults to 550..
         gamma_d (float, optional): _description_. Defaults to 0.3835.
         x0 (int, optional): _description_. Defaults to 1.
         x1 (int, optional): _description_. Defaults to 10.
@@ -589,7 +589,7 @@ def b_b_total(wavelengths = np.arange(400,800),
                                      a_md_spec_res=a_md_spec_res, 
                                      a_bd_spec_res=a_bd_spec_res)
             
-          a_d_lambda_0_res = np.interp(lambda_0_cd, wavelengths, a_d_res) if interpolate else a_d_res[utils.find_closest(wavelengths, lambda_0_cd)[1]]
+          a_d_lambda_0_res = np.interp(lambda_0_c_d, wavelengths, a_d_res) if interpolate else a_d_res[utils.find_closest(wavelengths, lambda_0_c_d)[1]]
           
           if len(c_d_res)==0:
             c_d_res = attenuation.c_d(wavelengths=wavelengths, 
@@ -601,7 +601,7 @@ def b_b_total(wavelengths = np.arange(400,800),
                                       S_bd=S_bd, 
                                       C_md=C_md,
                                       C_bd=C_bd, 
-                                      lambda_0_cd=lambda_0_cd,
+                                      lambda_0_c_d=lambda_0_c_d,
                                       lambda_0_md=lambda_0_md, 
                                       lambda_0_bd=lambda_0_bd, 
                                       gamma_d=gamma_d,

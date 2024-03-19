@@ -182,7 +182,7 @@ def estimate_c_d_lambda_0(C_ism=1.,
                           S_bd=15.7621e-3, 
                           C_md=12.1700e-3,
                           C_bd= 0.9994e-3, 
-                          lambda_0_cd=550., 
+                          lambda_0_c_d=550., 
                           lambda_0_md=550., 
                           lambda_0_bd=550., 
                           x0=1.,
@@ -225,7 +225,7 @@ def estimate_c_d_lambda_0(C_ism=1.,
         omega_d_550 = omega_d_lambda_0_res
 
     if a_d_lambda_0_res is None:
-        a_d_lambda_0 = absorption.a_d(wavelengths=lambda_0_cd,
+        a_d_lambda_0 = absorption.a_d(wavelengths=lambda_0_c_d,
                                       C_phy=C_phy, 
                                       C_ism=C_ism,
                                       A_md=A_md,
@@ -255,7 +255,7 @@ def c_d(wavelengths=np.arange(400,800),
         S_bd=15.7621e-3, 
         C_md=12.1700e-3,
         C_bd= 0.9994e-3, 
-        lambda_0_cd=550., 
+        lambda_0_c_d=550., 
         lambda_0_md=550., 
         lambda_0_bd=550., 
         gamma_d=0.3835,
@@ -308,7 +308,7 @@ def c_d(wavelengths=np.arange(400,800),
                                              C_bd=C_bd,
                                              lambda_0_md=lambda_0_md,
                                              lambda_0_bd=lambda_0_bd,
-                                             lambda_0_cd=lambda_0_cd,
+                                             lambda_0_c_d=lambda_0_c_d,
                                              x0=x0,
                                              x1=x1,
                                              x2=x2,
@@ -317,5 +317,5 @@ def c_d(wavelengths=np.arange(400,800),
                                              a_md_spec_res=[], # needs to be empty so function does not return a vector 
                                              a_bd_spec_res=[]) # needs to be empty so function does not return a vector 
 
-    c_d = c_d_lambda_0_res * (lambda_0_cd / wavelengths)**gamma_d
+    c_d = c_d_lambda_0_res * (lambda_0_c_d / wavelengths)**gamma_d
     return c_d 
