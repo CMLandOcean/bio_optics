@@ -40,24 +40,72 @@
 import numpy as np
 
 
-def R_rs_fl(wavelengths=np.arange(400,800), lambda_fl=685, L_fl_lambda0=0.001):
+def h_C(wavelengths=np.arange(400,800), fwhm=25, lambda_C=685):
+    """
+    Gaussian emission function of chloropyhll fluorescence [nm-1] according to Eq. 4 in [1]
+
+    [1] Mobley (2024): https://www.oceanopticsbook.info/view/scattering/level-2/chlorophyll-fluorescence
+
+    Args:
+        wavelengths (_type_, optional): Wavelengths [nm]. Defaults to np.arange(400,800).
+        fwhm (int, optional): full width at half maximum. Defaults to 25 [nm].
+        lambda_C (int, optional): Wavelength of maximum emission [nm]. Defaults to 685.
+
+    Returns:
+        h_C: Gaussian emission function of chloropyhll fluorescence [nm-1]
+    """
+    h_C = np.sqrt((4 * np.log(2)) / np.pi) * 1/fwhm * np.exp(-4 * np.log(2) * ((wavelengths - lambda_C) / 25)**2)
+    return h_C
+
+
+def h_C_double(W=0.75, wavelengths=np.arange(400,800), fwhm1=25, fwhm2=50, lambda_C1=685, lambda_C2=730):
+    """
+    Emission function of chlorophyll fluorescence as weighted sum of two Gaussians accorting to Eq. 6 in [1]
+
+    [1] Mobley (2024): https://www.oceanopticsbook.info/view/scattering/level-2/chlorophyll-fluorescence
+
+    Args:
+        W (float, optional): Weight of the first Gaussian. Defaults to 0.75, which results in the second peak height to be 0.2 * the first one.
+        wavelengths (_type_, optional):  Wavelengths [nm]. Defaults to np.arange(400,800).
+        fwhm1 (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 25.
+        fwhm2 (int, optional): full width at half maximum of peak 2 [nm]. Defaults to 50.
+        lambda_C1 (int, optional): Wavelength of maximum emission of peak 1 [nm]. Defaults to 685.
+        lambda_C2 (int, optional): Wavelength of maximum emission of peak 2 [nm]. Defaults to 730.
+
+    Returns:
+        h_C_double: Gaussian emission function of chloropyhll fluorescence [nm-1]
+    """
+    h_C_double = W * h_C(wavelengths=wavelengths, fwhm=fwhm1, lambda_C=lambda_C1) + (1-W) * h_C(wavelengths=wavelengths, fwhm=fwhm2, lambda_C=lambda_C2)
+    return h_C_double
+
+
+def R_rs_fl(wavelengths=np.arange(400,800), L_fl_lambda0=0.001, W=0.75, fwhm1=25, fwhm2=50, lambda_C1=685, lambda_C2=730, double=False):
     """
     Fluorescence reflectance accounting for Chl a pigment fluorescence as presented in Eq. 8 in 
     Groetsch et al. (2020) [1] following Eq. 7.36 in Gilerson & Huot (2017) [2, 3].
+    Updated following Mobley [4], L_fl_lambda0 is probably not really radiance but is rather treated as a scaler for the peak height.
 
     [1] Groetsch et al. (2020): Exploring the limits for sky and sun glint correction of hyperspectral above-surface reflectance observations. [10.1364/AO.385853]
     [2] Gilerson & Huot (2017): Sun-induced chlorophyll-a fluorescence, pp. 189-231 in [3].
     [3] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters.
+    [4] Mobley (2024): https://www.oceanopticsbook.info/view/scattering/level-2/chlorophyll-fluorescence
 
     Args:
         wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
-        lambda_fl: wavelength of fluorescence peak [nm]. Defaults to 685.
-        L_fl_lambda0: Fluorescence radiance at lambda0 [W m-2 nm-1 sr-1]. Defaults to 1.
+        L_fl_lambda0: Fluorescence radiance at lambda0 [W m-2 nm-1 sr-1]. Defaults to 0.001.
+        W (float, optional): Weight of the first Gaussian. Defaults to 0.75, which results in the second peak height to be 0.2 * the first one.
+        wavelengths (_type_, optional):  Wavelengths [nm]. Defaults to np.arange(400,800).
+        fwhm1 (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 25.
+        fwhm2 (int, optional): full width at half maximum of peak 2 [nm]. Defaults to 50.
+        lambda_C1 (int, optional): Wavelength of maximum emission of peak 1 [nm]. Defaults to 685.
+        lambda_C2 (int, optional): Wavelength of maximum emission of peak 2 [nm]. Defaults to 730.
 
     Returns:
         Fluorescence radiance reflectance [sr-1]
     """
-    
-    R_rs_fl = L_fl_lambda0 * np.exp(-4 * np.log(2) * ((wavelengths - lambda_fl) / 25)**2 / 1.1)
+    if double:
+        R_rs_fl = L_fl_lambda0 * h_C_double(W=W, wavelengths=wavelengths, fwhm1=fwhm1, fwhm2=fwhm2, lambda_C1=lambda_C1, lambda_C2=lambda_C2)
+    else:
+        R_rs_fl = L_fl_lambda0 * h_C(wavelengths=wavelengths, fwhm=fwhm1, lambda_C=lambda_C1)
     
     return R_rs_fl
