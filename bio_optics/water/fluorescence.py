@@ -79,7 +79,15 @@ def h_C_double(W=0.75, wavelengths=np.arange(400,800), fwhm1=25, fwhm2=50, lambd
     return h_C_double
 
 
-def R_rs_fl(wavelengths=np.arange(400,800), L_fl_lambda0=0.001, W=0.75, fwhm1=25, fwhm2=50, lambda_C1=685, lambda_C2=730, double=False, h_C_res=[]):
+def R_rs_fl(wavelengths=np.arange(400,800), 
+            L_fl_lambda0=0.001, 
+            W=0.75, 
+            fwhm1=25, 
+            fwhm2=50, 
+            lambda_C1=685, 
+            lambda_C2=730, 
+            double=False, 
+            h_C_res=[]):
     """
     Fluorescence reflectance accounting for Chl a pigment fluorescence as presented in Eq. 8 in 
     Groetsch et al. (2020) [1] following Eq. 7.36 in Gilerson & Huot (2017) [2, 3].
@@ -112,3 +120,33 @@ def R_rs_fl(wavelengths=np.arange(400,800), L_fl_lambda0=0.001, W=0.75, fwhm1=25
         R_rs_fl = L_fl_lambda0 * h_C_res
 
     return R_rs_fl
+
+
+def R_rs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=644):
+    """
+    Fluorescence of phycocyanin (cyano red)
+
+    Args:
+        wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
+        fwhm (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 20.
+        lambda_C (int, optional): Wavelength of maximum emission of peak [nm]. Defaults to 644.
+
+    Returns:
+       Fluorescence radiance reflectance due to phycocyanin [sr-1]
+    """
+    return L_fl_phycocyanin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+
+
+def R_rs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=573):
+    """
+    Fluorescence of phycoerythrin (cyano blue)
+
+    Args:
+        wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
+        fwhm (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 20.
+        lambda_C (int, optional): Wavelength of maximum emission of peak [nm]. Defaults to 573.
+
+    Returns:
+       Fluorescence radiance reflectance due to phycoerythrin [sr-1]
+    """
+    return L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
