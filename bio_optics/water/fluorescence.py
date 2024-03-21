@@ -79,7 +79,7 @@ def h_C_double(W=0.75, wavelengths=np.arange(400,800), fwhm1=25, fwhm2=50, lambd
     return h_C_double
 
 
-def R_rs_fl(wavelengths=np.arange(400,800), L_fl_lambda0=0.001, W=0.75, fwhm1=25, fwhm2=50, lambda_C1=685, lambda_C2=730, double=False):
+def R_rs_fl(wavelengths=np.arange(400,800), L_fl_lambda0=0.001, W=0.75, fwhm1=25, fwhm2=50, lambda_C1=685, lambda_C2=730, double=False, h_C_res=[]):
     """
     Fluorescence reflectance accounting for Chl a pigment fluorescence as presented in Eq. 8 in 
     Groetsch et al. (2020) [1] following Eq. 7.36 in Gilerson & Huot (2017) [2, 3].
@@ -103,9 +103,12 @@ def R_rs_fl(wavelengths=np.arange(400,800), L_fl_lambda0=0.001, W=0.75, fwhm1=25
     Returns:
         Fluorescence radiance reflectance [sr-1]
     """
-    if double:
-        R_rs_fl = L_fl_lambda0 * h_C_double(W=W, wavelengths=wavelengths, fwhm1=fwhm1, fwhm2=fwhm2, lambda_C1=lambda_C1, lambda_C2=lambda_C2)
+    if len(h_C_res)==0:
+        if double:
+            R_rs_fl = L_fl_lambda0 * h_C_double(W=W, wavelengths=wavelengths, fwhm1=fwhm1, fwhm2=fwhm2, lambda_C1=lambda_C1, lambda_C2=lambda_C2)
+        else:
+            R_rs_fl = L_fl_lambda0 * h_C(wavelengths=wavelengths, fwhm=fwhm1, lambda_C=lambda_C1)
     else:
-        R_rs_fl = L_fl_lambda0 * h_C(wavelengths=wavelengths, fwhm=fwhm1, lambda_C=lambda_C1)
-    
+        R_rs_fl = L_fl_lambda0 * h_C_res
+
     return R_rs_fl
