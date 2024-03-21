@@ -254,7 +254,7 @@ def forward(parameters,
                                                                                          lambda_C=parameters['lambda_C_phycocyanin'],
                                                                                          h_C_phycocyanin_res=h_C_phycocyanin_res) + \
                                                         fluorescence.R_rs_fl_phycoerythrin(wavelengths=wavelengths,
-                                                                                           L_fl_phycocyanin=parameters['L_fl_phycoerythrin'],
+                                                                                           L_fl_phycoerythrin=parameters['L_fl_phycoerythrin'],
                                                                                            fwhm=parameters['fwhm_phycoerythrin'],
                                                                                            lambda_C=parameters['lambda_C_phycoerythrin'],
                                                                                            h_C_phycoerythrin_res=h_C_phycoerythrin_res)
