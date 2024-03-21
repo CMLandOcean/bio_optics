@@ -122,7 +122,7 @@ def R_rs_fl(wavelengths=np.arange(400,800),
     return R_rs_fl
 
 
-def R_rs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=644):
+def R_rs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=644, h_C_phycocyanin_res=[]):
     """
     Fluorescence of phycocyanin (cyano red)
 
@@ -134,10 +134,15 @@ def R_rs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), 
     Returns:
        Fluorescence radiance reflectance due to phycocyanin [sr-1]
     """
-    return L_fl_phycocyanin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+    if len(h_C_phycocyanin_res)==0:
+        R_rs_fl_phycocyanin = L_fl_phycocyanin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+    else:
+        R_rs_fl_phycocyanin = L_fl_phycocyanin * h_C_phycocyanin_res
+
+    return R_rs_fl_phycocyanin
 
 
-def R_rs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=573):
+def R_rs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=573, h_C_phycoerythrin_res=[]):
     """
     Fluorescence of phycoerythrin (cyano blue)
 
@@ -149,4 +154,9 @@ def R_rs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,80
     Returns:
        Fluorescence radiance reflectance due to phycoerythrin [sr-1]
     """
-    return L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+    if len(h_C_phycoerythrin_res)==0:
+        R_rs_fl_phycoerythrin = L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+    else:
+        R_rs_fl_phycoerythrin = L_fl_phycoerythrin * h_C_phycoerythrin_res
+        
+    return R_rs_fl_phycoerythrin
