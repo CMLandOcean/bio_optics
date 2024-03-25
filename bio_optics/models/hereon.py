@@ -73,7 +73,7 @@ def forward(parameters,
     Returns:
         _type_: _description_
     """    
-    C_phy = np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]])
+    C_phy = np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"], parameters["C_6"], parameters["C_7"]])
 
     if len(n2_res) == 0:
         n2 = parameters["n2"]
@@ -145,6 +145,8 @@ def forward(parameters,
                                                   C_3=parameters["C_3"], 
                                                   C_4=parameters["C_4"], 
                                                   C_5=parameters["C_5"], 
+                                                  C_6=parameters["C_6"], 
+                                                  C_7=parameters["C_7"], 
                                                   b_i_spec_res=b_i_spec_res)
     if len(b_bp_res)==0:
         b_bp_res = b_bd_res + b_bphy_res
@@ -158,6 +160,8 @@ def forward(parameters,
                                    C_3=parameters["C_3"], 
                                    C_4=parameters["C_4"], 
                                    C_5=parameters["C_5"], 
+                                   C_6=parameters["C_6"], 
+                                   C_7=parameters["C_7"], 
                                    C_ism=parameters["C_ism"], 
                                    C_Y=parameters["C_Y"], 
                                    A_md=parameters["A_md"], 
@@ -196,6 +200,8 @@ def forward(parameters,
                                            C_3=parameters["C_3"], 
                                            C_4=parameters["C_4"], 
                                            C_5=parameters["C_5"], 
+                                           C_4=parameters["C_6"], 
+                                           C_5=parameters["C_7"], 
                                            C_ism=parameters["C_ism"], 
                                            b_ratio_C_0=parameters["b_ratio_C_0"], 
                                            b_ratio_C_1=parameters["b_ratio_C_1"], 
@@ -203,6 +209,8 @@ def forward(parameters,
                                            b_ratio_C_3=parameters["b_ratio_C_3"], 
                                            b_ratio_C_4=parameters["b_ratio_C_4"], 
                                            b_ratio_C_5=parameters["b_ratio_C_5"], 
+                                           b_ratio_C_4=parameters["b_ratio_C_6"], 
+                                           b_ratio_C_5=parameters["b_ratio_C_7"], 
                                            b_ratio_d=parameters["b_ratio_d"], 
                                            fresh=parameters["fresh"],
                                            A_md=parameters["A_md"],

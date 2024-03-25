@@ -420,16 +420,20 @@ def b_bphy_hereon(C_0 = 0,
                   C_3 = 0,
                   C_4 = 0,
                   C_5 = 0,
+                  C_6 = 0,
+                  C_7 = 0,
                   b_ratio_C_0 = 0.002,
                   b_ratio_C_1 = 0.002,
                   b_ratio_C_2 = 0.002,
                   b_ratio_C_3 = 0.002,
                   b_ratio_C_4 = 0.002, 
                   b_ratio_C_5 = 0.002, 
+                  b_ratio_C_6 = 0.002, 
+                  b_ratio_C_7 = 0.002, 
                   wavelengths = np.arange(400,800),
                   b_i_spec_res = []):
     """
-    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_5).
+    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_7).
     
     :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
     :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
@@ -437,22 +441,23 @@ def b_bphy_hereon(C_0 = 0,
     :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
     :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
     :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+    :param C_6: concentration of phytoplankton type 6 [ug/L], default: 0
+    :param C_7: concentration of phytoplankton type 7 [ug/L], default: 0
     :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
-    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_5) before inversion saves a lot of time.
+    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_7) before inversion saves a lot of time.
     :return: spectral scattering coefficient of phytoplankton mixture
     """
-    C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5])
+    C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
 
-    b_ratio_C_i = np.array([b_ratio_C_0, b_ratio_C_1, b_ratio_C_2, b_ratio_C_3, b_ratio_C_4, b_ratio_C_5])
+    b_ratio_C_i = np.array([b_ratio_C_0, b_ratio_C_1, b_ratio_C_2, b_ratio_C_3, b_ratio_C_4, b_ratio_C_5, b_ratio_C_6, b_ratio_C_7])
     
     if len(b_i_spec_res)==0:
-        b_i_spec = resampling.resample_b_i_spec_bi23(wavelengths=wavelengths)
+        b_i_spec = resampling.resample_b_i_spec_EnSAD(wavelengths=wavelengths)
     else:
         b_i_spec = b_i_spec_res
     
     b_bphy = 0
-    # shape-1 because there are 7 classes in the sli
-    for i in range(b_i_spec.shape[1]-1): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
+    for i in range(b_i_spec.shape[1]): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
     
     return b_bphy
 
@@ -478,6 +483,8 @@ def b_b_total(wavelengths = np.arange(400,800),
          C_3 = 0,
          C_4 = 0,
          C_5 = 0,
+         C_6 = 0,
+         C_7 = 0,
          C_ism = 0,
          b_ratio_C_0 = 0.002,
          b_ratio_C_1 = 0.002,
@@ -485,6 +492,8 @@ def b_b_total(wavelengths = np.arange(400,800),
          b_ratio_C_3 = 0.002,
          b_ratio_C_4 = 0.002, 
          b_ratio_C_5 = 0.002, 
+         b_ratio_C_6 = 0.002, 
+         b_ratio_C_7 = 0.002, 
          b_ratio_d = 0.0216,
          fresh=False,
          A_md=13.4685e-3, 
@@ -565,7 +574,7 @@ def b_b_total(wavelengths = np.arange(400,800),
     Returns:
         np.array: Total backscattering coefficient of natural water and water constituents [m-1]
     """
-    C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5])
+    C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
     if len(b_bp_res)==0:
       # compute b_bp
@@ -621,12 +630,16 @@ def b_b_total(wavelengths = np.arange(400,800),
                                C_3=C_3, 
                                C_4=C_4, 
                                C_5=C_5, 
+                               C_6=C_6,
+                               C_7=C_7,
                                b_ratio_C_0=b_ratio_C_0, 
                                b_ratio_C_1=b_ratio_C_1, 
                                b_ratio_C_2=b_ratio_C_2, 
                                b_ratio_C_3=b_ratio_C_3, 
                                b_ratio_C_4=b_ratio_C_4, 
                                b_ratio_C_5=b_ratio_C_5, 
+                               b_ratio_C_6=b_ratio_C_6, 
+                               b_ratio_C_7=b_ratio_C_7, 
                                wavelengths=wavelengths, 
                                b_i_spec_res=b_i_spec_res) + b_bd_res
     b_b = b_bp_res + b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res)

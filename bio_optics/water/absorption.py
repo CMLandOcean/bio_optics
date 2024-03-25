@@ -679,10 +679,12 @@ def a_phy(C_0 = 0,
           C_3 = 0,
           C_4 = 0,
           C_5 = 0,
+          C_6 = 0,
+          C_7 = 0,
           wavelengths = np.arange(400,800),
           a_i_spec_res = []):
     """
-    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_5).
+    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_7).
     
     :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
     :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
@@ -690,14 +692,16 @@ def a_phy(C_0 = 0,
     :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
     :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
     :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+    :param C_6: concentration of phytoplankton type 6 [ug/L], default: 0
+    :param C_7: concentration of phytoplankton type 7 [ug/L], default: 0
     :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
-    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_5) before inversion saves a lot of time.
+    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_7) before inversion saves a lot of time.
     :return: spectral scattering coefficient of phytoplankton mixture
     """
-    C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5])
+    C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
    
     if len(a_i_spec_res)==0:
-        a_i_spec = resampling.resample_a_i_spec_bi23(wavelengths=wavelengths)
+        a_i_spec = resampling.resample_a_i_spec_EnSAD(wavelengths=wavelengths)
     else:
         a_i_spec = a_i_spec_res
     
@@ -752,6 +756,8 @@ def a_total(wavelengths=np.arange(400,800),
             C_3=0., 
             C_4=0., 
             C_5=0.,
+            C_6=0.,
+            C_7=0.,
             C_Y=0.,
             C_ism=0.,
             A_md=13.4685e-3, 
@@ -781,13 +787,13 @@ def a_total(wavelengths=np.arange(400,800),
             a_w_res=[],
             da_W_div_dT_res=[]):
     
-    C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5])
+    C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
     if len(a_d_res)==0:
         a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
     
     if len(a_phy_res)==0:
-        a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, a_i_spec_res=a_i_spec_res)
+        a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, C_6=C_6, C_7=C_7, a_i_spec_res=a_i_spec_res)
 
     a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate) + \
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
