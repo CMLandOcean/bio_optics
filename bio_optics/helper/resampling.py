@@ -135,7 +135,7 @@ def resample_a_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
     """
     # read file
-    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSAD.txt'), skiprows=4, sep=",")
+    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSAD.txt'), skiprows=11, sep=",")
     # resample to sensor bands
     band_resampler = BandResampler(a_phyto_db.wavelength_nm.values, wavelengths) 
     a_i_spec = band_resampler(np.asarray(a_phyto_db)[:,1:])
