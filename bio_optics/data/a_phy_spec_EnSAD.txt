@@ -7,21 +7,7 @@ Dinflagellates is from WASI [2] and derived from pure cultures grown in the labo
 [4] Gege (1994): Gew�sseranalyse mit passiver Fernerkundung: Ein Modell zur Interpretation optischer Spektralmessungen. PhD thesis. DLR-Forschungsbericht 94-15, 171 p								
 [5] Gege (1995): Water analysis by remote sensing: A model for the interpretation of optical spectral measurements. Technical Translation ESA-TT-1324, 231 pp.								
 [6] Gege (1998): Correction of specular reflections at the water surface. Ocean Optics XIV, Conference Papers, Vol. 2.								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
-								
+
 								
 wavelength_nm,Brown group,Green group,Cryptophyte,Cyanobacteria blue,Cyanobacteria red,Coccolithophore,Dinoflagellates,Case-1
 400,0.033946956,0.024218179,0.026735264,0.039150556,0.041037084,0.070530481,0.055971,0.0488466758898002
