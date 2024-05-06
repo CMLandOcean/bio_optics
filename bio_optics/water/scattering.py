@@ -28,7 +28,7 @@ def b_phy(C_0 = 0,
           wavelengths = np.arange(400,800),
           b_i_spec_res = []):
     """
-    Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_5).
+    Spectral scattering coefficient of phytoplankton for a mixture of up to 8 phytoplankton classes (C_0..C_7).
     
     :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
     :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
@@ -50,6 +50,7 @@ def b_phy(C_0 = 0,
         b_i_spec = b_i_spec_res
     
     b_phy = 0
-    for i in range(b_i_spec.shape[1]): b_phy += C_i[i] * b_i_spec[:, i]
+    for i in range(b_i_spec.shape[1]): 
+        b_phy += C_i[i] * b_i_spec[:, i]
     
     return b_phy
