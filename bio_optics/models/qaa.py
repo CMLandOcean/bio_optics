@@ -64,7 +64,7 @@ def qaa(R_rs,
     u = (-g0 + np.sqrt(g0**2 + 4*g1 * r_rs)) / 2*g1
 
     # Step 2 [3]
-    chi = np.log((r_rs[idx[1]] + r_rs[idx[2]]) / (r_rs[idx[3]] + 5*(r_rs[idx[5]]/r_rs[idx[2]]) * r_rs[idx[5]]))
+    chi = np.log((R_rs[idx[1]] + R_rs[idx[2]]) / (R_rs[idx[3]] + 5*(R_rs[idx[5]]/R_rs[idx[2]]) * R_rs[idx[5]]))
     a_lambda_0_v5 = a_w_res[idx[3]] + 10**(h0 + h1*chi + h2*chi**2)
     a_lambda_0_v6 = a_w_res[idx[5]] + 0.39 * (R_rs[idx[5]] / R_rs[idx[1]] + R_rs[idx[2]])**1.14
 
@@ -155,7 +155,7 @@ def qaa_cdom(R_rs,
     u = 1 - np.exp((-k0 * r_rs**k1)/(0.31 - r_rs))
 
     # Step 2 [1]
-    chi = np.log((r_rs[idx[0]] + r_rs[idx[1]]) / (r_rs[idx[2]] + 2*(r_rs[idx[3]]/r_rs[idx[2]]) * r_rs[idx[3]]))
+    chi = np.log((R_rs[idx[0]] + R_rs[idx[1]]) / (R_rs[idx[2]] + 2*(R_rs[idx[3]]/R_rs[idx[2]]) * R_rs[idx[3]]))
     a_555 = a_w_res[idx[2]] + 10**(h0 + h1*chi + h2*chi**2)
 
     # Step 3 [1]
