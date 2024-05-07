@@ -176,3 +176,69 @@ def qaa_cdom(R_rs,
     a_g_440 = a_440 - a_w_res[idx[0]] - a_p_440
 
     return [a_p_440, a_g_440]
+
+
+def qaa_shallow(R_rs, 
+                wavelengths, 
+                lambdas=np.array([412, 443, 490, 555, 640, 670]),
+                g0=0.089,
+                g1=0.125,
+                a_w_res=[],
+                b_bw_res=[]):
+    """
+    Quasi-Analytical Algorithm (QAA) for optically shallow waters to derive the absorption and backscattering coefficients by analytically inverting the spectral remote-sensing reflectance [sr-1] [1,2,3].   
+    The function can run with any number of bands as long as the crucial wavelengths (lambdas) are included.
+
+    For most parts, this is the same as qaa() but with a different function to estimate a_t(lambda_0). TO DO: All the QAA functions should be streamlined at some point.
+     
+    [1] Barnes et al. (2013): MODIS-derived spatiotemporal water clarity patterns in optically shallow Florida Keys waters: A new approach to remove bottom contamination [10.1016/j.rse.2013.03.016]
+    [2] Lee et al. (2002): Deriving inherent optical properties from water color: A multiband quasi-analytical algorithm for optically deep waters [10.1364/ao.41.005755]
+    [3] Lee et al. (no year): An Update of the Quasi-Analytical Algorithm (QAA_v5). Available online: https://www.ioccg.org/groups/Software_OCA/QAA_v5.pdf
+
+    Args:
+        R_rs: remote sensing reflectance [sr-1]
+        wavelengths: corresponding wavelengths [nm]
+        lambdas: wavelengths used in QAA. Defaults to np.array([412, 443, 490, 555, 640, 670]).
+        g0: Defaults to 0.089 [1].
+        g1: Defaults to 0.125 [1].
+        a_w_res: absorption coefficient of pure water resampled to the sensors band setting [m-1]. Defaults to [], will be computed if not provided.
+        b_bw_res: backscattering coefficient of pure water resampled to the sensors band setting [m-1]. Defaults to [], will be computed if not provided.
+
+    Returns:
+        a: bulk spectral absorption coefficient [m-1]
+        b_b: bulk spectral backscattering coefficient [m-1] 
+        b_bp: spectral particulate backscattering coefficient [m-1]
+    """
+    
+    idx = np.array([find_closest(wavelengths, wl)[1] for wl in lambdas]).astype(int)
+    
+    if len(a_w_res)==0:
+        a_w_res = resample_a_w(wavelengths)
+    if len(b_bw_res)==0:
+        b_bw_res = resample_b_bw(wavelengths)
+
+    # Step 0 [2]
+    r_rs = above2below(R_rs)
+
+    # Eq. 5 in [1]
+    u = (-g0 + np.sqrt(g0**2 + 4*g1 * r_rs)) / 2*g1
+
+    # Eq. 9 in [1]
+    # !!! This is the only difference to QAA_v5.
+    a_lambda_0 = a_w_res[idx[5]] + 0.07*(r_rs[idx[5]]/r_rs[idx[1]])**1.1
+
+    # Eq. 4 in [1]
+    b_bp_lambda_0 = ((u[idx[5]] * a_lambda_0) / (1-u[idx[3]])) - b_bw_res[idx[5]]
+    
+    # Eq. 8 in [1]
+    eta = 2.0 * (1 - 1.2 * np.exp(-0.9 * (r_rs[idx[1]]/r_rs[idx[3]])))
+
+    # Eq. 6, left side in [1]
+    b_bp = np.asarray([b_bp_lambda_0 * (wavelengths[idx[5]] / lambda_i)**eta for lambda_i in wavelengths])
+    
+    # Eq. 6 in [1]
+    b_b = np.asarray([b_bw_res[i] + b_bp[i] for i in range(len(wavelengths))])
+    # Eq. 7 in [1]
+    a = (1-u) * b_b / u
+
+    return a, b_b, b_bp
