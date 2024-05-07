@@ -36,12 +36,12 @@ def opshal(R_rs,
            a_w_res=[],
            b_bw_res=[]):
     """
-    Approach for identifying optically shallow pixels when processing ocean-color imagery following McKinna & Werdell (2018) [1] based on an adapted versiokn of the QAA.
+    Approach for identifying optically shallow pixels when processing ocean-color imagery following McKinna & Werdell (2018) [1] based on an adapted version of the QAA.
 
     [1] McKinna & Werdell (2018): Approach for identifying optically shallow pixels when processing ocean-color imagery [10.1364/OE.26.00A915]
 
     Args:
-        R_rs: remote sensing reflectance [sr-1]
+        R_rs: remote sensing reflectance [sr-1]. If 2D mut have shape (bands,x), if 3D must have shape (bands,x,y).
         wavelengths: corresponding wavelengths [nm]
         depth: geometrical depth [m]
         lambda_0 (int, optional): reference wavelength [nm]. Defaults to 547.
@@ -67,7 +67,12 @@ def opshal(R_rs,
     a, b_b, b_bp = qaa_shallow(R_rs=R_rs, wavelengths=wavelengths, lambdas=lambdas, g0=g0, g1=g1, a_w_res=a_w_res, b_bw_res=b_bw_res)
 
     # Step 2: Estimate c
-    c = estimate_c(a, b_bp, b_bw_res[:, np.newaxis], eta_p=eta_p, eta_w=eta_w)
+    if len(R_rs.shape)==1:
+        c = estimate_c(a, b_bp, b_bw_res, eta_p=eta_p, eta_w=eta_w)
+    elif len(R_rs.shape)==2:
+        c = estimate_c(a, b_bp, b_bw_res[:, np.newaxis], eta_p=eta_p, eta_w=eta_w)
+    elif len(R_rs.shape)==3:
+        c = estimate_c(a, b_bp, b_bw_res[:, np.newaxis, np.newaxis], eta_p=eta_p, eta_w=eta_w)
 
     # Step 3: Estimate zeta
     zeta_E = estimate_zeta(c, depth)
