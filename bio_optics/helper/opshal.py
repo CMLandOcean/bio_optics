@@ -41,7 +41,7 @@ def opshal(R_rs,
     [1] McKinna & Werdell (2018): Approach for identifying optically shallow pixels when processing ocean-color imagery [10.1364/OE.26.00A915]
 
     Args:
-        R_rs: remote sensing reflectance [sr-1]. If 2D mut have shape (bands,x), if 3D must have shape (bands,x,y).
+        R_rs: remote sensing reflectance [sr-1]. For matrices, bands need to be first axis.
         wavelengths: corresponding wavelengths [nm]
         depth: geometrical depth [m]
         lambda_0 (int, optional): reference wavelength [nm]. Defaults to 547.
