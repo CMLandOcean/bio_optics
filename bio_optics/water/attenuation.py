@@ -43,6 +43,8 @@ from . import absorption
 
 def omega_b(a, b_b):
     """
+    Single scattering albedo
+    
     # Math: \omega_b = \frac{b_b}{a + b_b}
     """
     return b_b / (a + b_b)
@@ -354,3 +356,25 @@ def K_d_Lee(a_t,
     K_d = (1 + 0.005*theta_sun)*a_t + m1*(1 - m2*np.exp(m3*a_t)) * b_b
     
     return K_d
+
+
+def estimate_c(a, b_bp, b_bw, eta_p=0.015, eta_w=0.5):
+    """
+    Estimation of the beam attenuation coefficient c [m-1] as decsribed in Eq. 5 in McKinna & Werdell (2018) [1].
+    In [1] this function is used to estimate c at a reference wavelength of 547 nm.
+
+    [1] McKinna & Werdell (2018): Approach for identifying optically shallow pixels when processing ocean-color imagery [10.1364/OE.26.00A915]
+
+    Args:
+        a (np.array): absorption coefficient [m-1]
+        b_bp (np.array): particulate backscattering coefficient [m-1]
+        b_bw (np.array): backscattering coefficient of water [m-1]
+        eta_p (float, optional): particulate backscatter ratio. Defaults to 0.015; halfway between global average oceanic value of 0.01 and well known Petzold average particle value of 0.0183.
+        eta_w (float, optional): backscatter ratio of pure water. Defaults to 0.5.
+
+    Returns:
+        c: beam attenuation coefficient [m-1]
+    """
+    c = a + b_bp / eta_p + b_bw / eta_w
+
+    return c
