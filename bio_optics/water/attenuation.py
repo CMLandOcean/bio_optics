@@ -40,11 +40,13 @@ import numpy as np
 from .. surface import air_water
 from . import absorption
 
+
 def omega_b(a, b_b):
     """
     # Math: \omega_b = \frac{b_b}{a + b_b}
     """
     return b_b / (a + b_b)
+
 
 def domega_b_div_dp(a, b_b, da_div_dp, db_b_div_dp):
     """
@@ -53,6 +55,7 @@ def domega_b_div_dp(a, b_b, da_div_dp, db_b_div_dp):
     # Math: = \frac{a \frac{\partial b_b}{\partial p} - b \frac{\partial a}{\partial p}}{(a + b_b)^2}
     """
     return (a * db_b_div_dp - b_b * da_div_dp) / (a + b_b)**2
+
 
 def K_d(a,
         b_b, 
@@ -76,6 +79,7 @@ def K_d(a,
     K_d = (kappa_0 / cos_t_sun_p) * (a + b_b)
     
     return K_d
+
 
 def dK_d_div_dp(da_div_dp,
                 db_b_div_dp,
@@ -128,6 +132,7 @@ def k_uB(a,
     # Math: k_{uB} = \frac{a + b_b}{cos \theta_v'} \times (1 + \omega_b)^{2.2658} \times (1 + \frac{0.0577}{cos \theta_{sun}'})
     """
     return (a + b_b) / cos_t_view_p * (1 + omega_b)**2.2658 * (1 + 0.0577 / cos_t_sun_p)
+
 
 def dk_uB_div_dp(a, 
                  b_b,
@@ -319,3 +324,25 @@ def c_d(wavelengths=np.arange(400,800),
 
     c_d = c_d_lambda_0_res * (lambda_0_c_d / wavelengths)**gamma_d
     return c_d 
+
+
+def K_d_Lee(a_t, b_b, theta_sun, m1=4.18, m2=0.52, m3=-10.8):
+    """
+    Diffuse attenuation coefficient for downwelling irradiance [m-1] 
+    following Lee et al. (2005) [1] as described in Barnes et al. (2013) [2]
+
+    [1] Lee et al. (2005): Diffuse attenuation coefficient of downwelling irradiance: An evaluation of remote sensing methods [10.1029/2004JC002573]
+    [2] Barnes et al. (2013): MODIS-derived spatiotemporal water clarity patterns in optically shallow Florida Keys waters: A new approach to remove bottom contamination [10.1016/j.rse.2013.03.016]
+
+    Args:
+        a_t (np.array): total absorption coefficient
+        b_b (np.array): backscattering coefficient
+        theta_sun (float): solar zenith angle in air
+        m1 (float, optional): Constant. Defaults to 4.18.
+        m2 (float, optional): Constant. Defaults to 0.52.
+        m3 (float, optional): Constant. Defaults to -10.8.
+    """
+    # Eq. 1 in [2]
+    K_d = (1 + 0.005*theta_sun)*a_t + m1*(1 - m2*np.exp(m3*a_t)) * b_b
+    
+    return K_d
