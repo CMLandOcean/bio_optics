@@ -326,7 +326,12 @@ def c_d(wavelengths=np.arange(400,800),
     return c_d 
 
 
-def K_d_Lee(a_t, b_b, theta_sun, m1=4.18, m2=0.52, m3=-10.8):
+def K_d_Lee(a_t, 
+            b_b, 
+            theta_sun=30, 
+            m1=4.18, 
+            m2=0.52, 
+            m3=-10.8):
     """
     Diffuse attenuation coefficient for downwelling irradiance [m-1] 
     following Lee et al. (2005) [1] as described in Barnes et al. (2013) [2]
@@ -335,12 +340,15 @@ def K_d_Lee(a_t, b_b, theta_sun, m1=4.18, m2=0.52, m3=-10.8):
     [2] Barnes et al. (2013): MODIS-derived spatiotemporal water clarity patterns in optically shallow Florida Keys waters: A new approach to remove bottom contamination [10.1016/j.rse.2013.03.016]
 
     Args:
-        a_t (np.array): total absorption coefficient
-        b_b (np.array): backscattering coefficient
-        theta_sun (float): solar zenith angle in air
+        a_t (np.array): total absorption coefficient [m-1]
+        b_b (np.array): backscattering coefficient [m-1]
+        theta_sun (float): solar zenith angle in air [degrees]
         m1 (float, optional): Constant. Defaults to 4.18.
         m2 (float, optional): Constant. Defaults to 0.52.
         m3 (float, optional): Constant. Defaults to -10.8.
+    
+    Returns: 
+        K_d: Diffuse attenuation coefficient for downwelling irradiance [m-1]
     """
     # Eq. 1 in [2]
     K_d = (1 + 0.005*theta_sun)*a_t + m1*(1 - m2*np.exp(m3*a_t)) * b_b
