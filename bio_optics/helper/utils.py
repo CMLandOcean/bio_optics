@@ -25,18 +25,24 @@ from scipy.stats import pearsonr
 from sklearn.metrics import mean_squared_error, r2_score
 from . import distance
 from pysolar.solar import get_altitude
+import warnings
 
 
-def find_closest(arr: np.array, val: int):  
+def find_closest(arr: np.array, val: int, threshold=10):  
   """ 
   Find the closest value to a number in an array.
   
   :param arr:  an array or list of numbers
   :param val:  the number  
+  :param threshold: threshold that needs to be breached to send a WARNING message. Defaults to 10.
   :return:     the closest value and its index in arr
   """
   arr = np.asarray(arr)
+  distance = idx = (np.abs(arr - val)).min()
   idx = (np.abs(arr - val)).argmin()
+
+  if distance > threshold:
+      warnings.warn("The distance of " + str(val) + " to the closest value ("+str(arr[idx])+") is larger than the threshold of " + str(threshold) + '.')
   
   return arr[idx], idx
 
