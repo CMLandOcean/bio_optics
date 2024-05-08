@@ -38,13 +38,14 @@ def find_closest(arr: np.array, val: int, threshold=10):
   :return:     the closest value and its index in arr
   """
   arr = np.asarray(arr)
-  distance = idx = (np.abs(arr - val)).min()
+  distance = (np.abs(arr - val)).min()
   idx = (np.abs(arr - val)).argmin()
+  closest_val = arr[idx]
 
   if distance > threshold:
-      warnings.warn("The distance of " + str(val) + " to the closest value ("+str(arr[idx])+") is larger than the threshold of " + str(threshold) + '.')
+      warnings.warn("The distance of " + str(val) + " to the closest value ("+str(closest_val)+") is larger than the threshold of " + str(threshold) + '.')
   
-  return arr[idx], idx
+  return closest_val, idx
 
 
 def band_mask(wavelengths, mask_regions = [[1300,1500],[1800,2000]]):
