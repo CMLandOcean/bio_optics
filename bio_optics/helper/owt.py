@@ -30,20 +30,31 @@ from . indices import ndi
 data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
 
-def avw(R_rs, wavelengths):
+def avw(R_rs, wavelengths, sensor='hyperspectral'):
     """
     Apparent visible wavelength (AVW) [1]
     "The Apparent Visible Wavelength (AVW) is calculated as the weighted harmonic mean of all R_rs wavelengths, 
     weighted as a function of the relative intensity of Rrs at each wavelength" [1].
+    Polynomial coefficients for multispectral sensors are from [2].
 
     [1] Vandermeulen (2022) [https://oceancolor.gsfc.nasa.gov/atbd/avw/].
+    [2] Vandermeulen (no year) [https://oceancolor.gsfc.nasa.gov/resources/atbd/avw/#:~:text=The%20AVW%20is%20an%20optical,2020)]
     
     :param wavelengths: All available wavelengths between 400–700 nm
     :param R_rs: R_rs at respective wavelengths
+    :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
     :return:
     """ 
     avw = np.sum(R_rs[(wavelengths>=400) & (wavelengths<=700)], axis=0) / np.sum(R_rs[(wavelengths>=400) & (wavelengths<=700)] / wavelengths[(wavelengths>=400) & (wavelengths<=700)], axis=0)
-    return avw
+    
+    if sensor=='hyperspectral':
+        return avw
+        
+    else:
+        avw_coefficients = pd.read_csv(os.path.join(data_dir, 'avw_coefficients.txt'), skiprows=5)
+        c0, c1, c2, c3, c4, c5 = avw_coefficients[avw_coefficients['Sensor']==sensor].values[0][1:]
+        avw = c0*(avw**5) + c1*(avw**4) + c2*(avw**3) + c3*(avw**2) + c4*(avw) + c5
+        return avw
     
     
 def qwip(avw):
