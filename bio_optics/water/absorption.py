@@ -673,6 +673,80 @@ def a_d(wavelengths=np.arange(400,800),
     return a_d
 
 
+def a_md(wavelengths=np.arange(400,800),
+        C_ism=1.,
+        A_md=13.4685e-3,
+        S_md=10.3845e-3,
+        C_md=12.1700e-3,
+        lambda_0_md=550.,
+        a_md_spec_res=[]):
+    """
+    Absorption coefficient of mineralogenic detritus (Eq. 7 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_): _description_. Defaults to np.arange(400,800).
+        C_ism (_type_, optional): Concentration of inorganic suspended matter. Defaults to 1..
+        C_phy (_type_, optional): Concentration of chlorophyll a. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        a_d: Absorption coefficient of detritus [m-1].
+    """
+    a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md) if len(a_md_spec_res)==0 else a_md_spec_res
+
+    a_md = C_ism * a_md_spec_res
+
+    return a_md
+
+
+def a_bd(wavelengths=np.arange(400,800),
+        C_phy=1.,
+        A_bd=0.3893e-3,
+        S_bd=15.7621e-3,
+        C_bd= 0.9994e-3,
+        lambda_0_bd=550.,
+        a_bd_spec_res=[]):
+    """
+    Absorption coefficient of detritus (Eq. 7 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_): _description_. Defaults to np.arange(400,800).
+        C_ism (_type_, optional): Concentration of inorganic suspended matter. Defaults to 1..
+        C_phy (_type_, optional): Concentration of chlorophyll a. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        a_d: Absorption coefficient of detritus [m-1].
+    """
+    a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)  if len(a_bd_spec_res)==0 else a_bd_spec_res
+
+    a_bd = C_phy * a_bd_spec_res
+
+    return a_bd
+
+
 def a_phy(C_0 = 0,
           C_1 = 0,
           C_2 = 0,
@@ -778,7 +852,9 @@ def a_total(wavelengths=np.arange(400,800),
             interpolate=True, 
             T_W=20,
             T_W_0=20,
-            a_d_res=[],
+            # a_d_res=[],
+            a_md_res=[],
+            a_bd_res=[],
             a_md_spec_res=[],
             a_bd_spec_res=[],
             a_i_spec_res=[],
@@ -789,15 +865,22 @@ def a_total(wavelengths=np.arange(400,800),
     
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
-    if len(a_d_res)==0:
-        a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
+    if len(a_md_res) == 0:
+        a_md_res = a_md(wavelengths=wavelengths, C_ism=C_ism, A_md=A_md, S_md=S_md, C_md=C_md, lambda_0_md=lambda_0_md, a_md_spec_res=a_md_spec_res)
+
+    if len(a_bd_res) == 0:
+        a_bd_res = a_bd(wavelengths=wavelengths, C_phy=C_phy, A_bd=A_bd, S_bd=S_bd, C_bd=C_bd, lambda_0_bd=lambda_0_bd, a_bd_spec_res=a_bd_spec_res)
+
+    # if len(a_d_res)==0:
+    #     a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
     
     if len(a_phy_res)==0:
         a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, C_6=C_6, C_7=C_7, a_i_spec_res=a_i_spec_res)
 
     a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate) + \
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
-           a_d_res
+           a_md_res + \
+           a_bd_res
     
     a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res) + a_wc
 

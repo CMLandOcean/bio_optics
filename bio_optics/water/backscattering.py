@@ -458,7 +458,11 @@ def b_bphy_hereon(C_0 = 0,
     
     b_bphy = 0
     for i in range(b_i_spec.shape[1]): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
-    
+
+    Chl_tot = np.sum(C_i)
+    if Chl_tot>1.:
+        b_bphy *= Chl_tot**-0.1065
+
     return b_bphy
 
 
@@ -487,14 +491,16 @@ def b_b_total(wavelengths = np.arange(400,800),
          C_7 = 0,
          C_ism = 0,
          b_ratio_C_0 = 0.002,
-         b_ratio_C_1 = 0.002,
+         b_ratio_C_1 = 0.007,
          b_ratio_C_2 = 0.002,
-         b_ratio_C_3 = 0.002,
-         b_ratio_C_4 = 0.002, 
-         b_ratio_C_5 = 0.002, 
-         b_ratio_C_6 = 0.002, 
-         b_ratio_C_7 = 0.002, 
-         b_ratio_d = 0.0216,
+         b_ratio_C_3 = 0.003,
+         b_ratio_C_4 = 0.003, 
+         b_ratio_C_5 = 0.007, 
+         b_ratio_C_6 = 0.007, 
+         b_ratio_C_7 = 0.007, 
+         # b_ratio_d = 0.0216,
+         b_ratio_md = 0.0216,
+         b_ratio_bd = 0.0216,
          fresh=False,
          A_md=13.4685e-3, 
          A_bd=0.3893e-3, 
@@ -509,19 +515,27 @@ def b_b_total(wavelengths = np.arange(400,800),
          x0=1,
          x1=10,
          x2=-1.3390,
-         c_d_lambda_0_res=None,
-         a_d_lambda_0_res=None,
+         c_md_lambda_0_res=None,
+         a_md_lambda_0_res=None,
+         c_bd_lambda_0_res=None,
+         a_bd_lambda_0_res=None,
          omega_d_lambda_0_res=None,
          interpolate=True,
-         a_d_res=[],
+         a_bd_res=[],
+         a_md_res=[],
          a_md_spec_res=[],
          a_bd_spec_res=[],
-         b_d_res = [],
+         # b_d_res = [],
          b_bd_res = [],
-         b_bp_res = [],
+         b_md_res = [],
+         bb_bd_res=[],
+         bb_md_res=[],
+         bb_p_res=[],
+         # b_bp_res = [],
          b_bw_res = [],
          b_i_spec_res = [],
-         c_d_res = []):
+         c_md_res = [],
+         c_bd_res = []):
     """
     Total backscattering coefficient of natural water and water constituents following [1]
 
@@ -529,20 +543,26 @@ def b_b_total(wavelengths = np.arange(400,800),
 
     Args:
         wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
-        C_0 (int, optional): _description_. Defaults to 0.
-        C_1 (int, optional): _description_. Defaults to 0.
-        C_2 (int, optional): _description_. Defaults to 0.
-        C_3 (int, optional): _description_. Defaults to 0.
-        C_4 (int, optional): _description_. Defaults to 0.
-        C_5 (int, optional): _description_. Defaults to 0.
+        C_0 (float, optional): _description_. Defaults to 0.
+        C_1 (float, optional): _description_. Defaults to 0.
+        C_2 (float, optional): _description_. Defaults to 0.
+        C_3 (float, optional): _description_. Defaults to 0.
+        C_4 (float, optional): _description_. Defaults to 0.
+        C_5 (float, optional): _description_. Defaults to 0.
+        C_6 (float, optional): _description_. Defaults to 0.
+        C_7 (float, optional): _description_. Defaults to 0.
         C_ism (int, optional): _description_. Defaults to 0.
         b_ratio_C_0 (float, optional): _description_. Defaults to 0.002.
         b_ratio_C_1 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_2 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_3 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_4 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_5 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_d (float, optional): _description_. Defaults to 0.0216.
+        b_ratio_C_2 (float, optional): _description_. Defaults to 0.007.
+        b_ratio_C_3 (float, optional): _description_. Defaults to 0.003.
+        b_ratio_C_4 (float, optional): _description_. Defaults to 0.003.
+        b_ratio_C_5 (float, optional): _description_. Defaults to 0.007.
+        b_ratio_C_6 (float, optional): _description_. Defaults to 0.007.
+        b_ratio_C_7 (float, optional): _description_. Defaults to 0.007.
+        # b_ratio_d (float, optional): _description_. Defaults to 0.0216.
+        b_ratio_md (float, optional): _description_. Defaults to 0.0216.
+        b_ratio_bd (float, optional): _description_. Defaults to 0.0216.
         fresh (bool, optional): _description_. Defaults to False.
         A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
         A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
@@ -576,55 +596,75 @@ def b_b_total(wavelengths = np.arange(400,800),
     """
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
-    if len(b_bp_res)==0:
-      # compute b_bp
-      if len(b_bd_res)==0:
-        # compute b_bd
-        if len(b_d_res)==0:
-          # compute b_d
-          if len(a_d_res)==0:
-            # compute a_d
-            a_d_res = absorption.a_d(wavelengths=wavelengths,
-                                     C_phy=C_phy, 
-                                     C_ism=C_ism, 
+    if len(bb_p_res)==0:
+      # compute b_bp, backscattering all particles
+      if len(bb_bd_res)==0:
+        # compute b_bd, backscattering biogenic detritus
+        if len(bb_md_res)==0:
+          # compute b_md, backscattering mineralogenic detritus
+          if len(a_md_res)==0:
+            # compute a_md, absorption mineralogenic detritus
+            a_md_res = absorption.a_md(wavelengths=wavelengths,
+                                     C_ism=C_ism,
                                      A_md=A_md, 
-                                     A_bd=A_bd, 
-                                     S_md=S_md, 
-                                     S_bd=S_bd, 
-                                     C_md=C_md, 
-                                     C_bd=C_bd, 
-                                     lambda_0_md=lambda_0_md, 
-                                     lambda_0_bd=lambda_0_bd, 
-                                     a_md_spec_res=a_md_spec_res, 
-                                     a_bd_spec_res=a_bd_spec_res)
+                                     S_md=S_md,
+                                     C_md=C_md,
+                                     lambda_0_md=lambda_0_md,
+                                     a_md_spec_res=a_md_spec_res)
             
-          a_d_lambda_0_res = np.interp(lambda_0_c_d, wavelengths, a_d_res) if interpolate else a_d_res[utils.find_closest(wavelengths, lambda_0_c_d)[1]]
-          
-          if len(c_d_res)==0:
-            c_d_res = attenuation.c_d(wavelengths=wavelengths, 
+          a_md_lambda_0_res = np.interp(lambda_0_c_d, wavelengths, a_md_res) if interpolate else a_md_res[utils.find_closest(wavelengths, lambda_0_c_d)[1]]
+          if len(a_bd_res) == 0:
+            # compute a_bd, absorption biogenic detritus
+            a_bd_res = absorption.a_bd(wavelengths=wavelengths,
+                                         C_phy=C_phy,
+                                         A_bd=A_bd,
+                                         S_bd=S_bd,
+                                         C_bd=C_bd,
+                                         lambda_0_bd=lambda_0_bd,
+                                         a_bd_spec_res=a_bd_spec_res)
+
+          a_bd_lambda_0_res = np.interp(lambda_0_c_d, wavelengths, a_bd_res) if interpolate else a_bd_res[utils.find_closest(wavelengths, lambda_0_c_d)[1]]
+
+          if len(c_md_res)==0:
+            # attenuation mineralogenic detritus
+            c_md_res = attenuation.c_md(wavelengths=wavelengths,
                                       C_ism=C_ism, 
-                                      C_phy=C_phy,
-                                      A_md=A_md, 
-                                      A_bd=A_bd, 
+                                      A_md=A_md,
                                       S_md=S_md,
-                                      S_bd=S_bd, 
                                       C_md=C_md,
-                                      C_bd=C_bd, 
                                       lambda_0_c_d=lambda_0_c_d,
                                       lambda_0_md=lambda_0_md, 
-                                      lambda_0_bd=lambda_0_bd, 
                                       gamma_d=gamma_d,
                                       x0=x0,
                                       x1=x1,
                                       x2=x2,
-                                      c_d_lambda_0_res=c_d_lambda_0_res,
-                                      a_d_lambda_0_res=a_d_lambda_0_res,
-                                      omega_d_lambda_0_res=omega_d_lambda_0_res,
-                                      a_md_spec_res=a_md_spec_res,
-                                      a_bd_spec_res=a_bd_spec_res)
-          b_d_res = scattering.b(a_d_res, c_d_res)
-        b_bd_res = b_bd(b_d_res, b_ratio_d=b_ratio_d)
-      b_bp_res = b_bphy_hereon(C_0=C_0, 
+                                      c_md_lambda_0_res=c_md_lambda_0_res,
+                                      a_md_lambda_0_res=a_md_lambda_0_res,
+                                      omega_d_lambda_0_res=omega_d_lambda_0_res)
+          b_md_res = scattering.b(a_md_res, c_md_res)
+
+          if len(c_bd_res)==0:
+            # attenuation biogenic detritus
+            c_bd_res = attenuation.c_bd(wavelengths=wavelengths,
+                                      C_phy=C_phy,
+                                      A_bd=A_bd,
+                                      S_bd=S_bd,
+                                      C_bd=C_bd,
+                                      lambda_0_c_d=lambda_0_c_d,
+                                      lambda_0_bd=lambda_0_bd,
+                                      gamma_d=gamma_d,
+                                      x0=x0,
+                                      x1=x1,
+                                      x2=x2,
+                                      c_bd_lambda_0_res=c_bd_lambda_0_res,
+                                      a_bd_lambda_0_res=a_bd_lambda_0_res,
+                                      omega_d_lambda_0_res=omega_d_lambda_0_res)
+
+
+
+        b_bd_res = scattering.b(a_bd_res, c_bd_res)
+        bb_bp_res = b_bd(b_bd_res, b_ratio_d=b_ratio_bd) + b_bd(b_md_res, b_ratio_d=b_ratio_md)
+      bb_p_res = b_bphy_hereon(C_0=C_0,
                                C_1=C_1, 
                                C_2=C_2, 
                                C_3=C_3, 
@@ -641,7 +681,8 @@ def b_b_total(wavelengths = np.arange(400,800),
                                b_ratio_C_6=b_ratio_C_6, 
                                b_ratio_C_7=b_ratio_C_7, 
                                wavelengths=wavelengths, 
-                               b_i_spec_res=b_i_spec_res) + b_bd_res
-    b_b = b_bp_res + b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res)
+                               b_i_spec_res=b_i_spec_res) + bb_bp_res
+
+    b_b = bb_p_res + b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res)
 
     return b_b
