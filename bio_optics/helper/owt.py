@@ -72,7 +72,7 @@ def qwip(avw):
     return qwip
     
     
-def qwip_score(R_rs, wavelengths):
+def qwip_score(R_rs, wavelengths, sensor='hyperspectral'):
     """
     Quality Water Index Polynomial score (QWIP score) [1].
 
@@ -80,9 +80,10 @@ def qwip_score(R_rs, wavelengths):
     
     :param wavelengths: All available wavelengths between 400 nm and 700 nm 
     :param R_rs: R_rs at respective wavelengths
+    :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
     :return: QWIP score
     """
-    qwip_score = ndi(R_rs[find_closest(wavelengths, 665)[1]], R_rs[find_closest(wavelengths, 492)[1]]) - qwip(avw(R_rs, wavelengths))
+    qwip_score = ndi(R_rs[find_closest(wavelengths, 665)[1]], R_rs[find_closest(wavelengths, 492)[1]]) - qwip(avw(R_rs=R_rs, wavelengths=wavelengths, sensor=sensor))
     return qwip_score
 
 
