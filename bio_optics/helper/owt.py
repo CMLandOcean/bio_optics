@@ -45,12 +45,16 @@ def avw(R_rs, wavelengths, sensor='hyperspectral'):
     :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
     :return:
     """ 
-    # Check the shape of wavelengths
-    if len(wavelengths.shape) == 1:  # If wavelengths is 1D
-        avw = np.sum(R_rs[(wavelengths>=400) & (wavelengths<=700)], axis=0) / np.sum(R_rs[(wavelengths>=400) & (wavelengths<=700)] / wavelengths[(wavelengths>=400) & (wavelengths<=700)], axis=0)
-    else:  # If wavelengths is 2D or 3D
-        mask = (wavelengths >= 400) & (wavelengths <= 700)
-        avw = np.sum(R_rs * mask[:, np.newaxis, np.newaxis], axis=0) / np.sum((R_rs / wavelengths) * mask[:, np.newaxis, np.newaxis], axis=0)
+    wavelength_mask = (wavelengths>=400) & (wavelengths<=700)
+
+    if len(R_rs.shape)==2:
+        wavelengths_array = wavelengths[wavelength_mask][:, np.newaxis]
+    elif len(R_rs.shape)==3:
+        wavelengths_array = wavelengths[wavelength_mask][:, np.newaxis, np.newaxis]
+    else:
+        wavelengths_array = wavelengths[wavelength_mask]
+
+    avw = np.sum(R_rs[wavelength_mask], axis=0) / np.sum(R_rs[wavelength_mask] / wavelengths_array, axis=0)
     
     if sensor=='hyperspectral':
         return avw
