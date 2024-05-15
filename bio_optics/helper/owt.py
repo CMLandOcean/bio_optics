@@ -45,6 +45,11 @@ def avw(R_rs, wavelengths, sensor='hyperspectral'):
     :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
     :return:
     """ 
+    if len(R_rs.shape)==2:
+        wavelengths = wavelengths[:, np.newaxis]
+    elif len(R_rs.shape)==3:
+        wavelengths = wavelengths[:, np.newaxis, np.newaxis]
+        
     avw = np.sum(R_rs[(wavelengths>=400) & (wavelengths<=700)], axis=0) / np.sum(R_rs[(wavelengths>=400) & (wavelengths<=700)] / wavelengths[(wavelengths>=400) & (wavelengths<=700)], axis=0)
     
     if sensor=='hyperspectral':
