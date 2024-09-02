@@ -587,6 +587,7 @@ def invert(params,
         method (str, optional): _description_. Defaults to "least-squares".
         max_nfev (int, optional): _description_. Defaults to 400.
 
+
     Returns:
         _type_: _description_
     """
