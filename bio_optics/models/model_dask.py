@@ -61,7 +61,7 @@ def invert(params,
            b_X_norm_res=[],
            b_Mie_norm_res=[],
            R_i_b_res = [],
-           da_W_div_dT_res=[],
+           da_w_div_dT_res=[],
            E0_res=[],
            a_oz_res=[],
            a_ox_res=[],
@@ -96,7 +96,7 @@ def invert(params,
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time. Will be computed within function if not provided.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
-    :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
+    :param da_w_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
     :param E0_res: optional, precomputing E0 saves a lot of time. Will be computed within function if not provided.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time. Will be computed within function if not provided.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time. Will be computed within function if not provided.
@@ -134,7 +134,7 @@ def invert(params,
                              b_X_norm_res, 
                              b_Mie_norm_res, 
                              R_i_b_res, 
-                             da_W_div_dT_res,
+                             da_w_div_dT_res,
                              E0_res,
                              a_oz_res,
                              a_ox_res,
@@ -179,7 +179,7 @@ def invert(params,
                              b_X_norm_res, 
                              b_Mie_norm_res, 
                              R_i_b_res, 
-                             da_W_div_dT_res,
+                             da_w_div_dT_res,
                              E0_res,
                              a_oz_res,
                              a_ox_res,
@@ -485,7 +485,7 @@ def func2opt(parameters,
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time. Will be computed within function if not provided.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
-    :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
+    :param da_w_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
     :param E0_res: optional, precomputing E0 saves a lot of time. Will be computed within function if not provided.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time. Will be computed within function if not provided.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time. Will be computed within function if not provided.
