@@ -22,13 +22,13 @@ def b_rayleigh(wavelengths = np.arange(400,800),
     return b_rayleigh
 
 
-def R_rs_adjacency(C_adj=0.1,
-                   wavelengths = np.arange(400,800),
-                   lambda_r = 400,
-                   b_r_spec = 1,
-                   n_r = -4,
-                   R_bg=[],
-                   b_ray=[]):
+def Rrs_adjacency(C_adj=0.1,
+                  wavelengths = np.arange(400,800),
+                  lambda_r = 400,
+                  b_r_spec = 1,
+                  n_r = -4,
+                  R_bg=[],
+                  b_ray=[]):
     """_summary_
 
     Args:
@@ -41,7 +41,7 @@ def R_rs_adjacency(C_adj=0.1,
         b_ray (np.array, optional): Rayleigh scattering spectrum.
 
     Returns:
-        R_rs_adjacency: Estimate of adjacency radiance reflectance spectrum.
+        Rrs_adjacency: Estimate of adjacency radiance reflectance spectrum.
     """
     # if no R_bg is provided set to zero, i.e. no adjacency effect
     if len(R_bg)==0:
@@ -50,6 +50,6 @@ def R_rs_adjacency(C_adj=0.1,
     if len(b_ray)==0:
         b_ray = b_rayleigh(wavelengths=wavelengths, lambda_r=lambda_r, b_r_spec=b_r_spec, n_r=n_r)
     
-    R_rs_adjacency = C_adj * b_ray * R_bg
+    Rrs_adjacency = C_adj * b_ray * R_bg
     
-    return R_rs_adjacency
+    return Rrs_adjacency

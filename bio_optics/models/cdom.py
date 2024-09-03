@@ -2,7 +2,7 @@ import numpy as np
 from .. helper.utils import find_closest
 
 
-def hico(R_rs, wavelengths, lambda1=670, lambda2=490):
+def hico(Rrs, wavelengths, lambda1=670, lambda2=490):
     """
     Empirical CDOM model for the HICO mission [1]
     
@@ -14,13 +14,13 @@ def hico(R_rs, wavelengths, lambda1=670, lambda2=490):
     :param lambda_2: wavelength of second band [nm], default: 670
     :return: CDOM absorption at 412 nm [m-1]
     """
-    band1 = R_rs[find_closest(wavelengths, lambda1)[1]]
-    band2 = R_rs[find_closest(wavelengths, lambda2)[1]]
+    band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
+    band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
 
     return 0.8426 * (band1/band2) - 0.032
 
 
-def loisel(R_rs, wavelengths, lambda1=412, lambda2=555, sza=0):
+def loisel(Rrs, wavelengths, lambda1=412, lambda2=555, sza=0):
     """
     Semi-empirial CDOM model based on K_d [1]
     
@@ -33,8 +33,8 @@ def loisel(R_rs, wavelengths, lambda1=412, lambda2=555, sza=0):
     :param sza: sun zenith angle [deg]
     :return: CDOM absorption at 412 nm [m-1]
     """
-    band1 = R_rs[find_closest(wavelengths, lambda1)[1]]
-    band2 = R_rs[find_closest(wavelengths, lambda2)[1]]
+    band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
+    band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
     
     if sza==0:
         A, B, C, D = -0.0634808, 0.254858, -1.22384, -0.89454
@@ -53,7 +53,7 @@ def loisel(R_rs, wavelengths, lambda1=412, lambda2=555, sza=0):
     return a_CDOM412
 
 
-def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
+def mannino(Rrs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
     """
     Empirical model to estimate CDOM absorption [m-1] at a reference wavelengths (lambda0) at 443 nm, 412 nm or 355 nm.
     Coefficients are for MODIS-Aqua.
@@ -86,13 +86,13 @@ def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
     elif lambda0==355:
         a, b, c = -2.989, 5.004, 1.122 
 
-    band1 = R_rs[find_closest(wavelengths, lambda1)[1]]
-    band2 = R_rs[find_closest(wavelengths, lambda2)[1]]
+    band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
+    band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
 
     return np.log((band1/band2 - a) / b) / (-c)
 
 
-def ficek(R_rs, wavelengths, a=3.65, b=-1.93, lambda1=570, lambda2=655):
+def ficek(Rrs, wavelengths, a=3.65, b=-1.93, lambda1=570, lambda2=655):
     """
     Empirical model to estimate CDOM absorption [m-1] at 440 nm [1]
 
@@ -106,8 +106,8 @@ def ficek(R_rs, wavelengths, a=3.65, b=-1.93, lambda1=570, lambda2=655):
     Returns:
         CDOM absorption [m-1] at 440 nm
     """
-    band1 = R_rs[find_closest(wavelengths, lambda1)[1]]
-    band2 = R_rs[find_closest(wavelengths, lambda2)[1]]
+    band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
+    band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
 
     return a * (band1/band2)**b
 

@@ -62,9 +62,9 @@ def morel(wavelengths: np.array = np.arange(400,800),
     return b_bw
 
 
-def b_bw(wavelengths: np.array = np.arange(400,800), 
+def bb_w(wavelengths: np.array = np.arange(400,800), 
          fresh: bool = True,
-         b_bw_res = []):
+         bb_w_res = []):
     """
     Spectral backscattering coefficient of pure water according to Morel (1974) [1].
     
@@ -72,20 +72,20 @@ def b_bw(wavelengths: np.array = np.arange(400,800),
     
     :param wavelengths: wavelengths to compute b_bw for, default: np.arange(400,800)
     :param fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: True
-    :param b_bw_res: optional, precomputing b_bw before inversion saves a lot of time.
+    :param bb_w_res: optional, precomputing b_bw before inversion saves a lot of time.
     :return: spectral backscattering coefficients of pure water [m-1]
     """
-    if len(b_bw_res)==0:
-        b_bw = morel(wavelengths=wavelengths, fresh=fresh)
+    if len(bb_w_res)==0:
+        bb_w = morel(wavelengths=wavelengths, fresh=fresh)
     else:
-        b_bw = b_bw_res
+        bb_w = bb_w_res
     
-    return b_bw
+    return bb_w
 
 
-def b_bphy(C_phy: float = 0, 
+def bb_phy(C_phy: float = 0, 
            wavelengths: np.array = np.arange(400,800), 
-           b_bphy_spec: float = 0.0010,           
+           bb_phy_spec: float = 0.0010,           
            b_phy_norm_res = []):
     """
     Backscattering of phytoplankton resampled to specified wavelengths.
@@ -95,7 +95,7 @@ def b_bphy(C_phy: float = 0,
     
     :param C_phy: phytoplankton concentration [ug L-1], default: 0
     :param wavelengths: wavelengths to compute b_bphy for [nm], default: np.arange(400,800)
-    :param b_bphy_spec:  specific backscattering coefficient of phytoplankton at 550 nm in [m2 mg-1], default: 0.0010
+    :param bb_phy_spec:  specific backscattering coefficient of phytoplankton at 550 nm in [m2 mg-1], default: 0.0010
     :param b_phy_norm_res: optional, preresampling b_phy_norm before inversion saves a lot of time.
     :return:
 
@@ -106,13 +106,14 @@ def b_bphy(C_phy: float = 0,
     else:
         b_phy_norm = b_phy_norm_res
 
-    b_bphy = C_phy * b_bphy_spec * b_phy_norm
+    b_bphy = C_phy * bb_phy_spec * b_phy_norm
     
     return b_bphy
 
-def db_bphy_div_dC_phy(wavelengths: np.array = np.arange(400,800), 
-        b_bphy_spec: float = 0.0010,           
-        b_phy_norm_res: np.array = []):
+
+def dbb_phy_div_dC_phy(wavelengths: np.array = np.arange(400,800), 
+                       bb_phy_spec: float = 0.0010,  
+                       b_phy_norm_res: np.array = []):
     """
     # Math: \frac{\partial}{\partial C_{phy}}b_{b,phy} = \frac{\partial}{\partial C_{phy}}\left[C_{phy} * b_{b, phy}^* * b_{b, phy}^N(\lambda)\right] = b_{b, phy}^* * b_{b, phy}^N(\lambda)
     """
@@ -121,18 +122,20 @@ def db_bphy_div_dC_phy(wavelengths: np.array = np.arange(400,800),
     else:
         b_phy_norm = b_phy_norm_res
 
-    db_bphy_div_dC_phy = b_bphy_spec * b_phy_norm
+    dbb_phy_div_dC_phy = bb_phy_spec * b_phy_norm
     
-    return db_bphy_div_dC_phy
+    return dbb_phy_div_dC_phy
 
 
-def b_bX_norm(b_bX_norm_factor=1, wavelengths=np.arange(400,800)):
-    return np.ones(wavelengths.shape) * b_bX_norm_factor
+# def b_X_norm(b_X_norm_factor=1, 
+#              wavelengths=np.arange(400,800)):
+#     return np.ones(wavelengths.shape) * b_X_norm_factor
 
-def b_bX(C_X: float = 0,
+
+def bb_X(C_X: float = 0,
          wavelengths: np.array = np.arange(400,800),
-         b_bX_spec: float = 0.0086,
-         b_bX_norm_factor: float = 1,
+         bb_X_spec: float = 0.0086,
+         b_X_norm_factor: float = 1,
          b_X_norm_res = []):
     """
     Spectral backscattering coefficient of particles of type I defined by a normalized scattering coefficient with arbitrary wavelength dependency [1].
@@ -143,43 +146,47 @@ def b_bX(C_X: float = 0,
     
     :param C_X: concentration of non-algal particles type I [mg L-1], default: 0
     :param wavelengths: wavelengths to compute b_bX for [nm], default: np.arange(400,800)
-    :param b_bX_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param b_bX_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
+    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
+    :param bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time.
     :return: spectral backscattering coefficient of particles of type I
     """
     if len(b_X_norm_res)==0:
-        b_X_norm = np.ones(wavelengths.shape) * b_bX_norm_factor
+        b_X_norm = np.ones(wavelengths.shape) * b_X_norm_factor
     else:
         b_X_norm = b_X_norm_res
         
-    b_bX = C_X * b_bX_spec * b_X_norm
+    bb_X = C_X * bb_X_spec * b_X_norm
     
-    return b_bX
+    return bb_X
 
-def db_bX_div_dC_X(wavelengths: np.array = np.arange(400,800),
-        b_bX_spec: float = 0.0086,
-        b_bX_norm_factor: float = 1,
-        b_X_norm_res = []):
+
+def dbb_X_div_dC_X(wavelengths: np.array = np.arange(400,800),
+                   bb_X_spec: float = 0.0086,
+                   bb_X_norm_factor: float = 1,
+                   b_X_norm_res = []):
     """
     # Math: \frac{\partial}{\partial C_X} b_{b,x} = \frac{\partial}{\partial C_X}\left[C_X * b_{b,X}^* * b_{b,X}^N(\lambda)\right] = b_{b,X}^* * b_{b,X}^N(\lambda)
     """
     if len(b_X_norm_res)==0:
-        b_X_norm = np.ones(wavelengths.shape) * b_bX_norm_factor
+        b_X_norm = np.ones(wavelengths.shape) * bb_X_norm_factor
     else:
         b_X_norm = b_X_norm_res
         
-    b_bX_div_C_X = b_bX_spec * b_X_norm
+    bb_X_div_C_X = bb_X_spec * b_X_norm
     
-    return b_bX_div_C_X
+    return bb_X_div_C_X
 
 
-def b_bMie_norm(wavelengths=np.arange(400, 800), lambda_S=500, n=-1):
+def bb_Mie_norm(wavelengths=np.arange(400, 800), 
+                lambda_S=500, 
+                n=-1):
     return (wavelengths/lambda_S)**n
 
-def b_bMie(C_Mie: float = 0,
+
+def bb_Mie(C_Mie: float = 0,
            wavelengths: np.array = np.arange(400,800),
-           b_bMie_spec: float = 0.0042,
+           bb_Mie_spec: float = 0.0042,
            lambda_S: float = 500, 
            n: float = -1,
            b_Mie_norm_res=[]):
@@ -192,65 +199,67 @@ def b_bMie(C_Mie: float = 0,
     
     :param C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
     :param wavelengths: wavelengths to compute b_bMie for [nm], default: np.arange(400,800)
-    :param b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1], default: 0.0042
+    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1], default: 0.0042
     :param lambda_S: reference wavelength [nm], default: 500 nm
     :param n: Angström exponent of particle type II backscattering, default: -1
-    :param b_bMie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
+    :param bb_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
     :return: spectral backscattering coefficient of particles of type II
 
     # Math: b_{b,Mie} = C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n
     """
     if len(b_Mie_norm_res)==0:
-        b_bMie = C_Mie * b_bMie_spec * ((wavelengths/lambda_S)**n)
+        bb_Mie = C_Mie * bb_Mie_spec * ((wavelengths/lambda_S)**n)
     else:
-        b_bMie = C_Mie * b_bMie_spec * b_Mie_norm_res
+        bb_Mie = C_Mie * bb_Mie_spec * b_Mie_norm_res
     
-    return b_bMie
+    return bb_Mie
 
-def db_bMie_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
-        b_bMie_spec: float = 0.0042,
+
+def dbb_Mie_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
+        bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        b_bMie_norm_res=[]):
+        bb_Mie_norm_res=[]):
     """
     # Math: \frac{\partial}{\partial C_{Mie}}b_{b,Mie} = \frac{\partial}{\partial C_{Mie}}\left[C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n \right] = b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n
     """
-    if len(b_bMie_norm_res) == 0:
-        b_bMie_norm = (wavelengths/lambda_S)**n
+    if len(bb_Mie_norm_res) == 0:
+        bb_Mie_norm = (wavelengths/lambda_S)**n
     else:
-        b_bMie_norm = b_bMie_norm_res
+        bb_Mie_norm = bb_Mie_norm_res
 
-    db_bMie_div_dC_Mie = b_bMie_spec * b_bMie_norm
+    dbb_Mie_div_dC_Mie = bb_Mie_spec * bb_Mie_norm
 
-    return db_bMie_div_dC_Mie
+    return dbb_Mie_div_dC_Mie
 
-def db_Mie_div_dn(C_Mie: float = 0,
+
+def dbb_Mie_div_dn(C_Mie: float = 0,
         wavelengths: np.array = np.arange(400,800),
-        b_bMie_spec: float = 0.0042,
+        bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        b_bMie_norm_res=[]):
+        bb_Mie_norm_res=[]):
     """
     # Math: \frac{\partial}{\partial n} \left[C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n \right] = C_{Mie} * b_{b,Mie} * ln(\frac{\lambda}{\lambda_S}) (\frac{\lambda}{\lambda_S})^n
     """
-    if len(b_bMie_norm_res) == 0:
-        b_bMie_norm = (wavelengths/lambda_S)**n
+    if len(bb_Mie_norm_res) == 0:
+        bb_Mie_norm = (wavelengths/lambda_S)**n
     else:
-        b_bMie_norm = b_bMie_norm_res
+        bb_Mie_norm = bb_Mie_norm_res
 
-    b_bMie_div_dn = C_Mie * b_bMie_spec * np.log(wavelengths/lambda_S) * b_bMie_norm
+    bb_Mie_div_dn = C_Mie * bb_Mie_spec * np.log(wavelengths/lambda_S) * bb_Mie_norm
 
-    return b_bMie_div_dn
+    return bb_Mie_div_dn
 
 
-def b_bNAP(C_X: float = 0,
+def bb_NAP(C_X: float = 0,
            C_Mie: float = 0,
            wavelengths = np.arange(400,800),
-           b_bMie_spec: float = 0.0042,
+           bb_Mie_spec: float = 0.0042,
            lambda_S: float = 500, 
            n: float = -1,
-           b_bX_spec: float = 0.0086,
-           b_bX_norm_factor: float = 1,
+           bb_X_spec: float = 0.0086,
+           bb_X_norm_factor: float = 1,
            b_X_norm_res = [],
            b_Mie_norm_res = []):
     """
@@ -262,70 +271,72 @@ def b_bNAP(C_X: float = 0,
     :param C_X: concentration of non-algal particles type I [mg L-1], default: 0
     :param C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
     :param wavelengths: wavelengths to compute b_bNAP for [nm], default: np.arange(400,800)
-    :param b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
+    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
     :param lambda_S: reference wavelength for scattering particles type II [nm], default: 500 nm
     :param n: Angström exponent of particle type II backscattering, default: -1
-    :param b_bX_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param b_bX_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
+    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
+    :param bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
     :return: spectral backscattering coefficient of NAP
     """
-    b_bNAP = b_bX(C_X=C_X, wavelengths=wavelengths, b_bX_spec=b_bX_spec, b_bX_norm_factor=b_bX_norm_factor, b_X_norm_res=b_X_norm_res) + \
-             b_bMie(C_Mie=C_Mie, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_Mie_norm_res=b_Mie_norm_res)
+    bb_NAP = bb_X(C_X=C_X, wavelengths=wavelengths, bb_X_spec=bb_X_spec, b_X_norm_factor=bb_X_norm_factor, b_X_norm_res=b_X_norm_res) + \
+             bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, b_Mie_norm_res=b_Mie_norm_res)
     
-    return b_bNAP
+    return bb_NAP
 
-def db_bNAP_div_dC_X(wavelengths: np.array = np.arange(400,800),
-        b_bX_spec: float = 0.0086,
-        b_bX_norm_factor: float = 1,
-        b_X_norm_res: np.array = []):
+
+def dbb_NAP_div_dC_X(wavelengths: np.array = np.arange(400,800),
+                     bb_X_spec: float = 0.0086,
+                     bb_X_norm_factor: float = 1,
+                     b_X_norm_res: np.array = []):
     """
     # Math: b_{b,NAP} = b_{b,X} + b_{b,Mie}
     # Math: \frac{\partial}{\partial C_X}b_{b,NAP} = \frac{\partial}{\partial C_X}b_{b,X}
     """
-    return db_bX_div_dC_X(wavelengths=wavelengths, b_bX_spec=b_bX_spec, b_bX_norm_factor=b_bX_norm_factor, b_X_norm_res=b_X_norm_res)
+    return dbb_X_div_dC_X(wavelengths=wavelengths, bb_X_spec=bb_X_spec, bb_X_norm_factor=bb_X_norm_factor, b_X_norm_res=b_X_norm_res)
 
-def db_bNAP_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
-        b_bMie_spec: float = 0.0042,
+
+def dbb_NAP_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
+        bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n=-1,
-        b_bMie_norm_res=[]):
+        bb_Mie_norm_res=[]):
     """
     # Math: b_{b,NAP} = b_{b,X} + b_{b,Mie}
     # Math: \frac{\partial}{\partial C_{Mie}}b_{b,NAP} = \frac{\partial}{\partial C_{Mie}}b_{b,Mie}
     """
-    return db_bMie_div_dC_Mie(wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_bMie_norm_res=b_bMie_norm_res)
+    return dbb_Mie_div_dC_Mie(wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, bb_Mie_norm_res=bb_Mie_norm_res)
 
-def db_NAP_div_dn(C_Mie: float = 0,
+def dbb_NAP_div_dn(C_Mie: float = 0,
         wavelengths: np.array = np.arange(400,800),
-        b_bMie_spec: float = 0.0042,
+        bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        b_bMie_norm_res=[]):
+        bb_Mie_norm_res=[]):
     """
     # Math: b_{b,NAP} = b_{b,X} + b_{b,Mie}
     # Math: \frac{\partial}{\partial n}b_{b,NAP} = \frac{\partial}{\partial n}b_{b,Mie}
     """
-    return db_Mie_div_dn(C_Mie=C_Mie, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_bMie_norm_res=b_bMie_norm_res)
+    return dbb_Mie_div_dn(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, bb_Mie_norm_res=bb_Mie_norm_res)
 
 
-def b_b(C_X: float = 0,
+def bb(C_X: float = 0,
         C_Mie: float = 0,
         C_phy: float  = 0,
         wavelengths: np.array = np.arange(400,800),
         fresh: bool = True,
-        b_bMie_spec: float = 0.0042,
+        bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        b_bX_spec: float = 0.0086,
-        b_bX_norm_factor: float = 1,
-        b_bphy_spec: float = 0.0010,
-        b_bw_res = [],
+        bb_X_spec: float = 0.0086,
+        b_X_norm_factor: float = 1,
+        bb_phy_spec: float = 0.0010,
+        bb_w_res = [],
         b_phy_norm_res = [],
         b_X_norm_res=[],
         b_Mie_norm_res=[],
-        b_b_res=[]
+        bb_res=[]
         ):
     """
     Spectral backscattering coefficient of a natural water body as the sum of the backscattering coefficients of pure water, phytoplankton and non-algal particles [1].
@@ -338,75 +349,75 @@ def b_b(C_X: float = 0,
     :param C_phy: phytoplankton concentration [ug L-1], default: 0
     :param wavelengths: wavelengths to compute b_b for [nm], default: np.arange(400,800)
     :param fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: True
-    :param b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
+    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
     :param lambda_S: reference wavelength for scattering particles type II [nm], default: 500 nm
     :param n: Angström exponent of particle type II backscattering, default: -1
-    :param b_bX_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param b_bX_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
-    :param b_bphy_spec:  specific backscattering coefficient at 550 nm in [m2 mg-1], default: 0.0010
-    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion.
+    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
+    :param bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
+    :param bb_phy_spec:  specific backscattering coefficient at 550 nm in [m2 mg-1], default: 0.0010
+    :param bb_w_res: optional, precomputing b_bw b_bw saves a lot of time during inversion.
     :param b_phy_norm_res: optional, preresampling b_phy_norm saves a lot of time during inversion.
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
     :return:
     """  
-    if len(b_b_res)==0:
-        b_b = b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res) + \
-            b_bNAP(C_Mie=C_Mie, C_X=C_X, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_bX_spec=b_bX_spec, b_bX_norm_factor=b_bX_norm_factor, b_X_norm_res=b_X_norm_res, b_Mie_norm_res=b_Mie_norm_res) + \
-            b_bphy(wavelengths=wavelengths, C_phy=C_phy, b_bphy_spec=b_bphy_spec, b_phy_norm_res=b_phy_norm_res)
+    if len(bb_res)==0:
+        bb = bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
+              bb_NAP(C_Mie=C_Mie, C_X=C_X, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, bb_X_spec=bb_X_spec, bb_X_norm_factor=b_X_norm_factor, b_X_norm_res=b_X_norm_res, b_Mie_norm_res=b_Mie_norm_res) + \
+              bb_phy(wavelengths=wavelengths, C_phy=C_phy, bb_phy_spec=bb_phy_spec, b_phy_norm_res=b_phy_norm_res)
         
     else:
-        b_b = b_b_res
+        bb = bb_res
     
-    return b_b
+    return bb
 
-def db_b_div_dC_X(wavelengths: np.array = np.arange(400,800),
-        b_bX_spec: float = 0.0086,
-        b_bX_norm_factor: float = 1,
+def dbb_div_dC_X(wavelengths: np.array = np.arange(400,800),
+        bb_X_spec: float = 0.0086,
+        bb_X_norm_factor: float = 1,
         b_X_norm_res=[]
         ):
     """
     # Math: \frac{\partial}{\partial C_X} b_b(\lambda) = \frac{\partial}{\partial C_X} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial C_X}b_{b,NAP}(\lambda)
     """  
-    db_b_div_dC_X = db_bNAP_div_dC_X(wavelengths=wavelengths, b_bX_spec=b_bX_spec, b_bX_norm_factor=b_bX_norm_factor, b_X_norm_res=b_X_norm_res)
+    dbb_div_dC_X = dbb_NAP_div_dC_X(wavelengths=wavelengths, bb_X_spec=bb_X_spec, bb_X_norm_factor=bb_X_norm_factor, b_X_norm_res=b_X_norm_res)
     
-    return db_b_div_dC_X
+    return dbb_div_dC_X
 
-def db_b_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
+def dbb_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
         n=-1,
-        b_bMie_spec: float = 0.0042,
+        bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
-        b_bMie_norm_res=[]):
+        bb_Mie_norm_res=[]):
     """
     # Math: \frac{\partial}{\partial C_{Mie}} b_b(\lambda) = \frac{\partial}{\partial C_{Mie}} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial C_{Mie}}b_{b,NAP}(\lambda)
     """  
-    db_b_div_dC_Mie = db_bNAP_div_dC_Mie(wavelengths=wavelengths, n=n, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, b_bMie_norm_res=b_bMie_norm_res)
+    dbb_div_dC_Mie = dbb_NAP_div_dC_Mie(wavelengths=wavelengths, n=n, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, bb_Mie_norm_res=bb_Mie_norm_res)
 
-    return db_b_div_dC_Mie
+    return dbb_div_dC_Mie
 
-def db_b_div_dn(C_Mie: float = 0,
+def dbb_div_dn(C_Mie: float = 0,
     wavelengths: np.array = np.arange(400,800),
-    b_bMie_spec: float = 0.0042,
+    bb_Mie_spec: float = 0.0042,
     lambda_S: float = 500, 
     n: float = -1,
-    b_bMie_norm_res=[]):
+    bb_Mie_norm_res=[]):
     """
     # Math: \frac{\partial}{\partial n} b_b(\lambda) = \frac{\partial}{\partial n} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial n}b_{b,NAP}(\lambda)
     """  
-    db_b_div_dn = db_NAP_div_dn(C_Mie=C_Mie, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n, b_bMie_norm_res=b_bMie_norm_res)
+    dbb_div_dn = dbb_NAP_div_dn(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, bb_Mie_norm_res=bb_Mie_norm_res)
     
-    return db_b_div_dn
+    return dbb_div_dn
 
-def db_b_div_dC_phy(wavelengths: np.array = np.arange(400,800),
-        b_bphy_spec: float = 0.0010,
+def dbb_div_dC_phy(wavelengths: np.array = np.arange(400,800),
+        bb_phy_spec: float = 0.0010,
         b_phy_norm_res: np.array = [],
         ):
     """
     # Math: \frac{\partial}{\partial C_{phy}} b_b(\lambda) = \frac{\partial}{\partial C_{phy}} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial C_{phy}}b_{b,phy}(\lambda)
     """  
-    db_b_div_dC_phy = db_bphy_div_dC_phy(wavelengths=wavelengths, b_bphy_spec=b_bphy_spec, b_phy_norm_res=b_phy_norm_res)
+    dbb_div_dC_phy = dbb_phy_div_dC_phy(wavelengths=wavelengths, bb_phy_spec=bb_phy_spec, b_phy_norm_res=b_phy_norm_res)
     
-    return db_b_div_dC_phy
+    return dbb_div_dC_phy
 
 
 ################
@@ -414,7 +425,7 @@ def db_b_div_dC_phy(wavelengths: np.array = np.arange(400,800),
 ################
 
 
-def b_bphy_hereon(C_0 = 0,
+def bb_phy_hereon(C_0 = 0,
                   C_1 = 0,
                   C_2 = 0,
                   C_3 = 0,
@@ -422,16 +433,16 @@ def b_bphy_hereon(C_0 = 0,
                   C_5 = 0,
                   C_6 = 0,
                   C_7 = 0,
-                  b_ratio_C_0 = 0.002,
-                  b_ratio_C_1 = 0.002,
-                  b_ratio_C_2 = 0.002,
-                  b_ratio_C_3 = 0.002,
-                  b_ratio_C_4 = 0.002, 
-                  b_ratio_C_5 = 0.002, 
-                  b_ratio_C_6 = 0.002, 
-                  b_ratio_C_7 = 0.002, 
+                  bb_ratio_C_0 = 0.002,
+                  bb_ratio_C_1 = 0.002,
+                  bb_ratio_C_2 = 0.002,
+                  bb_ratio_C_3 = 0.002,
+                  bb_ratio_C_4 = 0.002, 
+                  bb_ratio_C_5 = 0.002, 
+                  bb_ratio_C_6 = 0.002, 
+                  bb_ratio_C_7 = 0.002, 
                   wavelengths = np.arange(400,800),
-                  b_i_spec_res = []):
+                  bb_i_spec_res = []):
     """
     Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_7).
     
@@ -449,20 +460,20 @@ def b_bphy_hereon(C_0 = 0,
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
 
-    b_ratio_C_i = np.array([b_ratio_C_0, b_ratio_C_1, b_ratio_C_2, b_ratio_C_3, b_ratio_C_4, b_ratio_C_5, b_ratio_C_6, b_ratio_C_7])
+    bb_ratio_C_i = np.array([bb_ratio_C_0, bb_ratio_C_1, bb_ratio_C_2, bb_ratio_C_3, bb_ratio_C_4, bb_ratio_C_5, bb_ratio_C_6, bb_ratio_C_7])
     
-    if len(b_i_spec_res)==0:
+    if len(bb_i_spec_res)==0:
         b_i_spec = resampling.resample_b_i_spec_EnSAD(wavelengths=wavelengths)
     else:
-        b_i_spec = b_i_spec_res
+        b_i_spec = bb_i_spec_res
     
-    b_bphy = 0
-    for i in range(b_i_spec.shape[1]): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
+    bb_phy = 0
+    for i in range(b_i_spec.shape[1]): bb_phy += bb_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
     
-    return b_bphy
+    return bb_phy
 
 
-def b_bd(b_d, b_ratio_d=0.0216):
+def bb_d(b_d, bb_ratio_d=0.0216):
     """
     Backscattering coefficient of detritus [m-1]
 
@@ -473,10 +484,10 @@ def b_bd(b_d, b_ratio_d=0.0216):
     Returns:
         np.array: Backscattering coefficient of detritus [m-1]
     """
-    return b_ratio_d * b_d
+    return bb_ratio_d * b_d
 
 
-def b_b_total(wavelengths = np.arange(400,800),
+def bb_total(wavelengths = np.arange(400,800),
          C_0 = 0,
          C_1 = 0,
          C_2 = 0,
@@ -486,15 +497,15 @@ def b_b_total(wavelengths = np.arange(400,800),
          C_6 = 0,
          C_7 = 0,
          C_ism = 0,
-         b_ratio_C_0 = 0.002,
-         b_ratio_C_1 = 0.002,
-         b_ratio_C_2 = 0.002,
-         b_ratio_C_3 = 0.002,
-         b_ratio_C_4 = 0.002, 
-         b_ratio_C_5 = 0.002, 
-         b_ratio_C_6 = 0.002, 
-         b_ratio_C_7 = 0.002, 
-         b_ratio_d = 0.0216,
+         bb_ratio_C_0 = 0.002,
+         bb_ratio_C_1 = 0.002,
+         bb_ratio_C_2 = 0.002,
+         bb_ratio_C_3 = 0.002,
+         bb_ratio_C_4 = 0.002, 
+         bb_ratio_C_5 = 0.002, 
+         bb_ratio_C_6 = 0.002, 
+         bb_ratio_C_7 = 0.002, 
+         bb_ratio_d = 0.0216,
          fresh=False,
          A_md=13.4685e-3, 
          A_bd=0.3893e-3, 
@@ -517,9 +528,9 @@ def b_b_total(wavelengths = np.arange(400,800),
          a_md_spec_res=[],
          a_bd_spec_res=[],
          b_d_res = [],
-         b_bd_res = [],
-         b_bp_res = [],
-         b_bw_res = [],
+         bb_d_res = [],
+         bb_p_res = [],
+         bb_w_res = [],
          b_i_spec_res = [],
          c_d_res = []):
     """
@@ -532,7 +543,7 @@ def b_b_total(wavelengths = np.arange(400,800),
         C_0 (int, optional): _description_. Defaults to 0.
         C_1 (int, optional): _description_. Defaults to 0.
         C_2 (int, optional): _description_. Defaults to 0.
-        C_3 (int, optional): _description_. Defaults to 0.
+        Cbb_w_res optional): _description_. Defaults to 0.
         C_4 (int, optional): _description_. Defaults to 0.
         C_5 (int, optional): _description_. Defaults to 0.
         C_ism (int, optional): _description_. Defaults to 0.
@@ -565,9 +576,9 @@ def b_b_total(wavelengths = np.arange(400,800),
         a_md_spec_res (list, optional): _description_. Defaults to [].
         a_bd_spec_res (list, optional): _description_. Defaults to [].
         b_d_res (list, optional): _description_. Defaults to [].
-        b_bd_res (list, optional): _description_. Defaults to [].
-        b_bp_res (list, optional): _description_. Defaults to [].
-        b_bw_res (list, optional): _description_. Defaults to [].
+        bb_d_res (list, optional): _description_. Defaults to [].
+        bb_p_res (list, optional): _description_. Defaults to [].
+        bb_w_res (list, optional): _description_. Defaults to [].
         b_i_spec_res (list, optional): _description_. Defaults to [].
         c_d_res (list, optional): _description_. Defaults to [].
 
@@ -576,10 +587,10 @@ def b_b_total(wavelengths = np.arange(400,800),
     """
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
-    if len(b_bp_res)==0:
-      # compute b_bp
-      if len(b_bd_res)==0:
-        # compute b_bd
+    if len(bb_p_res)==0:
+      # compute bb_p
+      if len(bb_d_res)==0:
+        # compute bb_d
         if len(b_d_res)==0:
           # compute b_d
           if len(a_d_res)==0:
@@ -623,8 +634,8 @@ def b_b_total(wavelengths = np.arange(400,800),
                                       a_md_spec_res=a_md_spec_res,
                                       a_bd_spec_res=a_bd_spec_res)
           b_d_res = scattering.b(a_d_res, c_d_res)
-        b_bd_res = b_bd(b_d_res, b_ratio_d=b_ratio_d)
-      b_bp_res = b_bphy_hereon(C_0=C_0, 
+        bb_d_res = bb_d(b_d_res, bb_ratio_d=bb_ratio_d)
+      bb_p_res = bb_phy_hereon(C_0=C_0, 
                                C_1=C_1, 
                                C_2=C_2, 
                                C_3=C_3, 
@@ -632,16 +643,16 @@ def b_b_total(wavelengths = np.arange(400,800),
                                C_5=C_5, 
                                C_6=C_6,
                                C_7=C_7,
-                               b_ratio_C_0=b_ratio_C_0, 
-                               b_ratio_C_1=b_ratio_C_1, 
-                               b_ratio_C_2=b_ratio_C_2, 
-                               b_ratio_C_3=b_ratio_C_3, 
-                               b_ratio_C_4=b_ratio_C_4, 
-                               b_ratio_C_5=b_ratio_C_5, 
-                               b_ratio_C_6=b_ratio_C_6, 
-                               b_ratio_C_7=b_ratio_C_7, 
+                               bb_ratio_C_0=bb_ratio_C_0, 
+                               bb_ratio_C_1=bb_ratio_C_1, 
+                               bb_ratio_C_2=bb_ratio_C_2, 
+                               bb_ratio_C_3=bb_ratio_C_3, 
+                               bb_ratio_C_4=bb_ratio_C_4, 
+                               bb_ratio_C_5=bb_ratio_C_5, 
+                               bb_ratio_C_6=bb_ratio_C_6, 
+                               bb_ratio_C_7=bb_ratio_C_7, 
                                wavelengths=wavelengths, 
-                               b_i_spec_res=b_i_spec_res) + b_bd_res
-    b_b = b_bp_res + b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res)
+                               bb_i_spec_res=b_i_spec_res) + bb_d_res
+    bb = bb_p_res + bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res)
 
-    return b_b
+    return bb

@@ -44,8 +44,8 @@ from .. water import albert_mobley as water_alg
 from .. atmosphere import sky_radiance, downwelling_irradiance
 from .. surface import surface, air_water
 
-def residual(R_rs_sim, 
-             R_rs,
+def residual(Rrs_sim, 
+             Rrs,
              weights = [],
              ):
     """
@@ -57,11 +57,12 @@ def residual(R_rs_sim,
     """
     
     if len(weights)==0:
-        err = (R_rs_sim - R_rs)
+        err = (Rrs_sim - Rrs)
     else:
-        err = (R_rs_sim - R_rs) * weights
+        err = (Rrs_sim - Rrs) * weights
         
     return err
+
 
 def get_residuals(fun, data, weights=[]):
     """
@@ -81,6 +82,7 @@ def get_residuals(fun, data, weights=[]):
             return (fun(*args4inner, **kwargs4inner) - data) * weights
     
     return compositefun
+
 
 def get_fun_shim(fun, wavelengths, fit_param_names, params_obj):
     """
@@ -106,6 +108,7 @@ def get_fun_shim(fun, wavelengths, fit_param_names, params_obj):
 
     return outer_fun
 
+
 def get_dfun_shim(dfun, wavelengths, fit_param_names, params_obj):
     """
     This is a function decorator i.e. the return value of this function is
@@ -130,29 +133,30 @@ def get_dfun_shim(dfun, wavelengths, fit_param_names, params_obj):
 
     return outer_fun
 
+
 def forward(parameters,
         wavelengths,
         a_res=[],
-        b_b_res=[],
+        bb_res=[],
         a_w_res=[],
-        da_W_div_dT_res=[],
+        da_w_div_dT_res=[],
         a_i_spec_res=[],
         a_Y_N_res = [],
         a_NAP_N_res = [],
         b_phy_norm_res = [],
-        b_bw_res = [],
+        bb_w_res = [],
         b_X_norm_res=[],
         b_Mie_norm_res=[],
         R_i_b_res = [],
-        E_0_res=[],
+        E0_res=[],
         a_oz_res=[],
         a_ox_res=[],
         a_wv_res=[],
-        E_dd_res=[],
-        E_dsa_res=[],
-        E_dsr_res=[],
-        E_d_res=[],
-        E_ds_res=[],
+        Ed_d_res=[],
+        Ed_sa_res=[],
+        Ed_sr_res=[],
+        Ed_res=[],
+        Ed_s_res=[],
         n2_res=[],
         Ls_Ed=[]):
     """
@@ -185,95 +189,95 @@ def forward(parameters,
                             T_W=parameters["T_W"],
                             T_W_0=parameters["T_W_0"],
                             a_w_res=a_w_res,
-                            da_W_div_dT_res=da_W_div_dT_res, 
+                            da_w_div_dT_res=da_w_div_dT_res, 
                             a_i_spec_res=a_i_spec_res, 
                             a_Y_N_res=a_Y_N_res,
                             a_NAP_N_res=a_NAP_N_res)
     else:
         a_sim = a_res
     
-    if len(b_b_res) == 0:
-        b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
+    if len(bb_res) == 0:
+        bb_sim = backscattering.bb(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                             fresh=parameters["fresh"],
-                            b_bphy_spec=parameters["b_bphy_spec"],
-                            b_bMie_spec=parameters["b_bMie_spec"],
-                            b_bX_spec=parameters["b_bX_spec"],
-                            b_bX_norm_factor=parameters["b_bX_norm_factor"],
+                            bb_phy_spec=parameters["bb_phy_spec"],
+                            bb_Mie_spec=parameters["bb_Mie_spec"],
+                            bb_X_spec=parameters["bb_X_spec"],
+                            b_X_norm_factor=parameters["b_X_norm_factor"],
                             lambda_S=parameters["lambda_S"],
                             n=parameters["n"],
-                            b_bw_res=b_bw_res, 
+                            bb_w_res=bb_w_res, 
                             b_phy_norm_res=b_phy_norm_res, 
                             b_X_norm_res=b_X_norm_res, 
                             b_Mie_norm_res=b_Mie_norm_res)
     else:
-        b_b_sim = b_b_res
+        bb_sim = bb_res
 
-    Rrsb = bottom_reflectance.R_rs_b(parameters["f_0"], parameters["f_1"], parameters["f_2"], parameters["f_3"], parameters["f_4"], parameters["f_5"], B_0=parameters["B_0"], B_1=parameters["B_1"], B_2=parameters["B_2"], B_3=parameters["B_3"], B_4=parameters["B_4"], B_5=parameters["B_5"], wavelengths=wavelengths, R_i_b_res=R_i_b_res)
+    Rrsb = bottom_reflectance.Rrs_b(parameters["f_0"], parameters["f_1"], parameters["f_2"], parameters["f_3"], parameters["f_4"], parameters["f_5"], B_0=parameters["B_0"], B_1=parameters["B_1"], B_2=parameters["B_2"], B_3=parameters["B_3"], B_4=parameters["B_4"], B_5=parameters["B_5"], wavelengths=wavelengths, R_i_b_res=R_i_b_res)
 
-    ob = attenuation.omega_b(a_sim, b_b_sim) #ob is omega_b. Shortened to distinguish between new var and function params.
+    ob = attenuation.omega_b(a_sim, bb_sim) #ob is omega_b. Shortened to distinguish between new var and function params.
 
     frs = water_alg.f_rs(omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    rrsd = water_alg.r_rs_deep(f_rs=frs, omega_b=ob)
+    rrsd = water_alg.rrs_deep(f_rs=frs, omega_b=ob)
 
-    Kd =  attenuation.K_d(a=a_sim, b_b=b_b_sim, cos_t_sun_p=ctsp, kappa_0=parameters["kappa_0"])
+    Kd =  attenuation.Kd(a=a_sim, bb=bb_sim, cos_t_sun_p=ctsp, kappa_0=parameters["kappa_0"])
 
-    kuW = attenuation.k_uW(a=a_sim, b_b=b_b_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
+    kuW = attenuation.ku_w(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    kuB = attenuation.k_uB(a=a_sim, b_b=b_b_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
+    kuB = attenuation.ku_b(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    R_rs_water = air_water.below2above(water_alg.r_rs_shallow(r_rs_deep=rrsd, K_d=Kd, k_uW=kuW, zB=parameters["zB"], R_rs_b=Rrsb, k_uB=kuB)) # zeta & gamma
+    R_rs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_W=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
 
     if parameters["fit_surface"].value:
-        if len(E_dd_res) == 0:
-            E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
+        if len(Ed_d_res) == 0:
+            Ed_d  = downwelling_irradiance.Ed_d(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_d_res)
         else:
-            E_dd = E_dd_res
+            Ed_d = Ed_d_res
 
-        if len(E_dsa_res) == 0:
-            E_dsa = downwelling_irradiance.E_dsa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsa_res)
+        if len(Ed_sa_res) == 0:
+            Ed_sa = downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sa_res)
         else:
-            E_dsa = E_dsa_res
+            Ed_sa = Ed_sa_res
 
-        if len(E_dsr_res) == 0:
-            E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+        if len(Ed_sr_res) == 0:
+            Ed_sr = downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sr_res)
         else:
-            E_dsr = E_dsr_res
+            Ed_sr = Ed_sr_res
 
-        if len(E_ds_res) == 0:
-            E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+        if len(Ed_s_res) == 0:
+            E_ds = downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
         else:
-            E_ds = E_ds_res
+            E_ds = Ed_s_res
 
-        if len(E_d_res) == 0:
-            E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
+        if len(Ed_res) == 0:
+            Ed = downwelling_irradiance.Ed(Ed_d, E_ds, parameters["f_dd"], parameters["f_ds"])
         else:
-            E_d = E_d_res
+            Ed = Ed_res
 
-        L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], E_dd, parameters["f_ds"], parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
+        L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], Ed_d, parameters["f_ds"], parameters["g_dsr"], Ed_sr, parameters["g_dsa"], Ed_sa)
 
-        R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+        Rrs_surface = surface.Rrs_surf(L_s, Ed, rho_L, parameters["d_r"])
 
-        R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
+        Rrs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
-        R_rs_sim = R_rs_water + R_rs_surface + parameters["offset"]
-        return R_rs_sim
+        Rrs_sim = R_rs_water + Rrs_surface + parameters["offset"]
+        return Rrs_sim
      
     else:
-        R_rs_sim = R_rs_water + parameters["offset"]
-        return R_rs_sim
+        Rrs_sim = R_rs_water + parameters["offset"]
+        return Rrs_sim
 
 def forward_glint(parameters,
         wavelengths,
-        E_0_res=[],
+        E0_res=[],
         a_oz_res=[],
         a_ox_res=[],
         a_wv_res=[],
-        E_dd_res=[],
-        E_dsa_res=[],
-        E_dsr_res=[],
-        E_d_res=[],
-        E_ds_res=[],
+        Ed_d_res=[],
+        Ed_sa_res=[],
+        Ed_sr_res=[],
+        Ed_res=[],
+        Ed_s_res=[],
         n2_res=[],
         Ls_Ed=[]):
     
@@ -290,62 +294,62 @@ def forward_glint(parameters,
     if len(Ls_Ed) == 0:
         Ls_Ed = np.zeros_like(wavelengths)
 
-    if len(E_dd_res) == 0:
-        E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
+    if len(Ed_d_res) == 0:
+        Ed_d  = downwelling_irradiance.Ed_d(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_d_res)
     else:
-        E_dd = E_dd_res
+        Ed_d = Ed_d_res
 
-    if len(E_dsa_res) == 0:
-        E_dsa = downwelling_irradiance.E_dsa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsa_res)
+    if len(Ed_sa_res) == 0:
+        Ed_sa = downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sa_res)
     else:
-        E_dsa = E_dsa_res
+        Ed_sa = Ed_sa_res
 
-    if len(E_dsr_res) == 0:
-        E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+    if len(Ed_sr_res) == 0:
+        Ed_sr = downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sr_res)
     else:
-        E_dsr = E_dsr_res
+        Ed_sr = Ed_sr_res
 
-    if len(E_ds_res) == 0:
-        E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+    if len(Ed_s_res) == 0:
+        Ed_s = downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
     else:
-        E_ds = E_ds_res
+        Ed_s = Ed_s_res
 
-    if len(E_d_res) == 0:
-        E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
+    if len(Ed_res) == 0:
+        Ed = downwelling_irradiance.Ed(Ed_d, Ed_s, parameters["f_dd"], parameters["f_ds"])
     else:
-        E_d = E_d_res
+        Ed = Ed_res
 
-    L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], E_dd, parameters["f_ds"], parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
+    L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], Ed_d, parameters["f_ds"], parameters["g_dsr"], Ed_sr, parameters["g_dsa"], Ed_sa)
 
-    R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+    Rrs_surface = surface.Rrs_surf(L_s, Ed, rho_L, parameters["d_r"])
 
-    R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
+    Rrs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
-    return R_rs_surface
+    return Rrs_surface
 
 def dfun(parameters,
         wavelengths,
         a_res=[],
-        b_b_res=[],
+        bb_res=[],
         a_w_res=[],
-        da_W_div_dT_res=[],
+        da_w_div_dT_res=[],
         a_i_spec_res=[],
         a_Y_N_res = [],
         a_NAP_N_res = [],
         b_phy_norm_res = [],
-        b_bw_res = [],
+        bb_w_res = [],
         b_X_norm_res=[],
         b_Mie_norm_res=[],
         R_i_b_res = [],
-        E_0_res=[],
+        E0_res=[],
         a_oz_res=[],
         a_ox_res=[],
         a_wv_res=[],
-        E_dd_res=[],
-        E_dsa_res=[],
-        E_dsr_res=[],
-        E_d_res=[],
-        E_ds_res=[],
+        Ed_d_res=[],
+        Ed_sa_res=[],
+        Ed_sr_res=[],
+        Ed_res=[],
+        Ed_s_res=[],
         n2_res=[],
         Ls_Ed=[]):
 
@@ -383,87 +387,87 @@ def dfun(parameters,
                             T_W=parameters["T_W"],
                             T_W_0=parameters["T_W_0"],
                             a_w_res=a_w_res,
-                            da_W_div_dT_res=da_W_div_dT_res, 
+                            da_w_div_dT_res=da_w_div_dT_res, 
                             a_i_spec_res=a_i_spec_res, 
                             a_Y_N_res=a_Y_N_res,
                             a_NAP_N_res=a_NAP_N_res)
     else:
         a_sim = a_res
 
-    if len(b_b_res) == 0:
-        b_b_sim = backscattering.b_b(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
+    if len(bb_res) == 0:
+        bb_sim = backscattering.bb(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                             fresh=parameters["fresh"],
-                            b_bphy_spec=parameters["b_bphy_spec"],
-                            b_bMie_spec=parameters["b_bMie_spec"],
-                            b_bX_spec=parameters["b_bX_spec"],
-                            b_bX_norm_factor=parameters["b_bX_norm_factor"],
+                            bb_phy_spec=parameters["bb_phy_spec"],
+                            bb_Mie_spec=parameters["bb_Mie_spec"],
+                            bb_X_spec=parameters["bb_X_spec"],
+                            b_X_norm_factor=parameters["b_X_norm_factor"],
                             lambda_S=parameters["lambda_S"],
                             n=parameters["n"],
-                            b_bw_res=b_bw_res, 
+                            bb_w_res=bb_w_res, 
                             b_phy_norm_res=b_phy_norm_res, 
                             b_X_norm_res=b_X_norm_res, 
                             b_Mie_norm_res=b_Mie_norm_res)
     else:
-        b_b_sim = b_b_res
+        bb_sim = bb_res
 
-    Rrsb = bottom_reflectance.R_rs_b(parameters["f_0"], parameters["f_1"], parameters["f_2"], parameters["f_3"], parameters["f_4"], parameters["f_5"], B_0=parameters["B_0"], B_1=parameters["B_1"], B_2=parameters["B_2"], B_3=parameters["B_3"], B_4=parameters["B_4"], B_5=parameters["B_5"], wavelengths=wavelengths, R_i_b_res=R_i_b_res)
+    Rrsb = bottom_reflectance.Rrs_b(parameters["f_0"], parameters["f_1"], parameters["f_2"], parameters["f_3"], parameters["f_4"], parameters["f_5"], B_0=parameters["B_0"], B_1=parameters["B_1"], B_2=parameters["B_2"], B_3=parameters["B_3"], B_4=parameters["B_4"], B_5=parameters["B_5"], wavelengths=wavelengths, R_i_b_res=R_i_b_res)
 
-    ob = attenuation.omega_b(a_sim, b_b_sim) #ob is omega_b. Shortened to distinguish between new var and function params.
+    ob = attenuation.omega_b(a_sim, bb_sim) #ob is omega_b. Shortened to distinguish between new var and function params.
 
     frs = water_alg.f_rs(omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    rrsd = water_alg.r_rs_deep(f_rs=frs, omega_b=ob)
+    rrsd = water_alg.rrs_deep(f_rs=frs, omega_b=ob)
 
-    Kd =  attenuation.K_d(a=a_sim, b_b=b_b_sim, cos_t_sun_p=ctsp, kappa_0=parameters["kappa_0"])
+    Kd =  attenuation.Kd(a=a_sim, bb=bb_sim, cos_t_sun_p=ctsp, kappa_0=parameters["kappa_0"])
 
-    kuW = attenuation.k_uW(a=a_sim, b_b=b_b_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
+    kuW = attenuation.ku_w(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    kuB = attenuation.k_uB(a=a_sim, b_b=b_b_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
+    kuB = attenuation.ku_b(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    R_rs_water = air_water.below2above(water_alg.r_rs_shallow(r_rs_deep=rrsd, K_d=Kd, k_uW=kuW, zB=parameters["zB"], R_rs_b=Rrsb, k_uB=kuB)) # zeta & gamma
+    R_rs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_W=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
 
-    if len(E_dd_res) == 0:
-        E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
+    if len(Ed_d_res) == 0:
+        Ed_d  = downwelling_irradiance.Ed_d(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_d_res)
     else:
-        E_dd = E_dd_res
+        Ed_d = Ed_d_res
 
-    if len(E_dsa_res) == 0:
-        E_dsa = downwelling_irradiance.E_dsa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsa_res)
+    if len(Ed_sa_res) == 0:
+        Ed_sa = downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sa_res)
     else:
-        E_dsa = E_dsa_res
+        Ed_sa = Ed_sa_res
 
-    if len(E_dsr_res) == 0:
-        E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+    if len(Ed_sr_res) == 0:
+        Ed_sr = downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sr_res)
     else:
-        E_dsr = E_dsr_res
+        Ed_sr = Ed_sr_res
 
-    if len(E_ds_res) == 0:
-        E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+    if len(Ed_s_res) == 0:
+        Ed_s = downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
     else:
-        E_ds = E_ds_res
+        Ed_s = Ed_s_res
 
-    if len(E_d_res) == 0:
-        E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
+    if len(Ed_res) == 0:
+        Ed = downwelling_irradiance.Ed(Ed_d, Ed_s, parameters["f_dd"], parameters["f_ds"])
     else:
-        E_d = E_d_res
+        Ed = Ed_res
 
-    dbdcphy = backscattering.db_b_div_dC_phy(wavelengths=wavelengths, b_bphy_spec=parameters["b_bphy_spec"], b_phy_norm_res=b_phy_norm_res)
+    dbdcphy = backscattering.dbb_div_dC_phy(wavelengths=wavelengths, bb_phy_spec=parameters["b_bphy_spec"], b_phy_norm_res=b_phy_norm_res)
 
     def df_div_dC_0():
         dadC0   = absorption.da_div_dC_i(i=0, wavelengths=wavelengths, a_i_spec_res=a_i_spec_res)
-        domegadC0 = attenuation.domega_b_div_dp(a=a_sim, b_b=b_b_sim, da_div_dp=dadC0, db_b_div_dp=dbdcphy)
+        domegadC0 = attenuation.domega_b_div_dp(a=a_sim, bb=bb_sim, da_div_dp=dadC0, dbb_div_dp=dbdcphy)
         dfrsdC0 = water_alg.df_rs_div_dp(omega_b=ob, domega_b_div_dp=domegadC0, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
-        df_div_dC_0 = air_water.dbelow2above_div_dp(r_rs=R_rs_water, 
-                                                dr_rs_div_dp=water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC0, ob, domegadC0),
+        df_div_dC_0 = air_water.dbelow2above_div_dp(rrs=R_rs_water, 
+                                                dr_rs_div_dp=water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdC0, ob, domegadC0),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC0, dbdcphy, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadC0, dbdcphy, domegadC0, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadC0, dbdcphy, domegadC0, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadC0, dbdcphy, domegadC0, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadC0, dbdcphy, domegadC0, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
@@ -471,19 +475,19 @@ def dfun(parameters,
 
     def df_div_dC_1():
         dadC1   = absorption.da_div_dC_i(1, wavelengths, a_i_spec_res)
-        domegadC1 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC1, dbdcphy)
+        domegadC1 = attenuation.domega_b_div_dp(a_sim, bb_sim, dadC1, dbdcphy)
         dfrsdC1 = water_alg.df_rs_div_dp(ob, domegadC1, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_1 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC1, ob, domegadC1),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdC1, ob, domegadC1),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC1, dbdcphy, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadC1, dbdcphy, domegadC1, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadC1, dbdcphy, domegadC1, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadC1, dbdcphy, domegadC1, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadC1, dbdcphy, domegadC1, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
@@ -491,19 +495,19 @@ def dfun(parameters,
 
     def df_div_dC_2():
         dadC2   = absorption.da_div_dC_i(2, wavelengths, a_i_spec_res)
-        domegadC2 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC2, dbdcphy)
+        domegadC2 = attenuation.domega_b_div_dp(a_sim, bb_sim, dadC2, dbdcphy)
         dfrsdC2 = water_alg.df_rs_div_dp(ob, domegadC2, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_2 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC2, ob, domegadC2),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdC2, ob, domegadC2),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC2, dbdcphy, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadC2, dbdcphy, domegadC2, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadC2, dbdcphy, domegadC2, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadC2, dbdcphy, domegadC2, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadC2, dbdcphy, domegadC2, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
@@ -511,19 +515,19 @@ def dfun(parameters,
 
     def df_div_dC_3():
         dadC3   = absorption.da_div_dC_i(3, wavelengths, a_i_spec_res)
-        domegadC3 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC3, dbdcphy)
+        domegadC3 = attenuation.domega_b_div_dp(a_sim, bb_sim, dadC3, dbdcphy)
         dfrsdC3 = water_alg.df_rs_div_dp(ob, domegadC3, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_3 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC3, ob, domegadC3),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdC3, ob, domegadC3),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC3, dbdcphy, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadC3, dbdcphy, domegadC3, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadC3, dbdcphy, domegadC3, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadC3, dbdcphy, domegadC3, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadC3, dbdcphy, domegadC3, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
@@ -531,19 +535,19 @@ def dfun(parameters,
 
     def df_div_dC_4():
         dadC4   = absorption.da_div_dC_i(4, wavelengths, a_i_spec_res)
-        domegadC4 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC4, dbdcphy)
+        domegadC4 = attenuation.domega_b_div_dp(a_sim, bb_sim, dadC4, dbdcphy)
         dfrsdC4 = water_alg.df_rs_div_dp(ob, domegadC4, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_4 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC4, ob, domegadC4),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdC4, ob, domegadC4),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC4, dbdcphy, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadC4, dbdcphy, domegadC4, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadC4, dbdcphy, domegadC4, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadC4, dbdcphy, domegadC4, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadC4, dbdcphy, domegadC4, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
@@ -551,19 +555,19 @@ def dfun(parameters,
 
     def df_div_dC_5():
         dadC5   = absorption.da_div_dC_i(5, wavelengths, a_i_spec_res)
-        domegadC5 = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadC5, dbdcphy)
+        domegadC5 = attenuation.domega_b_div_dp(a_sim, bb_sim, dadC5, dbdcphy)
         dfrsdC5 = water_alg.df_rs_div_dp(ob, domegadC5, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
         df_div_dC_5 = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdC5, ob, domegadC5),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdC5, ob, domegadC5),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadC5, dbdcphy, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadC5, dbdcphy, domegadC5, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadC5, dbdcphy, domegadC5, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadC5, dbdcphy, domegadC5, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadC5, dbdcphy, domegadC5, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                             )
                                                 )
@@ -572,19 +576,19 @@ def dfun(parameters,
     def df_div_dC_Y():
         dadCY = absorption.da_div_dC_Y(wavelengths=wavelengths, S=parameters["S"], lambda_0=parameters["lambda_0"], a_Y_N_res=a_Y_N_res)
         dbdCY = 0
-        domegadCY = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCY, dbdCY)
+        domegadCY = attenuation.domega_b_div_dp(a_sim, bb_sim, dadCY, dbdCY)
         dfrsdCY = water_alg.df_rs_div_dp(ob, domegadCY)
         df_div_dC_Y = air_water.dbelow2above_div_dp(R_rs_water, 
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdCY, ob, domegadCY),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdCY, ob, domegadCY),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadCY, dbdCY, ctsp, parameters["kappa_0"]),
                                                                                 k_uW=kuW, 
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadCY, dbdCY, domegadCY, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadCY, dbdCY, domegadCY, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadCY, dbdCY, domegadCY, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadCY, dbdCY, domegadCY, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                                 )
                                                 )
@@ -592,20 +596,20 @@ def dfun(parameters,
         
     def df_div_dC_X():
         dadCX = absorption.da_div_dC_X(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
-        dbdCX = backscattering.db_b_div_dC_X(wavelengths=wavelengths, b_X_norm_res=b_X_norm_res)
-        domegadCX = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCX, dbdCX)
+        dbdCX = backscattering.dbb_div_dC_X(wavelengths=wavelengths, b_X_norm_res=b_X_norm_res)
+        domegadCX = attenuation.domega_b_div_dp(a_sim, bb_sim, dadCX, dbdCX)
         dfrsdCX = water_alg.df_rs_div_dp(ob, domegadCX)
         df_div_dC_X = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdCX, ob, domegadCX),
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdCX, ob, domegadCX),
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=attenuation.dK_d_div_dp(dadCX, dbdCX, ctsp, ctvp),
                                                                                 k_uW=kuW,
-                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadCX, dbdCX, domegadCX, ctsp, ctvp),
+                                                                                dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadCX, dbdCX, domegadCX, ctsp, ctvp),
                                                                                 r_rs_b=Rrsb,
                                                                                 d_r_rs_b_div_dp=0,
                                                                                 k_uB=kuB,
-                                                                                dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadCX, dbdCX, domegadCX, ctsp, ctvp),
+                                                                                dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadCX, dbdCX, domegadCX, ctsp, ctvp),
                                                                                 zB=parameters["zB"]
                                                                                 )                                                
                     )
@@ -613,20 +617,20 @@ def dfun(parameters,
 
     def df_div_dC_Mie():
         dadCMie = absorption.da_div_dC_Mie(wavelengths=wavelengths, lambda_0=parameters["lambda_0"], a_NAP_spec_lambda_0=parameters["a_NAP_spec_lambda_0"], S_NAP=parameters["S_NAP"], a_NAP_N_res=a_NAP_N_res)
-        dbdCMie = backscattering.db_b_div_dC_Mie(wavelengths=wavelengths, n=parameters["n"], b_bMie_spec=parameters["b_bMie_spec"], lambda_S=parameters["lambda_S"], b_bMie_norm_res=b_Mie_norm_res)
-        domegadCMie = attenuation.domega_b_div_dp(a_sim, b_b_sim, dadCMie, dbdCMie)
+        dbdCMie = backscattering.dbb_div_dC_Mie(wavelengths=wavelengths, n=parameters["n"], bb_Mie_spec=parameters["b_bMie_spec"], lambda_S=parameters["lambda_S"], bb_Mie_norm_res=b_Mie_norm_res)
+        domegadCMie = attenuation.domega_b_div_dp(a_sim, bb_sim, dadCMie, dbdCMie)
         dfrsdCMie = water_alg.df_rs_div_dp(ob, domegadCMie)
         df_div_dC_Mie = air_water.dbelow2above_div_dp(R_rs_water,
-                                                  water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                  dr_rs_deep_div_dp=water_alg.dr_rs_deep_div_dp(frs, dfrsdCMie, ob, domegadCMie),
+                                                  water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                  drrs_deep_div_dp=water_alg.drrs_deep_div_dp(frs, dfrsdCMie, ob, domegadCMie),
                                                                                   K_d=Kd,
                                                                                   dK_d_div_dp=attenuation.dK_d_div_dp(dadCMie, dbdCMie, ctsp, ctvp),
                                                                                   k_uW=kuW,
-                                                                                  dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, b_b_sim, ob, dadCMie, dbdCMie, domegadCMie, ctsp, ctvp),
+                                                                                  dk_uW_div_dp=attenuation.dk_uW_div_dp(a_sim, bb_sim, ob, dadCMie, dbdCMie, domegadCMie, ctsp, ctvp),
                                                                                   r_rs_b=Rrsb,
                                                                                   d_r_rs_b_div_dp=0,
                                                                                   k_uB=kuB,
-                                                                                  dk_uB_div_dp=attenuation.dk_uB_div_dp(a_sim, b_b_sim, ob, dadCMie, dbdCMie, domegadCMie, ctsp, ctvp),
+                                                                                  dk_uB_div_dp=attenuation.dku_B_div_dp(a_sim, bb_sim, ob, dadCMie, dbdCMie, domegadCMie, ctsp, ctvp),
                                                                                   zB=parameters["zB"]              
                                                                                 )
                     )
@@ -637,14 +641,14 @@ def dfun(parameters,
 
     def df_div_df_0():
         df_div_df_0 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=0,
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
                                                                                 k_uW=kuW,
                                                                                 dk_uW_div_dp=0,
                                                                                 r_rs_b=Rrsb,
-                                                                                d_r_rs_b_div_dp=bottom_reflectance.dR_rs_b_div_df_i(0, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
+                                                                                d_r_rs_b_div_dp=bottom_reflectance.dRrs_b_div_df_i(0, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
                                                                                 k_uB=kuB,
                                                                                 dk_uB_div_dp=0,
                                                                                 zB=parameters["zB"]
@@ -654,14 +658,14 @@ def dfun(parameters,
 
     def df_div_df_1():
         df_div_df_1 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=0,
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
                                                                                 k_uW=kuW,
                                                                                 dk_uW_div_dp=0,
                                                                                 r_rs_b=Rrsb,
-                                                                                d_r_rs_b_div_dp=bottom_reflectance.dR_rs_b_div_df_i(1, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
+                                                                                d_r_rs_b_div_dp=bottom_reflectance.dRrs_b_div_df_i(1, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
                                                                                 k_uB=kuB,
                                                                                 dk_uB_div_dp=0,
                                                                                 zB=parameters["zB"]
@@ -671,14 +675,14 @@ def dfun(parameters,
 
     def df_div_df_2():
         df_div_df_2 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=0,
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
                                                                                 k_uW=kuW,
                                                                                 dk_uW_div_dp=0,
                                                                                 r_rs_b=Rrsb,
-                                                                                d_r_rs_b_div_dp=bottom_reflectance.dR_rs_b_div_df_i(2, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
+                                                                                d_r_rs_b_div_dp=bottom_reflectance.dRrs_b_div_df_i(2, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
                                                                                 k_uB=kuB,
                                                                                 dk_uB_div_dp=0,
                                                                                 zB=parameters["zB"]
@@ -688,14 +692,14 @@ def dfun(parameters,
 
     def df_div_df_3():
         df_div_df_3 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=0,
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
                                                                                 k_uW=kuW,
                                                                                 dk_uW_div_dp=0,
                                                                                 r_rs_b=Rrsb,
-                                                                                d_r_rs_b_div_dp=bottom_reflectance.dR_rs_b_div_df_i(3, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
+                                                                                d_r_rs_b_div_dp=bottom_reflectance.dRrs_b_div_df_i(3, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
                                                                                 k_uB=kuB,
                                                                                 dk_uB_div_dp=0,
                                                                                 zB=parameters["zB"]
@@ -705,14 +709,14 @@ def dfun(parameters,
 
     def df_div_df_4():
         df_div_df_4 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=0,
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
                                                                                 k_uW=kuW,
                                                                                 dk_uW_div_dp=0,
                                                                                 r_rs_b=Rrsb,
-                                                                                d_r_rs_b_div_dp=bottom_reflectance.dR_rs_b_div_df_i(4, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
+                                                                                d_r_rs_b_div_dp=bottom_reflectance.dRrs_b_div_df_i(4, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
                                                                                 k_uB=kuB,
                                                                                 dk_uB_div_dp=0,
                                                                                 zB=parameters["zB"]
@@ -722,14 +726,14 @@ def dfun(parameters,
 
     def df_div_df_5():
         df_div_df_5 = air_water.dbelow2above_div_dp(R_rs_water,
-                                                water_alg.dr_rs_shallow_div_dp(r_rs_deep=rrsd,
-                                                                                dr_rs_deep_div_dp=0,
+                                                water_alg.drrs_shallow_div_dp(r_rs_deep=rrsd,
+                                                                                drrs_deep_div_dp=0,
                                                                                 K_d=Kd,
                                                                                 dK_d_div_dp=0,
                                                                                 k_uW=kuW,
                                                                                 dk_uW_div_dp=0,
                                                                                 r_rs_b=Rrsb,
-                                                                                d_r_rs_b_div_dp=bottom_reflectance.dR_rs_b_div_df_i(5, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
+                                                                                d_r_rs_b_div_dp=bottom_reflectance.dRrs_b_div_df_i(5, wavelengths=wavelengths, R_i_b_res=R_i_b_res),
                                                                                 k_uB=kuB,
                                                                                 dk_uB_div_dp=0,
                                                                                 zB=parameters["zB"]
@@ -739,7 +743,7 @@ def dfun(parameters,
 
     def df_div_dzB():
         df_div_d_zB = air_water.dbelow2above_div_dp(R_rs_water,
-                                                    water_alg.dr_rs_shallow_div_zB(r_rs_deep=rrsd,
+                                                    water_alg.drrs_shallow_div_zB(r_rs_deep=rrsd,
                                                                                 K_d=Kd,
                                                                                 k_uW=kuW,
                                                                                 r_rs_b=Rrsb,
@@ -751,15 +755,15 @@ def dfun(parameters,
     
     if parameters["fit_surface"].value:
         def df_div_dg_dd():
-            df_div_dg_dd  =  rho_L * (sky_radiance.d_LS_div_dg_dd(E_dd) / E_d)
+            df_div_dg_dd  =  rho_L * (sky_radiance.d_LS_div_dg_dd(Ed_d) / Ed)
             return df_div_dg_dd
         
         def df_div_dg_dsr():
-            df_div_dg_dsr = rho_L * (sky_radiance.d_LS_div_dg_dsr(E_dsr) / E_d)
+            df_div_dg_dsr = rho_L * (sky_radiance.d_LS_div_dg_dsr(Ed_sr) / Ed)
             return df_div_dg_dsr
 
         def df_div_dg_dsa():
-            df_div_dg_dsa = rho_L * (sky_radiance.d_LS_div_dg_dsa(E_dsa) / E_d)
+            df_div_dg_dsa = rho_L * (sky_radiance.d_LS_div_dg_dsa(Ed_sa) / Ed)
             return df_div_dg_dsa
     else:
         # A memoized instance of this variable will improve the relative speed gains
@@ -803,30 +807,30 @@ def dfun(parameters,
     return np.array(jacobian).T
 
 def invert(parameters: Parameters, 
-           R_rs, 
+           Rrs, 
            wavelengths,
            weights=[],
            a_res=[],
-           b_b_res=[],
+           bb_res=[],
            a_i_spec_res=[],
            a_w_res=[],
            a_Y_N_res = [],
            a_NAP_N_res = [],
            b_phy_norm_res = [],
-           b_bw_res = [],
+           bb_w_res = [],
            b_X_norm_res=[],
            b_Mie_norm_res=[],
            R_i_b_res = [],
-           da_W_div_dT_res=[],
-           E_0_res=[],
+           da_w_div_dT_res=[],
+           E0_res=[],
            a_oz_res=[],
            a_ox_res=[],
            a_wv_res=[],
-           E_dd_res=[],
-           E_dsa_res=[],
-           E_dsr_res=[],
-           E_d_res=[],
-           E_ds_res=[],
+           Ed_d_res=[],
+           Ed_sa_res=[],
+           Ed_sr_res=[],
+           Ed_res=[],
+           Ed_s_res=[],
            n2_res=[],
            Ls_Ed=[],
            method="least-squares", 
@@ -847,33 +851,33 @@ def invert(parameters: Parameters,
             fit_bounds[1].append(ret_params[param].max)
 
 
-    userfun  = get_fun_shim(get_residuals(forward, R_rs, weights), wavelengths, fit_param_names, ret_params)
+    userfun  = get_fun_shim(get_residuals(forward, Rrs, weights), wavelengths, fit_param_names, ret_params)
     userdfun = get_dfun_shim(dfun, wavelengths, fit_param_names, ret_params)
 
     if analytical:
         analytical_fit = least_squares(userfun, fit_params, bounds=fit_bounds, jac=userdfun,
                                     kwargs={
                                         "a_res": a_res,
-                                        "b_b_res": b_b_res,
+                                        "bb_res": bb_res,
                                         "a_i_spec_res": a_i_spec_res,
                                         "a_w_res": a_w_res,
                                         "a_Y_N_res": a_Y_N_res,
                                         "a_NAP_N_res": a_NAP_N_res,
                                         "b_phy_norm_res": b_phy_norm_res,
-                                        "b_bw_res": b_bw_res,
+                                        "bb_w_res": bb_w_res,
                                         "b_X_norm_res": b_X_norm_res,
                                         "b_Mie_norm_res": b_Mie_norm_res,
                                         "R_i_b_res": R_i_b_res,
-                                        "da_W_div_dT_res": da_W_div_dT_res,
-                                        "E_0_res": E_0_res,
+                                        "da_w_div_dT_res": da_w_div_dT_res,
+                                        "E0_res": E0_res,
                                         "a_oz_res": a_oz_res,
                                         "a_ox_res": a_ox_res,
                                         "a_wv_res": a_wv_res,
-                                        "E_dd_res": E_dd_res,
-                                        "E_dsa_res": E_dsa_res,
-                                        "E_dsr_res": E_dsr_res,
-                                        "E_d_res": E_d_res,
-                                        "E_ds_res": E_ds_res,
+                                        "Ed_d_res": Ed_d_res,
+                                        "Ed_sa_res": Ed_sa_res,
+                                        "Ed_sr_res": Ed_sr_res,
+                                        "Ed_res": Ed_res,
+                                        "Ed_s_res": Ed_s_res,
                                         "n2_res": n2_res,
                                         "Ls_Ed": Ls_Ed,
                                     },
@@ -883,26 +887,26 @@ def invert(parameters: Parameters,
         numerical_fit = least_squares(userfun, fit_params, bounds=fit_bounds,
                                     kwargs={
                                         "a_res": a_res,
-                                        "b_b_res": b_b_res,
+                                        "bb_res": bb_res,
                                         "a_i_spec_res": a_i_spec_res,
                                         "a_w_res": a_w_res,
                                         "a_Y_N_res": a_Y_N_res,
                                         "a_NAP_N_res": a_NAP_N_res,
                                         "b_phy_norm_res": b_phy_norm_res,
-                                        "b_bw_res": b_bw_res,
+                                        "b_bw_res": bb_w_res,
                                         "b_X_norm_res": b_X_norm_res,
                                         "b_Mie_norm_res": b_Mie_norm_res,
                                         "R_i_b_res": R_i_b_res,
-                                        "da_W_div_dT_res": da_W_div_dT_res,
-                                        "E_0_res": E_0_res,
+                                        "da_w_div_dT_res": da_w_div_dT_res,
+                                        "E0_res": E0_res,
                                         "a_oz_res": a_oz_res,
                                         "a_ox_res": a_ox_res,
                                         "a_wv_res": a_wv_res,
-                                        "E_dd_res": E_dd_res,
-                                        "E_dsa_res": E_dsa_res,
-                                        "E_dsr_res": E_dsr_res,
-                                        "E_d_res": E_d_res,
-                                        "E_ds_res": E_ds_res,
+                                        "Ed_d_res": Ed_d_res,
+                                        "Ed_sa_res": Ed_sa_res,
+                                        "Ed_sr_res": Ed_sr_res,
+                                        "Ed_res": Ed_res,
+                                        "Ed_s_res": Ed_s_res,
                                         "n2_res": n2_res,
                                         "Ls_Ed": Ls_Ed,
                                     },

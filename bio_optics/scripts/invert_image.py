@@ -89,23 +89,23 @@ def invert_chunk(chunk,
     # Looper over elements in chunk and fill results
     for i in np.arange(chunk.shape[0]):
         inv = model.invert(params, 
-                          R_rs=chunk[i].values.astype(float), 
+                          Rrs=chunk[i].values.astype(float), 
                           wavelengths=wavelengths, 
                           weights=weights,
                           a_i_spec_res=a_i_spec_res,
                           a_w_res=a_w_res,
                           b_phy_norm_res=b_phy_norm_res,
-                          b_bw_res=b_bw_res,
+                          bb_w_res=b_bw_res,
                           R_i_b_res=R_i_b_res,
-                          E_0_res = E_0_res,
+                          E0_res = E_0_res,
                           a_oz_res = a_oz_res,
                           a_ox_res = a_ox_res,
                           a_wv_res = a_wv_res,
-                          da_W_div_dT_res = da_W_div_dT_res,
-                          E_d_res = E_d_res,
-                          E_dsa_res = E_dsa_res,
-                          E_dsr_res = E_dsr_res,
-                          E_dd_res = E_dd_res,
+                          da_w_div_dT_res = da_W_div_dT_res,
+                          Ed_res = E_d_res,
+                          Ed_sa_res = E_dsa_res,
+                          Ed_sr_res = E_dsr_res,
+                          Ed_d_res = E_dd_res,
                           method=method, 
                           max_nfev=max_nfev)
         results[i] = inv
@@ -166,14 +166,14 @@ def main():
     a_i_spec_res = resampling.resample_a_i_spec(wavelengths[wl_mask])
     a_w_res = resampling.resample_a_w(wavelengths[wl_mask])
     b_phy_norm_res = resampling.resample_b_phy_norm(wavelengths[wl_mask])
-    b_bw_res = resampling.resample_b_bw(wavelengths[wl_mask])
+    b_bw_res = resampling.resample_bb_w(wavelengths[wl_mask])
     R_i_b_res = resampling.resample_R_i_b(wavelengths[wl_mask])
-    E_0_res = resampling.resample_E_0(wavelengths[wl_mask])
+    E_0_res = resampling.resample_E0(wavelengths[wl_mask])
     a_oz_res = resampling.resample_a_oz(wavelengths[wl_mask])
     a_ox_res = resampling.resample_a_ox(wavelengths[wl_mask])
     a_wv_res = resampling.resample_a_wv(wavelengths[wl_mask])
-    da_W_div_dT_res = resampling.resample_da_W_div_dT(wavelengths[wl_mask])
-    E_d_res = downwelling_irradiance.E_d(wavelengths[wl_mask])
+    da_W_div_dT_res = resampling.resample_da_w_div_dT(wavelengths[wl_mask])
+    E_d_res = downwelling_irradiance.Ed(wavelengths[wl_mask])
     E_dsa_res = downwelling_irradiance.E_dsa(wavelengths[wl_mask])
     E_dsr_res = downwelling_irradiance.E_dsr(wavelengths[wl_mask])
     E_dd_res = downwelling_irradiance.E_dd(wavelengths[wl_mask])
@@ -298,21 +298,21 @@ def main():
                                                         a_i_spec_res=a_i_spec_res,
                                                         a_w_res=a_w_res,
                                                         b_phy_norm_res=b_phy_norm_res,
-                                                        b_bw_res=b_bw_res,
+                                                        bb_w_res=b_bw_res,
                                                         R_i_b_res=R_i_b_res,
-                                                        E_0_res = E_0_res,
+                                                        E0_res = E_0_res,
                                                         a_oz_res = a_oz_res,
                                                         a_ox_res = a_ox_res,
                                                         a_wv_res = a_wv_res, 
-                                                        da_W_div_dT_res = da_W_div_dT_res,
-                                                        E_d_res = E_d_res,
-                                                        E_dsa_res = E_dsa_res,
-                                                        E_dsr_res = E_dsr_res,
-                                                        E_dd_res = E_dd_res) 
+                                                        da_w_div_dT_res = da_W_div_dT_res,
+                                                        Ed_res = E_d_res,
+                                                        Ed_sa_res = E_dsa_res,
+                                                        Ed_sr_res = E_dsr_res,
+                                                        Ed_d_res = E_dd_res) 
                                             for i in results]).T
                     
                     ## glint
-                    glint = np.array([surface.R_rs_surf(wavelengths[wl_mask], 
+                    glint = np.array([surface.Rrs_surf(wavelengths[wl_mask], 
                                                                 g_dd=i.params['g_dd'].value,
                                                                 g_dsr=i.params['g_dsr'].value,
                                                                 g_dsa=i.params['g_dsa'].value,

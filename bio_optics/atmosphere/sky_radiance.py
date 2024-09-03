@@ -36,31 +36,31 @@
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
 
 
-def L_s(f_dd, g_dd,  E_dd,
-        f_ds, g_dsr, E_dsr,
-        g_dsa, E_dsa):
+def L_s(f_dd, g_dd,  Ed_d,
+        f_ds, g_dsr, Ed_sr,
+        g_dsa, Ed_sa):
     """
     Sky radiance in W/m2 nm sr [1]
     
     "A parameterization similar to E_d is implemented for the sky radiance, L_s. The radiance downwelling from a part of the sky is treated 
-    as a weighted sum of three wavelength dependent functions, E_dd, E_dsr and E_dsa. In contrast to E_d, the two diffuse components are treated 
+    as a weighted sum of three wavelength dependent functions, Ed_d, Ed_sr and Ed_sa. In contrast to E_d, the two diffuse components are treated 
     separately since Rayleigh scattering has a much stronger angle dependency than aerosol scattering. The parameters g_dd, g_dsr and g_dsa are 
-    the intensities (in units of sr−1) of E_dd, E_dsr and E_dsa, respectively." [1]
+    the intensities (in units of sr−1) of Ed_d, Ed_sr and Ed_sa, respectively." [1]
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
     :return: sky radiance in W/m2 nm sr
     
     """
-    L_s = f_dd * (g_dd  * E_dd) + f_ds * (g_dsr * E_dsr + g_dsa * E_dsa)
+    L_s = f_dd * (g_dd  * Ed_d) + f_ds * (g_dsr * Ed_sr + g_dsa * Ed_sa)
     
     return L_s
 
-def d_LS_div_dg_dd(E_dd):
-    return E_dd
+def d_LS_div_dg_dd(Ed_d):
+    return Ed_d
 
-def d_LS_div_dg_dsr(E_dsr):
-    return E_dsr
+def d_LS_div_dg_dsr(Ed_sr):
+    return Ed_sr
 
-def d_LS_div_dg_dsa(E_dsa):
-    return E_dsa
+def d_LS_div_dg_dsa(Ed_sa):
+    return Ed_sa

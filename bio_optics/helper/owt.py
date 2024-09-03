@@ -30,7 +30,7 @@ from . indices import ndi
 data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
 
-def avw(R_rs, wavelengths, sensor='hyperspectral'):
+def avw(Rrs, wavelengths, sensor='hyperspectral'):
     """
     Apparent visible wavelength (AVW) [1]
     "The Apparent Visible Wavelength (AVW) is calculated as the weighted harmonic mean of all R_rs wavelengths, 
@@ -41,20 +41,20 @@ def avw(R_rs, wavelengths, sensor='hyperspectral'):
     [2] Vandermeulen (no year) [https://oceancolor.gsfc.nasa.gov/resources/atbd/avw/#:~:text=The%20AVW%20is%20an%20optical,2020)]
     
     :param wavelengths: All available wavelengths between 400–700 nm
-    :param R_rs: R_rs at respective wavelengths
+    :param Rrs: Rrs at respective wavelengths
     :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
     :return:
     """ 
     wavelength_mask = (wavelengths>=400) & (wavelengths<=700)
 
-    if len(R_rs.shape)==2:
+    if len(Rrs.shape)==2:
         wavelengths_array = wavelengths[wavelength_mask][:, np.newaxis]
-    elif len(R_rs.shape)==3:
+    elif len(Rrs.shape)==3:
         wavelengths_array = wavelengths[wavelength_mask][:, np.newaxis, np.newaxis]
     else:
         wavelengths_array = wavelengths[wavelength_mask]
 
-    avw = np.sum(R_rs[wavelength_mask], axis=0) / np.sum(R_rs[wavelength_mask] / wavelengths_array, axis=0)
+    avw = np.sum(Rrs[wavelength_mask], axis=0) / np.sum(Rrs[wavelength_mask] / wavelengths_array, axis=0)
     
     if sensor=='hyperspectral':
         return avw
@@ -81,37 +81,37 @@ def qwip(avw):
     return qwip
     
     
-def qwip_score(R_rs, wavelengths, sensor='hyperspectral'):
+def qwip_score(Rrs, wavelengths, sensor='hyperspectral'):
     """
     Quality Water Index Polynomial score (QWIP score) [1].
 
     [1] Dierssen et al. (2022) [doi.org/10.3389/frsen.2022.869611].
     
     :param wavelengths: All available wavelengths between 400 nm and 700 nm 
-    :param R_rs: R_rs at respective wavelengths
+    :param Rrs: Rrs at respective wavelengths
     :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
     :return: QWIP score
     """
-    qwip_score = ndi(R_rs[find_closest(wavelengths, 665)[1]], R_rs[find_closest(wavelengths, 492)[1]]) - qwip(avw(R_rs=R_rs, wavelengths=wavelengths, sensor=sensor))
+    qwip_score = ndi(Rrs[find_closest(wavelengths, 665)[1]], Rrs[find_closest(wavelengths, 492)[1]]) - qwip(avw(Rrs=Rrs, wavelengths=wavelengths, sensor=sensor))
     return qwip_score
 
 
-def balasubramanian(R_rs, wavelengths):
+def balasubramanian(Rrs, wavelengths):
     """
     Optical water type classification [1].
 
     [1] Balasubramanian et al. (2020) [doi:10.1016/j.rse.2020.111768]
 
     Args:
-        spectrum: spectrum or image (bands on first axis)
+        Rrs: Rrs spectrum or image (bands on first axis)
         wavelengths: wavelengths of spectrum [nm]
     Return:
         One of three water types (1: Blue-green water, 2: Green water, 3: Brown water)
     """
-    Rrs_665 = R_rs[find_closest(wavelengths, 665)[1]]
-    Rrs_492 = R_rs[find_closest(wavelengths, 492)[1]]
-    Rrs_560 = R_rs[find_closest(wavelengths, 560)[1]]
-    Rrs_740 = R_rs[find_closest(wavelengths, 740)[1]]
+    Rrs_665 = Rrs[find_closest(wavelengths, 665)[1]]
+    Rrs_492 = Rrs[find_closest(wavelengths, 492)[1]]
+    Rrs_560 = Rrs[find_closest(wavelengths, 560)[1]]
+    Rrs_740 = Rrs[find_closest(wavelengths, 740)[1]]
 
     return np.where(((Rrs_665 < Rrs_560) & (Rrs_665 > Rrs_492)), 2,
                 np.where(((Rrs_665 > Rrs_560) & (Rrs_740 > 0.01)), 3,
@@ -119,24 +119,24 @@ def balasubramanian(R_rs, wavelengths):
                         np.where(np.isnan(Rrs_665), np.nan, 2))))
 
 
-def jiang(R_rs, wavelengths):
+def jiang(Rrs, wavelengths):
     """
     Optical water type classification [1]. 
     
     [1] Jiang et al. (2021) [10.1016/j.rse.2021.112386].
 
     Args:
-        R_rs: spectrum as np.array in units of R_rs [1/sr]
+        Rrs: Rrs spectrum as np.array in units of Rrs [1/sr]
         wavelengths: wavelengths of spectrum [nm]
     Return:
         One of four water types as int (1: clear waters, 2: moderately turbid waters, 3: highly turbid waters, 4: extremely turbid waters)
     """
 
     # Find the closest wavelengths to the wavelengths suggested in Jiang et al. (2021)
-    Rrs_490 = R_rs[find_closest(wavelengths, 490)[1]]
-    Rrs_560 = R_rs[find_closest(wavelengths, 560)[1]]
-    Rrs_620 = R_rs[find_closest(wavelengths, 620)[1]]
-    Rrs_754 = R_rs[find_closest(wavelengths, 754)[1]]
+    Rrs_490 = Rrs[find_closest(wavelengths, 490)[1]]
+    Rrs_560 = Rrs[find_closest(wavelengths, 560)[1]]
+    Rrs_620 = Rrs[find_closest(wavelengths, 620)[1]]
+    Rrs_754 = Rrs[find_closest(wavelengths, 754)[1]]
     
     return np.where((Rrs_490 > Rrs_560), 1,
                     np.where((Rrs_490 > Rrs_620), 2,
@@ -145,7 +145,7 @@ def jiang(R_rs, wavelengths):
 
 
 
-def forel_ule(R_rs, wavelengths, kind='slinear'):
+def forel_ule(Rrs, wavelengths, kind='slinear'):
     """
     Discrete Forel-Ule scale [1,2,3,4]
 
@@ -154,7 +154,7 @@ def forel_ule(R_rs, wavelengths, kind='slinear'):
     [3] Wernand et al. (2013): MERIS-based ocean colour classification with the discrete Forel-Ule scale [10.5194/os-9-477-2013]
     [4] Wang et al. (2021): A dataset of remote-sensed Forel-Ule Index for global inland waters during 2000–2018. [10.1038/s41597-021-00807-z]
 
-    :param R_rs: array of remote sensing reflectance, if more than 1D, first axis needs to be bands
+    :param Rrs: array of remote sensing reflectance, if more than 1D, first axis needs to be bands
     :param wavelengths: corresponding wavelengths [nm]
     :param kind: specifies kind of interpolation, parameter for interp1d, default: 'slinear'
 
@@ -165,7 +165,7 @@ def forel_ule(R_rs, wavelengths, kind='slinear'):
     xyz =resample_srf(srf_wavelengths=cie.iloc[:,0].values, 
                       srf_factors = cie.iloc[:,1:].values, 
                       input_wavelengths = wavelengths, 
-                      input_spectrum = R_rs,
+                      input_spectrum = Rrs,
                       kind=kind) 
 
     x = xyz[0] / xyz.sum(axis=0)
@@ -177,11 +177,11 @@ def forel_ule(R_rs, wavelengths, kind='slinear'):
     alpha_lut = fu_scale["alpha_Novoa"].values[:21]
     alpha_lut = np.where(np.isnan(alpha_lut), 0, alpha_lut)
 
-    if len(R_rs.shape)==1:
+    if len(Rrs.shape)==1:
         idx = np.where(alpha_lut-alpha < 0, -1e10, alpha_lut-alpha).argmin(axis=0)
     else:
         # if R_rs has more than 1 dimension
-        alpha_lut = np.broadcast_to(alpha_lut, R_rs.T.shape[:-1] + (21,)).T
+        alpha_lut = np.broadcast_to(alpha_lut, Rrs.T.shape[:-1] + (21,)).T
         idx = np.where(alpha_lut-alpha < 0, -1e10, alpha_lut-alpha).argmin(axis=0)
 
     fu_class = idx + 1

@@ -40,20 +40,20 @@ import numpy as np
 from .. helper import resampling
 
 
-def R_rs_b(f_0 = 0,
-           f_1 = 0,
-           f_2 = 0,
-           f_3 = 0,
-           f_4 = 0,
-           f_5 = 0,
-           B_0 = 1/np.pi, 
-           B_1 = 1/np.pi, 
-           B_2 = 1/np.pi, 
-           B_3 = 1/np.pi, 
-           B_4 = 1/np.pi, 
-           B_5 = 1/np.pi, 
-           wavelengths=np.arange(400,800),
-           R_i_b_res = []):
+def Rrs_b(f_0 = 0,
+          f_1 = 0,
+          f_2 = 0,
+          f_3 = 0,
+          f_4 = 0,
+          f_5 = 0,
+          B_0 = 1/np.pi, 
+          B_1 = 1/np.pi, 
+          B_2 = 1/np.pi, 
+          B_3 = 1/np.pi, 
+          B_4 = 1/np.pi, 
+          B_5 = 1/np.pi, 
+          wavelengths=np.arange(400,800),
+          R_i_b_res = []):
     """
     Radiance reflectance of benthic substrate [sr-1] as a mixture of up to 6 bottom types [1].
     
@@ -85,12 +85,13 @@ def R_rs_b(f_0 = 0,
     else:
         R_i_b = R_i_b_res
     
-    R_rs_b = np.sum([f_i[i] * B_i[i] * R_i_b.T[i] for i in np.arange(R_i_b.shape[1])], axis=0)
+    Rrs_b = np.sum([f_i[i] * B_i[i] * R_i_b.T[i] for i in np.arange(R_i_b.shape[1])], axis=0)
 
-    return R_rs_b
+    return Rrs_b
 
-def dR_rs_b_div_df_i(i, 
-           B_0 = 1/np.pi, 
+
+def dRrs_b_div_df_i(i,
+B_0 = 1/np.pi, 
            B_1 = 1/np.pi, 
            B_2 = 1/np.pi, 
            B_3 = 1/np.pi, 
@@ -108,11 +109,12 @@ def dR_rs_b_div_df_i(i,
     else: 
         R_i_b = R_i_b_res
     
-    dR_rs_b_div_df_i = B_i[i] * R_i_b.T[i]
+    dRrs_b_div_df_i = B_i[i] * R_i_b.T[i]
     
-    return dR_rs_b_div_df_i
+    return dRrs_b_div_df_i
 
-def dR_rs_b_div_dB_i(i, 
+
+def dRrs_b_div_dB_i(i, 
            f_0 = 0,
            f_1 = 0,
            f_2 = 0,
@@ -138,6 +140,6 @@ def dR_rs_b_div_dB_i(i,
     else: 
         R_i_b = R_i_b_res
     
-    dR_rs_b_div_dB_i = f_i[i] * R_i_b.T[i]
+    dRrs_b_div_dB_i = f_i[i] * R_i_b.T[i]
     
-    return dR_rs_b_div_dB_i
+    return dRrs_b_div_dB_i

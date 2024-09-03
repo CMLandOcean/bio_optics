@@ -70,7 +70,7 @@ def df_rs_div_dp(omega_b,
     return 0.0512 * (1 + 0.1098 / cos_t_sun_p) * (1 + 0.4021 / cos_t_view_p) * domega_b_div_dp * (4.6659 + omega_b * ((-15.6774) + (16.3713) * omega_b))
 
 
-def r_rs_deep(f_rs, omega_b):
+def rrs_deep(f_rs, omega_b):
     """
     Subsurface radiance reflectance of optically deep water after Albert & Mobley (2003) [1].
     
@@ -87,7 +87,7 @@ def r_rs_deep(f_rs, omega_b):
     """
     return f_rs * omega_b
 
-def dr_rs_deep_div_dp(f_rs,
+def drrs_deep_div_dp(f_rs,
                       df_rs_div_dp,
                       omega_b,
                       domega_b_div_dp):
@@ -97,12 +97,12 @@ def dr_rs_deep_div_dp(f_rs,
     return df_rs_div_dp * omega_b + f_rs * domega_b_div_dp
 
 
-def r_rs_shallow(r_rs_deep,
-                 K_d,
-                 k_uW,
+def rrs_shallow(rrs_deep,
+                 Kd,
+                 ku_W,
                  zB,
-                 R_rs_b,
-                 k_uB,
+                 Rrs_b,
+                 ku_b,
                  A_rs1=1.1576,
                  A_rs2=1.0389):
     """
@@ -114,12 +114,12 @@ def r_rs_shallow(r_rs_deep,
 
     # Math: r_{rs}^{sh-} = r_{rs}^{deep-} * \left[ 1 - A_{rs,1} * e^{-(K_d + k_{uW}) * zB} \right] + A_{rs,2} * R_{rs}^b * e^{-(K_d + k_{uB}) * zB}
     """
-    return r_rs_deep * \
-            (1 - A_rs1 * np.exp(-(K_d + k_uW) * zB)) + \
-            A_rs2 * R_rs_b * np.exp(-(K_d + k_uB) * zB)
+    return rrs_deep * \
+            (1 - A_rs1 * np.exp(-(Kd + ku_W) * zB)) + \
+            A_rs2 * Rrs_b * np.exp(-(Kd + ku_b) * zB)
 
-def dr_rs_shallow_div_dp(r_rs_deep,
-                          dr_rs_deep_div_dp,
+def drrs_shallow_div_dp(r_rs_deep,
+                          drrs_deep_div_dp,
                           K_d,
                           dK_d_div_dp,
                           k_uW,
@@ -140,7 +140,7 @@ def dr_rs_shallow_div_dp(r_rs_deep,
     eB = np.exp(-(K_d + k_uB) * zB)
     deB = -zB * (dK_d_div_dp + dk_uB_div_dp) * eB
     
-    return dr_rs_deep_div_dp * (1 - A_rs1 * eW) + \
+    return drrs_deep_div_dp * (1 - A_rs1 * eW) + \
             r_rs_deep * (-A_rs1 * deW) + \
             A_rs2 * \
             (
@@ -148,7 +148,7 @@ def dr_rs_shallow_div_dp(r_rs_deep,
                 r_rs_b * deB
             )
 
-def dr_rs_shallow_div_zB(r_rs_deep,
+def drrs_shallow_div_zB(r_rs_deep,
                           K_d,
                           k_uW,
                           r_rs_b,

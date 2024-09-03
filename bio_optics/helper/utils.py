@@ -62,7 +62,7 @@ def band_mask(wavelengths, mask_regions = [[1300,1500],[1800,2000]]):
     return good_bands_mask
 
 
-def estimate_y(R_rs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.2, d=-0.9):
+def estimate_y(Rrs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.2, d=-0.9):
     """
     Two-band estimation of spectral shape parameter of particulate backscattering using an empirical relationship [1,2,3] (named Y in [2]).
     The ratio of the two bands is named chi in [2] and can be in units of R_rs or (subsurface) r_rs.
@@ -76,7 +76,7 @@ def estimate_y(R_rs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.
     [4] Li et al. (2017): Remote sensing estimation of colored dissolved organic matter (CDOM) in optically shallow waters [10.1016/j.isprsjprs.2017.03.015])]
 
     Args:
-        R_rs (_type_): Remote sensing reflectance [sr-1]
+        Rrs (_type_): Remote sensing reflectance [sr-1]
         wavelengths (_type_): corresponding wavelengths [nm]
         lambda1 (float, optional): wavelength of first band [nm]. Defaults to 444.
         lambda2 (float, optional): wavelength of second band [nm]. Defaults to 555.
@@ -88,12 +88,12 @@ def estimate_y(R_rs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.
     Returns:
         y: spectral shape paramter for particulate backscattering coefficient
     """
-    y = a * (b - c*np.exp(d*(R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]])))
+    y = a * (b - c*np.exp(d*(Rrs[find_closest(wavelengths, lambda1)[1]] / Rrs[find_closest(wavelengths, lambda2)[1]])))
     
     return y
 
 
-def estimate_S_dg(R_rs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.002, c=0.6, d=-1.0):
+def estimate_S_dg(Rrs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.002, c=0.6, d=-1.0):
     """
     Two-band estimation of spectral shape parameter of CDOM and NAP absorption [1,2] (named S_dg in [2]) when using the exponental approximation.
     Default for lambda1 and lambda2, and coefficients a, b, c, d are from Erickson et al. (2023) [2].
@@ -103,7 +103,7 @@ def estimate_S_dg(R_rs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.00
     [4] Erickson et al. (2023): Bayesian approach to a generalized inherent optical property model [10.1364/oe.486581]
 
     Args:
-        R_rs (_type_): Remote sensing reflectance [sr-1]
+        Rrs (_type_): Remote sensing reflectance [sr-1]
         wavelengths (_type_): corresponding wavelengths [nm]
         lambda1 (float, optional): wavelength of first band [nm]. Defaults to 443.
         lambda2 (float, optional): wavelength of second band [nm]. Defaults to 555.
@@ -115,7 +115,7 @@ def estimate_S_dg(R_rs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.00
     Returns:
         S_dg: spectral shape paramter for absorption coefficient of CDOM and NAP when using the exponential approximation
     """
-    S_dg = a + b * (c + (R_rs[find_closest(wavelengths, lambda1)[1]] / R_rs[find_closest(wavelengths, lambda2)[1]])**d)
+    S_dg = a + b * (c + (Rrs[find_closest(wavelengths, lambda1)[1]] / Rrs[find_closest(wavelengths, lambda2)[1]])**d)
     
     return S_dg
 

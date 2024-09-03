@@ -67,7 +67,7 @@ def resample_a_w(wavelengths = np.arange(400,800)):
     return a_w
 
 
-def resample_da_W_div_dT(wavelengths = np.arange(400,800)):
+def resample_da_w_div_dT(wavelengths = np.arange(400,800)):
     """
     Temperature gradient of pure water absorption [m-1  degC-1]
     after Roettgers et al. (2013) [1] as distributed with the Water Color Simulator 6 (WASI6) [2]
@@ -170,7 +170,7 @@ def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     return b_i_spec
 
 
-def resample_b_bw(wavelengths = np.arange(400,800), 
+def resample_bb_w(wavelengths = np.arange(400,800), 
                   fresh=True):
     """
     Spectral backscattering coefficient of water [m-1] at selected wavelengths according to Morel (1974) [1].
@@ -181,9 +181,9 @@ def resample_b_bw(wavelengths = np.arange(400,800),
     :param fresh:  boolean to decide if backscattering coefficient is to be computed for fresh (True, default) or oceanic water (False) with a salinity of 35-38 per mille. Values are only valid of lambda_0==500 nm.
     :return: spectral backscattering coefficient of water for input wavelengths
     """
-    b_bw = backscattering.morel(wavelengths=wavelengths, fresh=fresh)
+    bb_w = backscattering.morel(wavelengths=wavelengths, fresh=fresh)
     
-    return b_bw
+    return bb_w
 
 
 def resample_b_phy_norm(wavelengths = np.arange(400,800)):
@@ -292,7 +292,7 @@ def resample_a_ox(wavelengths = np.arange(400,800)):
     return a_ox_res
     
     
-def resample_E_0(wavelengths = np.arange(400,800)):
+def resample_E0(wavelengths = np.arange(400,800)):
     """
     Extraterrestrial solar irradiance [mW m-2 nm-1] as distributed with the Water Color Simulator 6 (WASI6) [1]
 
@@ -302,12 +302,12 @@ def resample_E_0(wavelengths = np.arange(400,800)):
     :return: extraterrestrial solar irradiance for input wavelengths
     """
     # read file
-    E_0_db = pd.read_csv(os.path.join(data_dir, 'E0_sun.txt'), sep=" ", skiprows=12)
+    E0_db = pd.read_csv(os.path.join(data_dir, 'E0_sun.txt'), sep=" ", skiprows=12)
     # resample to sensor bands
-    band_resampler = BandResampler(E_0_db.wavelength_nm.values, wavelengths) 
+    band_resampler = BandResampler(E0_db.wavelength_nm.values, wavelengths) 
     
-    E_0_res = band_resampler(E_0_db["E_0"])    
-    return E_0_res
+    E0_res = band_resampler(E0_db["E_0"])    
+    return E0_res
 
 
 ### Other
@@ -404,23 +404,3 @@ def resample_srf(srf_wavelengths, srf_factors, input_wavelengths, input_spectrum
             resampled_spectrum[band_i,:] = np.einsum('i,ijk->ijk', interp_srf_factors, input_spectrum).sum(axis=0) / np.sum(srf_factors[:,band_i])
         
     return resampled_spectrum
-
-
-# def resample_srf(srf, original_wavelengths, original_spectrum,  kind='slinear', fill_value='extrapolate'):
-#     """
-#     Resample a spectrum to a sensor's band setting using it's spectral response function (SRF).
-#     Uses scipy.interpolate.interp1d.
-    
-#     :param srf: pd.DataFrame with columns [wavelength [nm], band_1_response, ..., band_i_response]
-#     :param central_wavelengths: np.array of central wavelengths [nm] for new spectrum
-#     :return np.array of resampled reflectance with len(n_bands in SRF).
-#     """
-#     resampled_spectrum = np.zeros(len(srf.columns[1:]))*np.nan
-
-#     for band_i in range(1,len(srf.columns)-1): # first column is wavelength (nm)
-#         # fit interpolated SRF for respective band
-#         interp = interp1d(srf[srf.columns[0]], srf[srf.columns[band_i]], kind=kind, fill_value=fill_value)
-#         # interpolate original spectrum to SRF bands, multiply interpolated SRF with spectrum, sum and divide by sum of SRF
-#         resampled_spectrum[band_i-1] = np.sum(np.multiply(interp(original_wavelengths), original_spectrum)) / np.sum(srf[srf.columns[band_i]])
-
-#     return resampled_spectrum

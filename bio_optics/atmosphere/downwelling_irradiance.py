@@ -40,7 +40,7 @@ import numpy as np
 from . import transmittance, ET_solar_irradiance
 
 
-def E_dd(wavelengths=np.arange(400,800), 
+def Ed_d(wavelengths=np.arange(400,800), 
          theta_sun=np.radians(30), 
          P=1013.25, 
          AM=5, 
@@ -49,13 +49,13 @@ def E_dd(wavelengths=np.arange(400,800),
          WV=2.5, 
          alpha=1.317, 
          beta=0.2602, 
-         E_0_res=[],
+         E0_res=[],
          a_oz_res=[],
          a_ox_res=[],
          a_wv_res=[],
-         E_dd_res=[]):
+         Ed_d_res=[]):
     """
-    E_dd is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source [1]. 
+    Ed_d is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source [1]. 
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
@@ -68,14 +68,14 @@ def E_dd(wavelengths=np.arange(400,800),
     :param WV: precipitable water [cm], default: 2.5
     :param alpha: Angström exponent determining wavelength dependency (typically ranges from 0.2 to 2 [1]), default: 1.317
     :param beta: turbidity coefficient as a measure of concentration (typically ranges from 0.16 to 0.50 [1]), default: 0.2606
-    :param E_0_res: optional, precomputing E_0 saves a lot of time.
+    :param E0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time.
     :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :return: E_dd
+    :return: Ed_d
     """
-    if len(E_dd_res)==0:
-        E_dd = ET_solar_irradiance.E_0(wavelengths,E_0_res=E_0_res) * np.cos(theta_sun) * \
+    if len(Ed_d_res)==0:
+        Ed_d = ET_solar_irradiance.E0(wavelengths,E0_res=E0_res) * np.cos(theta_sun) * \
                transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P) * \
                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
@@ -83,11 +83,11 @@ def E_dd(wavelengths=np.arange(400,800),
                transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
                transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
     else:
-        E_dd=E_dd_res
+        Ed_d=Ed_d_res
         
-    return E_dd
+    return Ed_d
     
-def E_dsr(wavelengths=np.arange(400,800), 
+def Ed_sr(wavelengths=np.arange(400,800), 
           theta_sun=np.radians(30), 
           P=1013.25, 
           AM=5, 
@@ -96,13 +96,13 @@ def E_dsr(wavelengths=np.arange(400,800),
           WV=2.5, 
           alpha=1.317, 
           beta=0.2602, 
-          E_0_res=[],
+          E0_res=[],
           a_oz_res=[],
           a_ox_res=[],
           a_wv_res=[],
-          E_dsr_res=[]):
+          Ed_sr_res=[]):
     """
-    E_dsr represents Rayleigh scattering as part of the diffuse component of downwelling irradiance [1].
+    Ed_sr represents Rayleigh scattering as part of the diffuse component of downwelling irradiance [1].
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
@@ -113,25 +113,25 @@ def E_dsr(wavelengths=np.arange(400,800),
     :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
     :param H_oz: ozone scale height [cm], default: 0.381
     :param WV: precipitable water [cm], default: 2.5
-    :param E_0_res: optional, precomputing E_0 saves a lot of time.
+    :param E0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time.
     :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :return: E_dsr
+    :return: Ed_sr
     """
-    if len(E_dsr_res)==0:
-        E_dsr = 0.5 * ET_solar_irradiance.E_0(wavelengths, E_0_res=E_0_res) * np.cos(theta_sun) * \
+    if len(Ed_sr_res)==0:
+        Ed_sr = 0.5 * ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
                 (1 - transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**0.95) * \
                 transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                 transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
                 transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
                 transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
     else:
-        E_dsr=E_dsr_res
+        Ed_sr=Ed_sr_res
         
-    return E_dsr
+    return Ed_sr
  
-def E_dsa(wavelengths=np.arange(400,800), 
+def Ed_sa(wavelengths=np.arange(400,800), 
           theta_sun=np.radians(30), 
           P=1013.25, 
           AM=5, 
@@ -140,13 +140,13 @@ def E_dsa(wavelengths=np.arange(400,800),
           WV=2.5, 
           alpha=1.317, 
           beta=0.2606, 
-          E_0_res=[],
+          E0_res=[],
           a_oz_res=[],
           a_ox_res=[],
           a_wv_res=[],
-          E_dsa_res=[]):
+          Ed_sa_res=[]):
     """
-    E_dsa represents aerosol scattering as part of the diffuse component of downwelling irradiance [1].
+    Ed_sa represents aerosol scattering as part of the diffuse component of downwelling irradiance [1].
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
@@ -159,14 +159,14 @@ def E_dsa(wavelengths=np.arange(400,800),
     :param WV: precipitable water [cm], default: 2.5
     :param alpha: Angstroem exponent determining wavelength dependency (typically ranges from 0.2 to 2 [1]), default: 1.317
     :param beta: turbidity coefficient as a measure of concentration (typically ranges from 0.16 to 0.50 [1]), default: 0.2606
-    :param E_0_res: optional, precomputing E_0 saves a lot of time.
+    :param E0_res: optional, precomputing E_0 saves a lot of time.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time.
     :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :return: E_dsa
+    :return: Ed_sa
     """
-    if len(E_dsa_res)==0:
-        E_dsa = ET_solar_irradiance.E_0(wavelengths, E_0_res=E_0_res) * np.cos(theta_sun) * \
+    if len(Ed_sa_res)==0:
+        Ed_sa = ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
                 transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**1.5 * \
                 transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
                 transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
@@ -175,26 +175,26 @@ def E_dsa(wavelengths=np.arange(400,800),
                 (1 - transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta)) * \
                 transmittance.F_a(theta_sun=theta_sun, alpha=alpha)
     else:
-        E_dsa=E_dsa_res
+        Ed_sa=Ed_sa_res
     
-    return E_dsa
+    return Ed_sa
     
-def E_ds(E_dsr, E_dsa):
-    return E_dsr + E_dsa
+def Ed_s(Ed_sr, Ed_sa):
+    return Ed_sr + Ed_sa
 
-def E_d(E_dd,
+def Ed(Ed_d,
         E_ds,
         f_dd=1,
         f_ds=1
         ):
     """
     Downwelling irradiance is split into a direct and a diffuse component [1]: 
-    * E_dd is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source. 
-    * E_ds is the radiation from the sky, i.e. the diffuse downwelling irradiance. It is split into two components E_dsr and E_dsa:
-        * E_dsr represents Rayleigh scattering
-        * E_dsa represents aerosol scattering
+    * Ed_d is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source. 
+    * E_ds is the radiation from the sky, i.e. the diffuse downwelling irradiance. It is split into two components Ed_sr and Ed_sa:
+        * Ed_sr represents Rayleigh scattering
+        * Ed_sa represents aerosol scattering
      
      [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     """
 
-    return f_dd * E_dd + f_ds * E_ds
+    return f_dd * Ed_d + f_ds * E_ds

@@ -43,7 +43,7 @@ from .. surface import surface, air_water, glint
 from .. helper import resampling, utils
 
 
-def r_rs_dp(u, 
+def rrs_dp(u, 
             theta_sun=np.radians(30), 
             theta_view=np.radians(0), 
             n1=1, 
@@ -61,12 +61,12 @@ def r_rs_dp(u,
     :return: subsurface radiance reflectance of deep water [sr-1]
     """    
     f_rs = 0.0512 * (1 + 4.6659 * u - 7.8387 * u**2 + 5.4571 * u**3) * (1 + 0.1098/np.cos(air_water.snell(theta_sun, n1, n2))) * (1 + 0.4021/np.cos(air_water.snell(theta_view, n1, n2)))
-    r_rs_dp = f_rs * u
+    rrs_dp = f_rs * u
     
-    return r_rs_dp
+    return rrs_dp
 
 
-def r_rs_sh(C_0 = 0,
+def rrs_sh(C_0 = 0,
             C_1 = 0,
             C_2 = 0,
             C_3 = 0,
@@ -87,10 +87,10 @@ def r_rs_sh(C_0 = 0,
             B_3 = 1/np.pi,
             B_4 = 1/np.pi,
             B_5 = 1/np.pi,
-            b_bphy_spec: float = 0.0010,
-            b_bMie_spec: float = 0.0042,
-            b_bX_spec: float = 0.0086,
-            b_bX_norm_factor: float = 1,
+            bb_phy_spec: float = 0.0010,
+            bb_Mie_spec: float = 0.0042,
+            bb_X_spec: float = 0.0086,
+            b_X_norm_factor: float = 1,
             a_NAP_spec_lambda_0: float = 0.041,
             S: float = 0.014,
             K: float = 0.0,
@@ -113,11 +113,11 @@ def r_rs_sh(C_0 = 0,
             a_Y_N_res = [],
             a_NAP_N_res = [],
             b_phy_norm_res = [],
-            b_bw_res = [],
+            bb_w_res = [],
             b_X_norm_res=[],
             b_Mie_norm_res=[],
             R_i_b_res = [],
-            da_W_div_dT_res=[]
+            da_w_div_dT_res=[]
             ):
     """
     Subsurface radiance reflectance of optically shallow water after Albert & Mobley (2003) [1].
@@ -147,10 +147,10 @@ def r_rs_sh(C_0 = 0,
     :param B_3: proportion of radiation reflected towards the sensor from bottom type 3, default: 1/np.pi
     :param B_4: proportion of radiation reflected towards the sensor from bottom type 4, default: 1/np.pi
     :param B_5: proportion of radiation reflected towards the sensor from bottom type 5, default: 1/np.pi
-    :param b_bphy_spec:  specific backscattering coefficient of phytoplankton at 550 nm in [m2 mg-1], default: 0.0010
-    :param b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
-    :param b_bX_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param b_bX_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
+    :param bb_phy_spec:  specific backscattering coefficient of phytoplankton at 550 nm in [m2 mg-1], default: 0.0010
+    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
+    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
+    :param b_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
     :param a_NAP_spec_lambda_0: specific absorption coefficient of NAP at reference wavelength lambda_0 [m2 g-1], default: 0.041
     :param S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.014
     :param K: constant added to the CDOM exponential function [m-1], default: 0
@@ -173,27 +173,27 @@ def r_rs_sh(C_0 = 0,
     :param a_Y_N_res: optional, normalized absorption coefficients of CDOM resampled to sensor's band settings. Will be computed within function if not provided.
     :param a_NAP_N_res: optional, normalized absorption coefficients of NAP resampled to sensor's band settings. Will be computed within function if not provided.
     :param b_phy_norm_res: optional, preresampling b_phy_norm saves a lot of time during inversion. Will be computed within function if not provided.
-    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
+    :param bb_w_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time. Will be computed within function if not provided.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
-    :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
+    :param da_w_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
     :return: subsurface radiance reflectance of shallow water [sr-1]
     """
     # Backscattering and absorption coefficients of the water body depending on the concentration of optically active water constituents
-    bs = backscattering.b_b(C_X=C_X,
+    bs = backscattering.bb(C_X=C_X,
                             C_Mie=C_Mie,
                             C_phy=np.sum([C_0,C_1,C_2,C_3,C_4,C_5]),
-                            b_bphy_spec=b_bphy_spec,
+                            bb_phy_spec=bb_phy_spec,
                             wavelengths=wavelengths,
-                            b_bMie_spec=b_bMie_spec,
+                            bb_Mie_spec=bb_Mie_spec,
                             lambda_S=lambda_S,
                             n=n,
-                            b_bX_spec=b_bX_spec,
-                            b_bX_norm_factor=b_bX_norm_factor,
+                            bb_X_spec=bb_X_spec,
+                            b_X_norm_factor=b_X_norm_factor,
                             fresh=fresh,
                             b_phy_norm_res = b_phy_norm_res,
-                            b_bw_res = b_bw_res,
+                            bb_w_res = bb_w_res,
                             b_Mie_norm_res = b_Mie_norm_res,
                             b_X_norm_res = b_X_norm_res)
 
@@ -218,13 +218,13 @@ def r_rs_sh(C_0 = 0,
                       a_w_res = a_w_res,
                       a_Y_N_res = a_Y_N_res,
                       a_NAP_N_res = a_NAP_N_res,
-                      da_W_div_dT_res=da_W_div_dT_res,
+                      da_w_div_dT_res=da_w_div_dT_res,
                       )
 
     u = bs / (ab + bs)
 
     # Diffuse attenuation coefficient
-    diffuse_attenuation = attenuation.K_d(a=ab, b_b=bs, theta_sun=theta_sun, n1=n1, n2=n2, kappa_0=kappa_0)
+    diffuse_attenuation = attenuation.Kd(a=ab, bb=bs, theta_sun=theta_sun, n1=n1, n2=n2, kappa_0=kappa_0)
 
     # Attenuation coefficients for upwelling radiance of the water body (k_uW) and the bottom (k_uB)
     k_uW = ((ab + bs) / np.cos(air_water.snell(theta_view, n1, n2))) * (1 + u)**3.5421 * (1 - (0.2786 / np.cos(air_water.snell(theta_sun, n1, n2))))
@@ -233,12 +233,12 @@ def r_rs_sh(C_0 = 0,
     A_rs_1 = 1.1576 # (+/- 0.0038)
     A_rs_2 = 1.0389 # (+/- 0.0014) 
 
-    r_rs_sh = r_rs_dp(u=u, theta_sun=theta_sun, theta_view=theta_view, n1=n1, n2=n2) * \
+    rrs_sh = rrs_dp(u=u, theta_sun=theta_sun, theta_view=theta_view, n1=n1, n2=n2) * \
               (1 - A_rs_1 * np.exp(-(diffuse_attenuation + k_uW) * zB)) + \
-              (A_rs_2 * bottom_reflectance.R_rs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
+              (A_rs_2 * bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
                np.exp(-(diffuse_attenuation + k_uB) * zB))
 
-    return r_rs_sh
+    return rrs_sh
     
 
 #################
@@ -247,7 +247,7 @@ def r_rs_sh(C_0 = 0,
 
 
 def invert(params, 
-           R_rs, 
+           Rrs, 
            wavelengths,
            Ls_Ed, 
            weights=[],
@@ -256,11 +256,11 @@ def invert(params,
            a_Y_N_res = [],
            a_NAP_N_res = [],
            b_phy_norm_res = [],
-           b_bw_res = [],
+           bb_w_res = [],
            b_X_norm_res=[],
            b_Mie_norm_res=[],
            R_i_b_res = [],
-           da_W_div_dT_res=[],
+           da_w_div_dT_res=[],
            method="least-squares", 
            max_nfev=400
            ):
@@ -268,7 +268,7 @@ def invert(params,
     Function to inversely fit a modeled spectrum to a measurement spectrum.
     
     :param params: lmfit Parameters object containing all Parameter objects that are required to specify the model
-    :param R_rs: Remote sensing reflectance spectrum [sr-1]
+    :param Rrs: Remote sensing reflectance spectrum [sr-1]
     :param wavelengths: wavelengths of R_rs bands [nm]
     :param weights: spectral weighing coefficients
     :param a_i_spec_res: optional, specific absorption coefficients of phytoplankton types resampled to sensor's band settings. Will be computed within function if not provided.
@@ -276,31 +276,31 @@ def invert(params,
     :param a_Y_N_res: optional, normalized absorption coefficients of CDOM resampled to sensor's band settings. Will be computed within function if not provided.
     :param a_NAP_N_res: optional, normalized absorption coefficients of NAP resampled to sensor's band settings. Will be computed within function if not provided.
     :param b_phy_norm_res: optional, preresampling b_phy_norm saves a lot of time during inversion. Will be computed within function if not provided.
-    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
+    :param bb_w_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time. Will be computed within function if not provided.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
     :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
-    :param E_0_res: optional, precomputing E_0 saves a lot of time. Will be computed within function if not provided.
+    :param E0_res: optional, precomputing E0 saves a lot of time. Will be computed within function if not provided.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time. Will be computed within function if not provided.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time. Will be computed within function if not provided.
     :param a_wv_res: optional, precomputing a_wv saves a lot of time. Will be computed within function if not provided.
-    :param E_dd_res: optional, preresampling E_dd before inversion saves a lot of time. Will be computed within function if not provided.
-    :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time. Will be computed within function if not provided.
-    :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time. Will be computed within function if not provided.
-    :param E_d_res: optional, preresampling E_d before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_d_res: optional, preresampling Ed_d before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_sa_res: optional, preresampling Ed_sa before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_sr_res: optional, preresampling Ed_sr before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_res: optional, preresampling Ed before inversion saves a lot of time. Will be computed within function if not provided.
     :param method: name of the fitting method to use by lmfit, default: 'least-squares'
     :param max_nfev: maximum number of function evaluations, default: 400
     :return: object containing the optimized parameters and several goodness-of-fit statistics.
     """    
 
     if len(weights)==0:
-        weights = np.ones(len(R_rs))
+        weights = np.ones(len(Rrs))
     
     if params['fit_surface']==True:
         res = minimize(func2opt, 
                        params, 
-                       args=(R_rs, 
+                       args=(Rrs, 
                              wavelengths, 
                              Ls_Ed, 
                              weights, 
@@ -309,11 +309,11 @@ def invert(params,
                              a_Y_N_res, 
                              a_NAP_N_res, 
                              b_phy_norm_res, 
-                             b_bw_res, 
+                             bb_w_res, 
                              b_X_norm_res, 
                              b_Mie_norm_res, 
                              R_i_b_res, 
-                             da_W_div_dT_res), 
+                             da_w_div_dT_res), 
                        method=method, 
                        max_nfev=max_nfev) 
                        
@@ -322,11 +322,11 @@ def invert(params,
         params.add('h0', vary=False) 
         params.add('h1', vary=False) 
 
-        Ls_Ed = np.ones(len(R_rs))
+        Ls_Ed = np.ones(len(Rrs))
         
         res = minimize(func2opt, 
                        params, 
-                       args=(R_rs, 
+                       args=(Rrs, 
                              wavelengths, 
                              Ls_Ed, 
                              weights, 
@@ -335,11 +335,11 @@ def invert(params,
                              a_Y_N_res, 
                              a_NAP_N_res, 
                              b_phy_norm_res, 
-                             b_bw_res, 
+                             bb_w_res, 
                              b_X_norm_res, 
                              b_Mie_norm_res, 
                              R_i_b_res, 
-                             da_W_div_dT_res), 
+                             da_w_div_dT_res), 
                        method=method, 
                        max_nfev=max_nfev) 
     return res
@@ -353,11 +353,11 @@ def forward(params,
             a_Y_N_res = [],
             a_NAP_N_res = [],
             b_phy_norm_res = [],
-            b_bw_res = [],
+            bb_w_res = [],
             b_X_norm_res=[],
             b_Mie_norm_res=[],
             R_i_b_res = [],
-            da_W_div_dT_res=[]):
+            da_w_div_dT_res=[]):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
@@ -368,26 +368,26 @@ def forward(params,
     :param a_Y_N_res: optional, normalized absorption coefficients of CDOM resampled to sensor's band settings. Will be computed within function if not provided.
     :param a_NAP_N_res: optional, normalized absorption coefficients of NAP resampled to sensor's band settings. Will be computed within function if not provided.
     :param b_phy_norm_res: optional, preresampling b_phy_norm saves a lot of time. Will be computed within function if not provided.
-    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time . Will be computed within function if not provided.
+    :param bb_w_res: optional, precomputing b_bw b_bw saves a lot of time . Will be computed within function if not provided.
     :param b_X_norm_res: optional, precomputing b_bX_norm saves a lot of time. Will be computed within function if not provided.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b saves a lot of time. Will be computed within function if not provided.
-    :param da_W_div_dT_res: optional, preresampling da_W_div_dT saves a lot of time. Will be computed within function if not provided.
-    :param E_0_res: optional, preresampling E_0 saves a lot of time. Will be computed within function if not provided.
+    :param da_w_div_dT_res: optional, preresampling da_W_div_dT saves a lot of time. Will be computed within function if not provided.
+    :param E0_res: optional, preresampling E0 saves a lot of time. Will be computed within function if not provided.
     :param a_oz_res: optional, preresampling a_oz saves a lot of time. Will be computed within function if not provided.
     :param a_ox_res: optional, preresampling a_ox saves a lot of time. Will be computed within function if not provided.
     :param a_wv_res: optional, preresampling a_wv saves a lot of time. Will be computed within function if not provided.
-    :param E_dd_res: optional, precomputing E_dd saves a lot of time. Will be computed within function if not provided.
-    :param E_dsa_res: optional, precomputing E_dsa saves a lot of time. Will be computed within function if not provided.
-    :param E_dsr_res: optional, precomputing E_dsr saves a lot of time. Will be computed within function if not provided.
-    :param E_d_res: optional, precomputing E_d saves a lot of time. Will be computed within function if not provided.
-    :return: R_rs: simulated remote sensing reflectance spectrum [sr-1]
+    :param Ed_d_res: optional, precomputing E_dd saves a lot of time. Will be computed within function if not provided.
+    :param Ed_sa_res: optional, precomputing E_dsa saves a lot of time. Will be computed within function if not provided.
+    :param Ed_sr_res: optional, precomputing E_dsr saves a lot of time. Will be computed within function if not provided.
+    :param Ed_res: optional, precomputing E_d saves a lot of time. Will be computed within function if not provided.
+    :return: Rrs: simulated remote sensing reflectance spectrum [sr-1]
     """
     
     if params['fit_surface']==True:
         
-        R_rs_sim = air_water.below2above(
-                            r_rs_sh(C_0 = params['C_0'],
+        Rrs_sim = air_water.below2above(
+                            rrs_sh(C_0 = params['C_0'],
                                     C_1 = params['C_1'],
                                     C_2 = params['C_2'],
                                     C_3 = params['C_3'],
@@ -408,10 +408,10 @@ def forward(params,
                                     B_3 = params['B_3'],
                                     B_4 = params['B_4'],
                                     B_5 = params['B_5'],
-                                    b_bphy_spec = params['b_bphy_spec'],
-                                    b_bMie_spec = params['b_bMie_spec'],
-                                    b_bX_spec = params['b_bX_spec'],
-                                    b_bX_norm_factor = params['b_bX_norm_factor'],
+                                    bb_phy_spec = params['bb_phy_spec'],
+                                    bb_Mie_spec = params['bb_Mie_spec'],
+                                    bb_X_spec = params['bb_X_spec'],
+                                    b_X_norm_factor = params['b_X_norm_factor'],
                                     a_NAP_spec_lambda_0 = params['a_NAP_spec_lambda_0'],
                                     S = params['S'],
                                     K = params['K'],
@@ -434,11 +434,11 @@ def forward(params,
                                     a_Y_N_res = a_Y_N_res,
                                     a_NAP_N_res = a_NAP_N_res,
                                     b_phy_norm_res=b_phy_norm_res,
-                                    b_bw_res=b_bw_res,
+                                    bb_w_res=bb_w_res,
                                     b_X_norm_res=b_X_norm_res,
                                     b_Mie_norm_res=b_Mie_norm_res,
                                     R_i_b_res=R_i_b_res,
-                                    da_W_div_dT_res=da_W_div_dT_res)) + \
+                                    da_w_div_dT_res=da_w_div_dT_res)) + \
                             glint.rsoa(wavelengths = wavelengths, 
                                               h0=params['h0'], 
                                               h1=params['h1'], 
@@ -447,8 +447,8 @@ def forward(params,
                             
     elif params['fit_surface']==False:
 
-        R_rs_sim = air_water.below2above(
-                            r_rs_sh(C_0 = params['C_0'],
+        Rrs_sim = air_water.below2above(
+                            rrs_sh(C_0 = params['C_0'],
                                     C_1 = params['C_1'],
                                     C_2 = params['C_2'],
                                     C_3 = params['C_3'],
@@ -469,10 +469,10 @@ def forward(params,
                                     B_3 = params['B_3'],
                                     B_4 = params['B_4'],
                                     B_5 = params['B_5'],
-                                    b_bphy_spec = params['b_bphy_spec'],
-                                    b_bMie_spec = params['b_bMie_spec'],
-                                    b_bX_spec = params['b_bX_spec'],
-                                    b_bX_norm_factor = params['b_bX_norm_factor'],
+                                    bb_phy_spec = params['bb_phy_spec'],
+                                    bb_Mie_spec = params['bb_Mie_spec'],
+                                    bb_X_spec = params['bb_X_spec'],
+                                    b_X_norm_factor = params['b_X_norm_factor'],
                                     a_NAP_spec_lambda_0 = params['a_NAP_spec_lambda_0'],
                                     S = params['S'],
                                     K = params['K'],
@@ -495,18 +495,18 @@ def forward(params,
                                     a_Y_N_res = a_Y_N_res,
                                     a_NAP_N_res = a_NAP_N_res,
                                     b_phy_norm_res=b_phy_norm_res,
-                                    b_bw_res=b_bw_res,
+                                    bb_w_res=bb_w_res,
                                     b_X_norm_res=b_X_norm_res,
                                     b_Mie_norm_res=b_Mie_norm_res,
                                     R_i_b_res=R_i_b_res,
-                                    da_W_div_dT_res=da_W_div_dT_res)) + \
+                                    da_w_div_dT_res=da_w_div_dT_res)) + \
                             params['offset']
                             
-    return R_rs_sim
+    return Rrs_sim
 
 
 def func2opt(params, 
-             R_rs,
+             Rrs,
              wavelengths, 
              Ls_Ed, 
              weights = [],
@@ -515,11 +515,11 @@ def func2opt(params,
              a_Y_N_res = [],
              a_NAP_N_res = [],
              b_phy_norm_res = [],
-             b_bw_res = [],
+             bb_w_res = [],
              b_X_norm_res=[],
              b_Mie_norm_res=[],
              R_i_b_res = [],
-             da_W_div_dT_res=[]):
+             da_w_div_dT_res=[]):
     """
     Error function around model to be minimized by changing fit parameters.
     
@@ -536,22 +536,22 @@ def func2opt(params,
     :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time. Will be computed within function if not provided.
     :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
-    :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
-    :param E_0_res: optional, precomputing E_0 saves a lot of time. Will be computed within function if not provided.
+    :param da_w_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
+    :param E0_res: optional, precomputing E0 saves a lot of time. Will be computed within function if not provided.
     :param a_oz_res: optional, precomputing a_oz saves a lot of time. Will be computed within function if not provided.
     :param a_ox_res: optional, precomputing a_ox saves a lot of time. Will be computed within function if not provided.
     :param a_wv_res: optional, precomputing a_wv saves a lot of time. Will be computed within function if not provided.
-    :param E_dd_res: optional, preresampling E_dd before inversion saves a lot of time. Will be computed within function if not provided.
-    :param E_dsa_res: optional, preresampling E_dsa before inversion saves a lot of time. Will be computed within function if not provided.
-    :param E_dsr_res: optional, preresampling E_dsr before inversion saves a lot of time. Will be computed within function if not provided.
-    :param E_d_res: optional, preresampling E_d before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_d_res: optional, preresampling Ed_d before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_sa_res: optional, preresampling Ed_sa before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_sr_res: optional, preresampling Ed_sr before inversion saves a lot of time. Will be computed within function if not provided.
+    :param Ed_res: optional, preresampling Ed before inversion saves a lot of time. Will be computed within function if not provided.
     :return: weighted difference between measured and simulated R_rs
     """
     
     if len(weights)==0:
         weights = np.ones(len(wavelengths))
 
-    R_rs_sim = forward(params=params,
+    Rrs_sim = forward(params=params,
                        wavelengths=wavelengths,
                        Ls_Ed = Ls_Ed, 
                        a_i_spec_res=a_i_spec_res,
@@ -559,10 +559,10 @@ def func2opt(params,
                        a_Y_N_res = a_Y_N_res,
                        a_NAP_N_res = a_NAP_N_res,
                        b_phy_norm_res=b_phy_norm_res,
-                       b_bw_res=b_bw_res,
+                       bb_w_res=bb_w_res,
                        b_X_norm_res=b_X_norm_res,
                        b_Mie_norm_res=b_Mie_norm_res,
                        R_i_b_res=R_i_b_res,
-                       da_W_div_dT_res=da_W_div_dT_res)
+                       da_w_div_dT_res=da_w_div_dT_res)
            
-    return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
+    return utils.compute_residual(Rrs, Rrs_sim, method=params['error_method'], weights=weights)

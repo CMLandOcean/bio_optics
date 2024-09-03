@@ -43,7 +43,7 @@ def D_u_B(u, f1=1.04, f2=5.4):
     return D_u_B
 
 
-def r_rs_dp(u, g_0=0.084, g_1=0.170):
+def rrs_dp(u, g_0=0.084, g_1=0.170):
     """
     Subsurface radiance reflectance [sr-1] for optically deep water after Eq. 4 in [1].
 
@@ -55,14 +55,14 @@ def r_rs_dp(u, g_0=0.084, g_1=0.170):
         g_1 (float, optional): Defaults to 0.17 [sr-1].
 
     Returns:
-        r_rs_dp: Subsurface radiance reflectance [sr-1] for optically deep water
+        Rrs_dp: Subsurface radiance reflectance [sr-1] for optically deep water
     """
-    r_rs_dp = (g_0 + g_1 * u) * u
+    rrs_dp = (g_0 + g_1 * u) * u
 
-    return r_rs_dp
+    return rrs_dp
 
 
-def r_rs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
+def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
             C_Y = 0,           # represents G from Eq. 17 [2]
             a_phy_440 = 1e-10,     # represents P from Eq. 16 [2]
             zB = 2,                 # represents H from Eq. 9 [2]
@@ -92,7 +92,7 @@ def r_rs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
             wavelengths = np.arange(400,800),
             a_w_res=[],
             A_res=[],
-            b_bw_res=[],
+            bb_w_res=[],
             R_i_b_res=[]):
     """
     Subsurface reflectance of shallow water [sr-1] after Lee et al. (1998, 1999) [1,2].
@@ -132,23 +132,23 @@ def r_rs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
         S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.015
         b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] from [3] but used here to compute b_bp' and must be 1, default: 1
         n: Angström exponent of particle type II backscattering usually called y or Y in Lee's work, should be estimated using utils.estimate_y()*(-1), default: -1
-        fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: False
+        fresh: boolean to decide if to compute bb_w for fresh or oceanic water, default: False
         n1: refractive index of origin medium, default: 1 for air
         n2: refractive index of destination medium, default: 1.33 for water
         g_0: Empirical value. Defaults to 0.084.
         g_1: Empirical value. Defaults to 0.17.
         theta_sun: sun zenith angle [radians], default: np.radians(30)
-        wavelengths: wavelengths to compute r_rs_sh for [nm], default: np.arange(400,800) 
+        wavelengths: wavelengths to compute Rrs_sh for [nm], default: np.arange(400,800) 
         a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
         A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
-        b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
+        bb_w_res: optional, precomputing bb_w bb_w saves a lot of time during inversion. Will be computed within function if not provided.
         R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
 
     Returns:
-        r_rs_sh: subsurface radiance reflectance [sr-1] of shallow water
+        rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
     """
-    bs = backscattering.b_bw(wavelengths=wavelengths, fresh=fresh, b_bw_res=b_bw_res) + \
-         backscattering.b_bMie(C_Mie=C_Mie, wavelengths=wavelengths, b_bMie_spec=b_bMie_spec, lambda_S=lambda_S, n=n)
+    bs = backscattering.bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
+         backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=b_bMie_spec, lambda_S=lambda_S, n=n)
     
     ab = absorption.a_w(wavelengths=wavelengths, a_w_res=a_w_res) + \
          absorption.a_Y(wavelengths=wavelengths, C_Y=C_Y, S=S, lambda_0=lambda_0) + \
@@ -157,20 +157,20 @@ def r_rs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
     kappa = ab + bs    
     u = bs / kappa
     
-    r_rs_sh = (r_rs_dp(u=u, g_0=g_0, g_1=g_1) * (1 - np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_C(u=u))))) + \
-              bottom_reflectance.R_rs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
+    rrs_sh = (rrs_dp(u=u, g_0=g_0, g_1=g_1) * (1 - np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_C(u=u))))) + \
+              bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
               np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_B(u=u)))
                 
-    return r_rs_sh
+    return rrs_sh
 
 
 def invert(params, 
-           R_rs, 
+           Rrs, 
            wavelengths,
            weights = [],
            a_w_res=[],
            A_res=[],
-           b_bw_res=[],
+           bb_w_res=[],
            R_i_b_res=[],
            method="least-squares", 
            max_nfev=400
@@ -179,12 +179,12 @@ def invert(params,
     Function to inversely fit a modeled spectrum to a measurement spectrum.
     
     :param params: lmfit Parameters object containing all Parameter objects that are required to specify the model
-    :param R_rs: Remote sensing reflectance spectrum [sr-1]
-    :param wavelengths: wavelengths of R_rs bands [nm]
+    :param Rrs: Remote sensing reflectance spectrum [sr-1]
+    :param wavelengths: wavelengths of Rrs bands [nm]
     :param weights: spectral weighing coefficients
     :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
     :param A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
-    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
+    :param bb_w_res: optional, precomputing bb_w bb_w saves a lot of time during inversion. Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
     :param method: name of the fitting method to use by lmfit, default: 'least-squares'
     :param max_nfev: maximum number of function evaluations, default: 400
@@ -192,16 +192,16 @@ def invert(params,
     """ 
 
     if len(weights)==0:
-        weights = np.ones(len(R_rs))
+        weights = np.ones(len(Rrs))
 
     res = minimize(func2opt,
                    params, 
-                   args=(R_rs,
+                   args=(Rrs,
                          wavelengths, 
                          weights,
                          a_w_res, 
                          A_res,
-                         b_bw_res, 
+                         bb_w_res, 
                          R_i_b_res), 
                    method=method, 
                    max_nfev=max_nfev) 
@@ -212,21 +212,21 @@ def forward(params,
             wavelengths,
             a_w_res=[],
             A_res = [],
-            b_bw_res = [],
+            bb_w_res = [],
             R_i_b_res = [],):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
     :param params: lmfit Parameters object containing all Parameter objects that are required to specify the model
-    :param wavelengths: wavelengths of R_rs bands [nm]
+    :param wavelengths: wavelengths of Rrs bands [nm]
     :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
     :param A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
-    :param b_bw_res: optional, precomputing b_bw b_bw saves a lot of time . Will be computed within function if not provided.
+    :param bb_w_res: optional, precomputing bb_w bb_w saves a lot of time . Will be computed within function if not provided.
     :param R_i_b_res: optional, preresampling R_i_b saves a lot of time. Will be computed within function if not provided.
-    :return: R_rs: simulated remote sensing reflectance spectrum [sr-1]
+    :return: Rrs: simulated remote sensing reflectance spectrum [sr-1]
     """
-    R_rs_sim = air_water.below2above(
-                            r_rs_sh(wavelengths = wavelengths,
+    Rrs_sim = air_water.below2above(
+                            rrs_sh(wavelengths = wavelengths,
                                     C_Mie = params['C_Mie'],
                                     C_Y = params['C_Y'], 
                                     a_phy_440 = params['a_phy_440'], 
@@ -256,40 +256,40 @@ def forward(params,
                                     theta_sun = params['theta_sun'],
                                     a_w_res=a_w_res,
                                     A_res=A_res,
-                                    b_bw_res=b_bw_res,
+                                    bb_w_res=bb_w_res,
                                     R_i_b_res=R_i_b_res) + params['offset'])
     
-    return R_rs_sim
+    return Rrs_sim
 
 
 def func2opt(params, 
-             R_rs,
+             Rrs,
              wavelengths, 
              weights = [],
              a_w_res=[],
              A_res=[],
-             b_bw_res=[],
+             bb_w_res=[],
              R_i_b_res=[]):
     """_summary_
 
     Args:
         params (_type_): _description_
-        R_rs (_type_): _description_
+        Rrs (_type_): _description_
         wavelengths (_type_): _description_
         weights (list, optional): _description_. Defaults to [].
         a_w_res (list, optional): _description_. Defaults to [].
         A_res (list, optional): _description_. Defaults to [].
-        b_bw_res (list, optional): _description_. Defaults to [].
+        bb_w_res (list, optional): _description_. Defaults to [].
         R_i_b_res (list, optional): _description_. Defaults to [].
 
     Returns:
         _type_: _description_
     """
-    R_rs_sim = forward(wavelengths = wavelengths,
+    Rrs_sim = forward(wavelengths = wavelengths,
                        params = params,
                        a_w_res=a_w_res,
                        A_res=A_res,
-                       b_bw_res=b_bw_res,
+                       bb_w_res=bb_w_res,
                        R_i_b_res=R_i_b_res) + params['offset']
     
-    return utils.compute_residual(R_rs, R_rs_sim, method=params['error_method'], weights=weights)
+    return utils.compute_residual(Rrs, Rrs_sim, method=params['error_method'], weights=weights)

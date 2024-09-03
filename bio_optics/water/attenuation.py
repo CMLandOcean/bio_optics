@@ -41,26 +41,26 @@ from .. surface import air_water
 from . import absorption
 
 
-def omega_b(a, b_b):
+def omega_b(a, bb):
     """
     Single scattering albedo
     
     # Math: \omega_b = \frac{b_b}{a + b_b}
     """
-    return b_b / (a + b_b)
+    return bb / (a + bb)
 
 
-def domega_b_div_dp(a, b_b, da_div_dp, db_b_div_dp):
+def domega_b_div_dp(a, bb, da_div_dp, dbb_div_dp):
     """
     # Math: \frac{\partial}{\partial p}\left[\omega_b\right] = \frac{\partial}{\partial p}\left[ b_b \times (a+b_b)^{-1} \right]
     # Math: =\frac{\partial b_b}{\partial p} (a + b_b)^{-1} - b_b(a+b_b)^{-2}(\frac{\partial a}{\partial p} + \frac{\partial b_b}{\partial p})
     # Math: = \frac{a \frac{\partial b_b}{\partial p} - b \frac{\partial a}{\partial p}}{(a + b_b)^2}
     """
-    return (a * db_b_div_dp - b_b * da_div_dp) / (a + b_b)**2
+    return (a * dbb_div_dp - bb * da_div_dp) / (a + bb)**2
 
 
-def K_d(a,
-        b_b, 
+def Kd(a,
+        bb, 
         cos_t_sun_p=np.pi/6,
         kappa_0=1.0546,
         ):
@@ -78,36 +78,36 @@ def K_d(a,
 
     # Math: K_d(\lambda) = \kappa_0 \frac{a + b_b}{cos\theta_{sun}'}
     """
-    K_d = (kappa_0 / cos_t_sun_p) * (a + b_b)
+    Kd = (kappa_0 / cos_t_sun_p) * (a + bb)
     
-    return K_d
+    return Kd
 
 
 def dK_d_div_dp(da_div_dp,
-                db_b_div_dp,
+                dbb_div_dp,
                 cos_t_sun_p=np.cos(np.pi/6),
                 kappa_0=1.0546):
     """
     # Math: \frac{\partial}{\partial p} \left[ \frac{k_0}{cos \theta_{sun}'} (a + b_b) \right] = \frac{k_0}{cos \theta_{sun}'} (\frac{\partial a}{\partial p} + \frac{\partial b_b}{\partial p})
     """
-    return (kappa_0 / cos_t_sun_p) * (da_div_dp + db_b_div_dp)
+    return (kappa_0 / cos_t_sun_p) * (da_div_dp + dbb_div_dp)
     
 
-def k_uW(a,
-         b_b,
+def ku_w(a,
+         bb,
          omega_b,
          cos_t_sun_p,
          cos_t_view_p):
     """
     # Math: k_{uW} = \frac{a + b_b}{cos \theta_v'} \times (1 + \omega_b)^{3.5421} \times (1 - \frac{0.2786}{cos \theta_{sun}'})
     """
-    return (a + b_b) / cos_t_view_p * (1 + omega_b)**3.5421 * (1 - 0.2786 / cos_t_sun_p)
+    return (a + bb) / cos_t_view_p * (1 + omega_b)**3.5421 * (1 - 0.2786 / cos_t_sun_p)
 
 def dk_uW_div_dp(a, 
-                 b_b,
+                 bb,
                  omega_b,
                  da_div_dp, 
-                 db_b_div_dp,
+                 dbb_div_dp,
                  domega_b_div_dp,
                  cos_t_sun_p, 
                  cos_t_view_p):
@@ -119,28 +119,28 @@ def dk_uW_div_dp(a,
 
     return 1/cos_t_sun_p * \
           (
-            ((da_div_dp + db_b_div_dp) * (1 + omega_b)**(3.5421) + \
-             (a + b_b) * (3.5421 * (1 + omega_b)**(2.5421) * domega_b_div_dp))
+            ((da_div_dp + dbb_div_dp) * (1 + omega_b)**(3.5421) + \
+             (a + bb) * (3.5421 * (1 + omega_b)**(2.5421) * domega_b_div_dp))
           ) * \
           (1 - 0.2786/ cos_t_view_p)
 
 
-def k_uB(a,
-         b_b,
+def ku_b(a,
+         bb,
          omega_b,
          cos_t_sun_p,
          cos_t_view_p):
     """
     # Math: k_{uB} = \frac{a + b_b}{cos \theta_v'} \times (1 + \omega_b)^{2.2658} \times (1 + \frac{0.0577}{cos \theta_{sun}'})
     """
-    return (a + b_b) / cos_t_view_p * (1 + omega_b)**2.2658 * (1 + 0.0577 / cos_t_sun_p)
+    return (a + bb) / cos_t_view_p * (1 + omega_b)**2.2658 * (1 + 0.0577 / cos_t_sun_p)
 
 
-def dk_uB_div_dp(a, 
-                 b_b,
+def dku_B_div_dp(a, 
+                 bb,
                  omega_b, 
                  da_div_dp, 
-                 db_b_div_dp,
+                 dbb_div_dp,
                  domega_b_div_dp,
                  cos_t_sun_p, 
                  cos_t_view_p):
@@ -151,8 +151,8 @@ def dk_uB_div_dp(a,
     """
     return 1/cos_t_sun_p * \
           (
-            ((da_div_dp + db_b_div_dp) * (1 + omega_b)**(2.2658) + \
-             (a + b_b) * (2.2658 * (1 + omega_b)**(1.2658) * domega_b_div_dp))
+            ((da_div_dp + dbb_div_dp) * (1 + omega_b)**(2.2658) + \
+             (a + bb) * (2.2658 * (1 + omega_b)**(1.2658) * domega_b_div_dp))
           ) * \
           (1 + 0.0577 / cos_t_view_p)
 
@@ -328,7 +328,7 @@ def c_d(wavelengths=np.arange(400,800),
     return c_d 
 
 
-def K_d_Lee(a_t, 
+def Kd_Lee(a_t, 
             b_b, 
             theta_sun=30, 
             m1=4.18, 
@@ -350,15 +350,15 @@ def K_d_Lee(a_t,
         m3 (float, optional): Constant. Defaults to -10.8.
     
     Returns: 
-        K_d: Diffuse attenuation coefficient for downwelling irradiance [m-1]
+        Kd: Diffuse attenuation coefficient for downwelling irradiance [m-1]
     """
     # Eq. 1 in [2]
-    K_d = (1 + 0.005*theta_sun)*a_t + m1*(1 - m2*np.exp(m3*a_t)) * b_b
+    Kd = (1 + 0.005*theta_sun)*a_t + m1*(1 - m2*np.exp(m3*a_t)) * b_b
     
-    return K_d
+    return Kd
 
 
-def estimate_c(a, b_bp, b_bw, eta_p=0.015, eta_w=0.5):
+def estimate_c(a, bb_p, bb_w, eta_p=0.015, eta_w=0.5):
     """
     Estimation of the beam attenuation coefficient c [m-1] as decsribed in Eq. 5 in McKinna & Werdell (2018) [1].
     In [1] this function is used to estimate c at a reference wavelength of 547 nm.
@@ -367,14 +367,14 @@ def estimate_c(a, b_bp, b_bw, eta_p=0.015, eta_w=0.5):
 
     Args:
         a (np.array): absorption coefficient [m-1]
-        b_bp (np.array): particulate backscattering coefficient [m-1]
-        b_bw (np.array): backscattering coefficient of water [m-1]
+        bb_p (np.array): particulate backscattering coefficient [m-1]
+        bb_w (np.array): backscattering coefficient of water [m-1]
         eta_p (float, optional): particulate backscatter ratio. Defaults to 0.015; halfway between global average oceanic value of 0.01 and well known Petzold average particle value of 0.0183.
         eta_w (float, optional): backscatter ratio of pure water. Defaults to 0.5.
 
     Returns:
         c: beam attenuation coefficient [m-1]
     """
-    c = a + b_bp / eta_p + b_bw / eta_w
+    c = a + bb_p / eta_p + bb_w / eta_w
 
     return c

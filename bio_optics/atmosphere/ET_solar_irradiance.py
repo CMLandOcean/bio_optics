@@ -41,7 +41,7 @@ import pandas as pd
 from .. helper import resampling
 
 
-def E_0(wavelengths=np.arange(400,800), E_0_res=[]):
+def E0(wavelengths=np.arange(400,800), E0_res=[]):
     """
     ET solar irradiance resampled to sensor's spectral sampling rate.
     
@@ -49,9 +49,9 @@ def E_0(wavelengths=np.arange(400,800), E_0_res=[]):
     :param E_0_res: optional, preresampling E_0_res before inversion saves a lot of time. 
     :return: extraterrestrial solar irrafiance [W/m2 nm]
     """
-    if len(E_0_res)==0:
-        E_0 = resampling.resample_E_0(wavelengths=wavelengths)
+    if len(E0_res)==0:
+        E0 = resampling.resample_E0(wavelengths=wavelengths)
     else:
-        E_0 = E_0_res
+        E0 = E0_res
         
-    return E_0
+    return E0

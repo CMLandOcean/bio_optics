@@ -39,7 +39,7 @@
 import numpy as np
 
 
-def below2above(r_rs, zeta=0.52, Gamma=1.6):
+def below2above(rrs, zeta=0.52, Gamma=1.6):
     """
     Convert subsurface radiance reflectance to remote sensing reflectance after Lee et al. (1998) [1]
     as described in Giardino et al. (2019) [2].
@@ -47,23 +47,23 @@ def below2above(r_rs, zeta=0.52, Gamma=1.6):
     [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1. A semianalytical model [10.1364/AO.37.006329]
     [2] Giardino et al. (2019): Imaging Spectrometry of Inland and Coastal Waters: State of the Art, Achievements and Perspectives [10.1007/s10712-018-9476-0]
     
-    :param r_rs: subsurface radiance reflectance
+    :param rrs: subsurface radiance reflectance
     :return: remote sensing reflectance
     
     # Math: R_{rs}(\lambda) = \frac{\zeta * r_{rs}^*(\lambda)} {1 - \Gamma * r_{rs}^- (\lambda)}
     """
-    return (zeta * r_rs) / (1 - Gamma * r_rs)
+    return (zeta * rrs) / (1 - Gamma * rrs)
 
-def dbelow2above_div_dp(r_rs, dr_rs_div_dp, zeta=0.52, Gamma=1.6):
+def dbelow2above_div_dp(rrs, dr_rs_div_dp, zeta=0.52, Gamma=1.6):
     """
     # Math: \frac{\partial}{\partial p}R_{rs} = \frac{\partial}{\partial p}\left[\frac{\zeta r_{rs}^-} {1 - \Gamma r_{rs}^- } \right] 
     # Math: = \zeta \frac{\partial r_{rs}^-}{\partial p} \left[ \frac{1}{1 - \Gamma r_{rs}^-} \right] + \zeta r_{rs}^- \left[\frac{1}{(1 - \Gamma r_{rs}^-)^2} \Gamma \frac{\partial r_{rs}^-}{\partial p} \right]
     # Math: = \zeta \frac{\partial r_{rs}^-}{\partial p} \frac{1}{(1 - \Gamma r_{rs}^-)^2}
     """
-    return zeta * dr_rs_div_dp * (1 - Gamma * r_rs)**-2
+    return zeta * dr_rs_div_dp * (1 - Gamma * rrs)**-2
     
 
-def above2below(R_rs, zeta=0.52, Gamma=1.6):
+def above2below(Rrs, zeta=0.52, Gamma=1.6):
     """
     Convert remote sensing reflectance to subsurface radiance reflectance after Lee et al. (1998) [1]
     as described in Giardino et al. (2019) [2].
@@ -71,10 +71,10 @@ def above2below(R_rs, zeta=0.52, Gamma=1.6):
     [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1. A semianalytical model [10.1364/AO.37.006329]
     [2] Giardino et al. (2019): Imaging Spectrometry of Inland and Coastal Waters: State of the Art, Achievements and Perspectives [10.1007/s10712-018-9476-0]
     
-    :param R_rs: remote sensing reflectance
+    :param Rrs: remote sensing reflectance
     :return: subsurface radiance reflectance
     """
-    return R_rs / (zeta + Gamma * R_rs)
+    return Rrs / (zeta + Gamma * Rrs)
     
     
 def snell(theta_inc, n1=1, n2=1.33):
