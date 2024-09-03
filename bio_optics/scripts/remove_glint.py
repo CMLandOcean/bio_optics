@@ -67,7 +67,7 @@ def main():
         print(f"Found {len(specnames)} reflectance spectra")
 
         n_res = resampling.resample_n(wavelengths)
-        r_rs_water = dat.iloc[:,1:].to_numpy()
+        rrs_water = dat.iloc[:,1:].to_numpy()
 
         ######################################################################
         ########## LOOP OVER FIELDS ##########################################
@@ -78,16 +78,16 @@ def main():
         
         if args.apply_water_mask==True:  
             # Apply water mask
-            r_rs_water = np.where(indices.awei(r_rs_water, wavelengths) > args.water_mask_threshold, r_rs_water, np.nan)
+            rrs_water = np.where(indices.awei(rrs_water, wavelengths) > args.water_mask_threshold, rrs_water, np.nan)
             
         # Apply glint correction
-        glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
-        R_rs = r_rs_water - glint_reflectance.astype('float32')
+        glint_reflectance = glint.gao(rrs_water, wavelengths, n2=n_res)
+        Rrs = rrs_water - glint_reflectance.astype('float32')
 
         # Write output rows into the respective files
         odict = OrderedDict()
         odict["Wavelen"] = wavelengths
-        for r_i, row in enumerate(R_rs.T):
+        for r_i, row in enumerate(Rrs.T):
             odict[specnames[r_i]] = row
         ##Write
         pd.DataFrame(odict).to_csv(args.output_file,index=False)
@@ -142,42 +142,42 @@ def main():
             glint_profile = profile.copy()
             glint_profile['count'] = len(wavelengths)
 
-            R_rs_profile = profile.copy()
-            R_rs_profile['count'] = len(wavelengths)
+            Rrs_profile = profile.copy()
+            Rrs_profile['count'] = len(wavelengths)
 
             # Open output files and write row by row
             if args.glint_out:
                 dst_glint = rio.open(args.glint_out, 'w', **glint_profile)
             else:
                 dst_glint = None
-            dst_R_rs = rio.open(args.output_file, 'w', **glint_profile)
+            dst_Rrs = rio.open(args.output_file, 'w', **glint_profile)
             # Loop over rows of input file, compute mask and write to output file        
             for _, wind in src.block_windows():
                 
                 print(wind)
 
                 # Read row from xarray object
-                r_rs_water = src.read(window=wind)
+                rrs_water = src.read(window=wind)
             
                 if args.apply_water_mask==True:  
                     # Apply water mask
-                    r_rs_water = np.where(indices.awei(r_rs_water, wavelengths) > args.water_mask_threshold, r_rs_water, np.nan)
+                    rrs_water = np.where(indices.awei(rrs_water, wavelengths) > args.water_mask_threshold, rrs_water, np.nan)
             
                 # Apply glint correction
-                glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
-                R_rs = r_rs_water - glint_reflectance.astype('float32')
+                glint_reflectance = glint.gao(rrs_water, wavelengths, n2=n_res)
+                Rrs = rrs_water - glint_reflectance.astype('float32')
 
                 # Write output rows into the respective files
                 if dst_glint:
                     dst_glint.write(glint_reflectance.astype('float32'), window=wind)
-                dst_R_rs.write(R_rs, window=wind)
+                dst_Rrs.write(Rrs, window=wind)
                 hdrname = os.path.splitext(args.output_file)[0]+".hdr"
-                hdr = spectral.envi.read_envi_header(outhdr,hdrname)
+                hdr = spectral.envi.read_envi_header(rflhdr,hdrname)
         if dst_glint:
             hdrname = os.path.splitext(args.glint_out)[0]+".hdr"
             hdr = spectral.envi.read_envi_header(glinthdr,hdrname)
             dst_glint.close()
-        dst_R_rs.close()
+        dst_Rrs.close()
 
     stop = timeit.default_timer()
     print('Processing time: ', stop - start, '')  

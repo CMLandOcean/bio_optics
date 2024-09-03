@@ -66,17 +66,17 @@ def invert_chunk(chunk,
                  a_i_spec_res,
                  a_w_res,
                  b_phy_norm_res,
-                 b_bw_res,
+                 bb_w_res,
                  R_i_b_res,
-                 E_0_res,
+                 E0_res,
                  a_oz_res,
                  a_ox_res,
                  a_wv_res,
-                 da_W_div_dT_res,
-                 E_d_res,
-                 E_dsa_res,
-                 E_dsr_res,
-                 E_dd_res,
+                 da_w_div_dT_res,
+                 Ed_res,
+                 Ed_sa_res,
+                 Ed_sr_res,
+                 Ed_d_res,
                  method="least_squares", 
                  max_nfev=400):
     """
@@ -89,25 +89,25 @@ def invert_chunk(chunk,
     # Looper over elements in chunk and fill results
     for i in np.arange(chunk.shape[0]):
         inv = model.invert(params, 
-                          Rrs=chunk[i].values.astype(float), 
-                          wavelengths=wavelengths, 
-                          weights=weights,
-                          a_i_spec_res=a_i_spec_res,
-                          a_w_res=a_w_res,
-                          b_phy_norm_res=b_phy_norm_res,
-                          bb_w_res=b_bw_res,
-                          R_i_b_res=R_i_b_res,
-                          E0_res = E_0_res,
-                          a_oz_res = a_oz_res,
-                          a_ox_res = a_ox_res,
-                          a_wv_res = a_wv_res,
-                          da_w_div_dT_res = da_W_div_dT_res,
-                          Ed_res = E_d_res,
-                          Ed_sa_res = E_dsa_res,
-                          Ed_sr_res = E_dsr_res,
-                          Ed_d_res = E_dd_res,
-                          method=method, 
-                          max_nfev=max_nfev)
+                           Rrs=chunk[i].values.astype(float), 
+                           wavelengths=wavelengths, 
+                           weights=weights,
+                           a_i_spec_res=a_i_spec_res,
+                           a_w_res=a_w_res,
+                           b_phy_norm_res=b_phy_norm_res,
+                           bb_w_res=bb_w_res,
+                           R_i_b_res=R_i_b_res,
+                           E0_res = E0_res,
+                           a_oz_res = a_oz_res,
+                           a_ox_res = a_ox_res,
+                           a_wv_res = a_wv_res,
+                           da_w_div_dT_res = da_w_div_dT_res,
+                           Ed_res = Ed_res,
+                           Ed_sa_res = Ed_sa_res,
+                           Ed_sr_res = Ed_sr_res,
+                           Ed_d_res = Ed_d_res,
+                           method=method, 
+                           max_nfev=max_nfev)
         results[i] = inv
         
     return results
@@ -166,17 +166,17 @@ def main():
     a_i_spec_res = resampling.resample_a_i_spec(wavelengths[wl_mask])
     a_w_res = resampling.resample_a_w(wavelengths[wl_mask])
     b_phy_norm_res = resampling.resample_b_phy_norm(wavelengths[wl_mask])
-    b_bw_res = resampling.resample_bb_w(wavelengths[wl_mask])
+    bb_w_res = resampling.resample_bb_w(wavelengths[wl_mask])
     R_i_b_res = resampling.resample_R_i_b(wavelengths[wl_mask])
-    E_0_res = resampling.resample_E0(wavelengths[wl_mask])
+    E0_res = resampling.resample_E0(wavelengths[wl_mask])
     a_oz_res = resampling.resample_a_oz(wavelengths[wl_mask])
     a_ox_res = resampling.resample_a_ox(wavelengths[wl_mask])
     a_wv_res = resampling.resample_a_wv(wavelengths[wl_mask])
-    da_W_div_dT_res = resampling.resample_da_w_div_dT(wavelengths[wl_mask])
-    E_d_res = downwelling_irradiance.Ed(wavelengths[wl_mask])
-    E_dsa_res = downwelling_irradiance.E_dsa(wavelengths[wl_mask])
-    E_dsr_res = downwelling_irradiance.E_dsr(wavelengths[wl_mask])
-    E_dd_res = downwelling_irradiance.E_dd(wavelengths[wl_mask])
+    da_w_div_dT_res = resampling.resample_da_w_div_dT(wavelengths[wl_mask])
+    Ed_res = downwelling_irradiance.Ed(wavelengths[wl_mask])
+    Ed_sa_res = downwelling_irradiance.Ed_sa(wavelengths[wl_mask])
+    Ed_sr_res = downwelling_irradiance.Ed_sr(wavelengths[wl_mask])
+    Ed_d_res = downwelling_irradiance.Ed_d(wavelengths[wl_mask])
 
     # Get params from file
     params = read_params(args.params_file)
@@ -208,9 +208,9 @@ def main():
     glint_profile = profile.copy()
     glint_profile['count'] = len(wavelengths[wl_mask])
 
-    out_R_rs = np.zeros((len(wavelengths[wl_mask]), img.shape[2])) * np.nan
-    R_rs_profile = profile.copy()
-    R_rs_profile['count'] = len(wavelengths[wl_mask])
+    out_Rrs = np.zeros((len(wavelengths[wl_mask]), img.shape[2])) * np.nan
+    Rrs_profile = profile.copy()
+    Rrs_profile['count'] = len(wavelengths[wl_mask])
 
     ######################################################################
     ########## INVERSION LOOP ############################################
@@ -221,7 +221,7 @@ def main():
          rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_nfev']), 'w', **nfev_profile) as dst_nfev, \
          rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_fwd']), 'w', **fwd_profile) as dst_fwd, \
          rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_glint']), 'w', **glint_profile) as dst_glint, \
-         rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_Rrs']), 'w', **R_rs_profile) as dst_R_rs:
+         rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_Rrs']), 'w', **Rrs_profile) as dst_Rrs:
 
             start = timeit.default_timer()
             
@@ -232,11 +232,11 @@ def main():
                 # Read row from xarray object
                 row = img[:,idx[0],:]
 
-                # Apply water mask and convert from reflectance R [-] to above-water radiance reflectance r_rs [sr-1]
-                r_rs = row.where(indices.awei(row, row.wavelength)>0, shade=args.shade) / np.pi
+                # Apply water mask and convert from reflectance R [-] to above-water radiance reflectance rrs [sr-1]
+                rrs = row.where(indices.awei(row, row.wavelength)>0, shade=args.shade) / np.pi
                 
                 # Select only water pixels
-                data = r_rs[wl_mask].where(r_rs.notnull().all(axis=0), drop=True).T
+                data = rrs[wl_mask].where(rrs.notnull().all(axis=0), drop=True).T
 
                 # If the row contains water pixels ...
                 if data.shape[0] > 0:
@@ -252,25 +252,25 @@ def main():
                     chunk_refs = [ray.put(chunk) for chunk in chunks]  
                     # Invert chunks in parallel
                     result_refs = [invert_chunk.remote(chunk_ref,
-                                                    params=params,
-                                                    wavelengths=wavelengths[wl_mask],
-                                                    weights=[],
-                                                    a_i_spec_res=a_i_spec_res,
-                                                    a_w_res=a_w_res,
-                                                    b_phy_norm_res=b_phy_norm_res,
-                                                    b_bw_res=b_bw_res,
-                                                    R_i_b_res=R_i_b_res,
-                                                    E_0_res = E_0_res,
-                                                    a_oz_res = a_oz_res,
-                                                    a_ox_res = a_ox_res,
-                                                    a_wv_res = a_wv_res,       
-                                                    da_W_div_dT_res = da_W_div_dT_res,
-                                                    E_d_res = E_d_res,
-                                                    E_dsa_res = E_dsa_res,
-                                                    E_dsr_res = E_dsr_res,
-                                                    E_dd_res = E_dd_res,
-                                                    method='least_squares', 
-                                                    max_nfev=1500) for chunk_ref in chunk_refs]  # Process the chunks in parallel
+                                                       params=params,
+                                                       wavelengths=wavelengths[wl_mask],
+                                                       weights=[],
+                                                       a_i_spec_res=a_i_spec_res,
+                                                       a_w_res=a_w_res,
+                                                       b_phy_norm_res=b_phy_norm_res,
+                                                       bb_w_res=bb_w_res,
+                                                       R_i_b_res=R_i_b_res,
+                                                       E0_res = E0_res,
+                                                       a_oz_res = a_oz_res,
+                                                       a_ox_res = a_ox_res,
+                                                       a_wv_res = a_wv_res, 
+                                                       da_w_div_dT_res = da_w_div_dT_res,
+                                                       Ed_res = Ed_res,
+                                                       Ed_sa_res = Ed_sa_res,
+                                                       Ed_sr_res = Ed_sr_res,
+                                                       Ed_d_res = Ed_d_res,
+                                                       method='least_squares', 
+                                                       max_nfev=1500) for chunk_ref in chunk_refs]  # Process the chunks in parallel
                     chunk_results = ray.get(result_refs) 
 
                     # Concatenate the results (MinimizerResult objects) from the processed chunks
@@ -283,32 +283,32 @@ def main():
                     ## params
                     # reset array so that results of laster iteration are set to nan
                     out_params = out_params * np.nan 
-                    out_params[:,~np.isnan(r_rs).all(axis=0)] = np.array([np.array(i.params) for i in results]).T
+                    out_params[:,~np.isnan(rrs).all(axis=0)] = np.array([np.array(i.params) for i in results]).T
                     
                     ## n iterations
                     # reset array so that results of laster iteration are set to nan
                     out_nfev = out_nfev * np.nan
-                    out_nfev[:,~np.isnan(r_rs).all(axis=0)] = np.array([i.nfev for i in results]).T
+                    out_nfev[:,~np.isnan(rrs).all(axis=0)] = np.array([i.nfev for i in results]).T
 
-                    ## forward r_rs
+                    ## forward rrs
                     # reset array so that results of laster iteration are set to nan
                     out_fwd = out_fwd * np.nan
-                    out_fwd[:,~np.isnan(r_rs).all(axis=0)] = np.array([model.forward(i.params,
+                    out_fwd[:,~np.isnan(rrs).all(axis=0)] = np.array([model.forward(i.params,
                                                         wavelengths[wl_mask], 
                                                         a_i_spec_res=a_i_spec_res,
                                                         a_w_res=a_w_res,
                                                         b_phy_norm_res=b_phy_norm_res,
-                                                        bb_w_res=b_bw_res,
+                                                        bb_w_res=bb_w_res,
                                                         R_i_b_res=R_i_b_res,
-                                                        E0_res = E_0_res,
+                                                        E0_res = E0_res,
                                                         a_oz_res = a_oz_res,
                                                         a_ox_res = a_ox_res,
                                                         a_wv_res = a_wv_res, 
-                                                        da_w_div_dT_res = da_W_div_dT_res,
-                                                        Ed_res = E_d_res,
-                                                        Ed_sa_res = E_dsa_res,
-                                                        Ed_sr_res = E_dsr_res,
-                                                        Ed_d_res = E_dd_res) 
+                                                        da_w_div_dT_res = da_w_div_dT_res,
+                                                        Ed_res = Ed_res,
+                                                        Ed_sa_res = Ed_sa_res,
+                                                        Ed_sr_res = Ed_sr_res,
+                                                        Ed_d_res = Ed_d_res) 
                                             for i in results]).T
                     
                     ## glint
@@ -316,29 +316,29 @@ def main():
                                                                 g_dd=i.params['g_dd'].value,
                                                                 g_dsr=i.params['g_dsr'].value,
                                                                 g_dsa=i.params['g_dsa'].value,
-                                                                E_0_res = E_0_res,
+                                                                E0_res = E0_res,
                                                                 a_ox_res = a_ox_res,
                                                                 a_wv_res = a_wv_res, 
-                                                                E_d_res = E_d_res,
-                                                                E_dsa_res = E_dsa_res,
-                                                                E_dsr_res = E_dsr_res,
-                                                                E_dd_res = E_dd_res)
+                                                                Ed_res = Ed_res,
+                                                                Ed_sa_res = Ed_sa_res,
+                                                                Ed_sr_res = Ed_sr_res,
+                                                                Ed_d_res = Ed_d_res)
                                             for i in results])
                     # reset array so that results of laster iteration are set to nan
                     out_glint = out_glint * np.nan 
-                    out_glint[:,~np.isnan(r_rs).all(axis=0)] = glint.T
+                    out_glint[:,~np.isnan(rrs).all(axis=0)] = glint.T
 
-                    ## R_rs  
+                    ## Rrs  
                     # reset array so that results of laster iteration are set to nan
-                    out_R_rs = out_R_rs * np.nan 
-                    out_R_rs[:, ~np.isnan(r_rs).all(axis=0)] = (data - glint).T
+                    out_Rrs = out_Rrs * np.nan 
+                    out_Rrs[:, ~np.isnan(rrs).all(axis=0)] = (data - glint).T
 
                 # Write output rows into the respective files
                 dst_params.write(out_params[:,np.newaxis,:], window=wind)
                 dst_nfev.write(out_nfev[:,np.newaxis,:], window=wind)
                 dst_fwd.write(out_fwd[:,np.newaxis,:], window=wind)
                 dst_glint.write(out_glint[:,np.newaxis,:], window=wind)
-                dst_R_rs.write(out_R_rs[:,np.newaxis,:], window=wind)
+                dst_Rrs.write(out_Rrs[:,np.newaxis,:], window=wind)
                 
             stop = timeit.default_timer()
             print('Processing time: ', stop - start, '')  
