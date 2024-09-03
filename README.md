@@ -3,35 +3,6 @@
 
 The bio_optics python package is an open-source framework for forward and inverse modelling of above-water multi- and hyperspectral observations of natural water bodies. It contains the bio-optical models of Albert & Mobley (2003)[^1] and couples them to the surface reflectance model of Gege (2012)[^2]. The intention of the authors was to build a modular and extendable software package that allows the combination and creation of different models to study optical properties of natural water bodies. It can be used for simulation and analysis of spectroscopy data through inversion of the above-mentioned models. Single parts of the models can also be run as single modules, e.g., for the analysis of spectral backscattering or absorption measurements, or the correction of sun and sky glint at the water surface. 
 
-## HOW TO CONTRIBUTE
-This framework was intentionally built to be a community project. If you want to contribute or have any questions please get in touch with Marcel. If you find errors, bugs or if you have other suggestions, please use the ... functionality.
-
-## UPDATES
-Here we list the major changes of every release. Please take a look at the commit history for all details.
-
-<details>
-<summary>Version 0.0.2</summary>
-
-- Integration of HEREON bio-optical model including a split of `a_d` into `a_md` and `a_bd`, and `b_d` into `b_bd` and `b_md` 
-- Renaming of key variables and functions following the style `Quantity_Specification` to better resemble symbolism typically used in the bio-optical community (e.g., $b_{bw}$ is now represented as `bb_w` instead of `b_bw` and $R_{rs}$ is now represented as `Rrs` instead of `R_rs`). See the new GLOSSARY for details.
-- Integration of OPSHAL for identification of optically shallow water
-</details>
-
-
-## GLOSSARY
-| Symbol            | Code representation(s) | Description | Unit |
-| :---------------- | :------- | :---- | :---- |
-| $a(\lambda)$       |   `a`   | Absorption coefficient of water | $\text{m}^{-1}$ |
-| $a_w(\lambda)$       |   `a_w`   | Absorption coefficient of pure water | $\text{m}^{-1}$ |
-| $a_{ph}(\lambda)$       |   `a_ph`, `a_phy`,`a_Phi`   | Absorption coefficient of phytoplankton | $\text{m}^{-1}$ |
-| $a_Y(\lambda)$       |   `a_Y`,`a_Y_pow`,`a_Y_gauss`,`a_Y_exp_gauss`   | Absorption coefficient of CDOM or yellow substances | $\text{m}^{-1}$ |
-| $a_Y^{norm}(\lambda)$       |   `a_Y_norm`   | Normalized absorption coefficient of CDOM or yellow substances | $\text{m}^{-1}$ |
-| $a_{NAP}(\lambda)$       |   `a_NAP`   | Absorption coefficient of non-algal particles | $\text{m}^{-1}$ |
-| $a_{NAP}^{norm}(\lambda)$       |   `a_NAP_norm`   | Normalized absorption coefficient of non-algal particles | $\text{m}^{-1}$ |
-| $b(\lambda)$       |   `b`   | Scattering coefficient of water | $\text{m}^{-1}$ |
-| $b_b(\lambda)$       |   `bb`   | Backscattering coefficient of water | $\text{m}^{-1}$ |
-| $c(\lambda)$       |   `c`   | Attenuation coefficient of water | $\text{m}^{-1}$ |
-
 ## PLEASE GIVE US CREDIT
 This python package has initially been created by members of the CarbonMapper Land and Ocean Program at the Center for Global Discovery and Conservation Science at Arizona State University. When using this framework, please use the following citation:
 
