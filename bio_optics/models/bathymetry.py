@@ -23,7 +23,7 @@ def stumpf(R_w,
     :param m1: tunable constant to scale the ratio to depth (default: 1)
     :param m0: tunable constant to set offset for a depth of 0 m (default: 0)
     :param n: fixed value chosen to assure both that the logarithm will be positive under any condition and that the ratio will produce a linear response with depth (default: 1)
-    :param normalied: boolean to decide if output should be normalized to the range 0..1 (default: True).
+    :param normalized: boolean to decide if output should be normalized to the range 0..1 (default: True).
     :return: relative bathymetry
     """
 
@@ -52,7 +52,7 @@ def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1
     :param lambda3: wavelength [nm] of red band used for light attenuation index (omega) (default: 652 for GAO data) 
     :param chl_a: concentration of chl-a [mg m-3] (default: None, computed from r_rs)
     :param n: factor in stumpf() (default: 1000, according to [1]])
-    :param normalied: boolean to decide if output should be normalized to the range 0..1 (default: False).
+    :param normalized: boolean to decide if output should be normalized to the range 0..1 (default: False).
     :return: bathymetry
     """
     band1 = R_rs[find_closest(wavelengths,lambda1)[1]]
