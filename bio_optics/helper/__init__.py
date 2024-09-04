@@ -1,3 +1,13 @@
-__all__ = ["resampling","utils","indices","owt","distance", "normalization", "plotting", "spectral_mixture", "outlier", "opshal"]
+__all__ = ["distance",
+           "indices",
+           "normalization",
+           "opshal",
+           "outlier",
+           "owt",
+           "plotting",
+           "resampling",
+           "spectral_mixture",
+           "utils"
+           ]
 
-from . import resampling, utils, indices, owt, distance, normalization, plotting, spectral_mixture, outlier, opshal
+from . import distance, indices, normalization, opshal, outlier, owt, plotting, resampling, spectral_mixture, utils     
