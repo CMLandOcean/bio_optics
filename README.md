@@ -31,10 +31,10 @@ Here we list the major changes of every release. Please take a look at the commi
 | $b(\lambda)$       |   `b`   | Scattering coefficient of water | $\text{m}^{-1}$ |
 | $b_{phy}(\lambda)$       |   `b_phy`   | Scattering coefficient of phytoplankton | $\text{m}^{-1}$ |
 | $b_b(\lambda)$       |   `bb`   | Backscattering coefficient of a natural water body as the sum of the backscattering coefficients of pure water, phytoplankton and non-algal particles | $\text{m}^{-1}$ |
-| $b_{bphy{(\lambda)$       |   `bb_phy`   | Backscattering coefficient of phytoplankton | $\text{m}^{-1}$ |
-| $b_{bX{(\lambda)$       |   `bb_X`   | Backscattering coefficient of particles of type I with arbitrary wavelength dependency | $\text{m}^{-1}$ |
-| $b_{bMie{(\lambda)$       |   `bb_Mie`   | Backscattering coefficient of particles of type II | $\text{m}^{-1}$ |
-| $b_{bNAP{(\lambda)$       |   `bb_NAP`   | Backscattering coefficient of non-algal particles (NAP) as a mixture of two types (I and II) with spectrally different backscattering coefficients | $\text{m}^{-1}$ |
+| $b_{bphy}(\lambda)$       |   `bb_phy`   | Backscattering coefficient of phytoplankton | $\text{m}^{-1}$ |
+| $b_{bX}(\lambda)$       |   `bb_X`   | Backscattering coefficient of particles of type I with arbitrary wavelength dependency | $\text{m}^{-1}$ |
+| $b_{bMie}(\lambda)$       |   `bb_Mie`   | Backscattering coefficient of particles of type II | $\text{m}^{-1}$ |
+| $b_{bNAP}(\lambda)$       |   `bb_NAP`   | Backscattering coefficient of non-algal particles (NAP) as a mixture of two types (I and II) with spectrally different backscattering coefficients | $\text{m}^{-1}$ |
 | $c(\lambda)$       |   `c`   | Attenuation coefficient of water | $\text{m}^{-1}$ |
 | $c_d(\lambda)$       |   `c_d`   | Attenuation coefficient of detritus | $\text{m}^{-1}$ |
 
