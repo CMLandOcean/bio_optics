@@ -31,7 +31,7 @@ def main():
     parser = argparse.ArgumentParser(description='Invert Reflectance [-] image')
     parser.add_argument('--output_glint',action='store_true',help="Write glint spectrum to file")
     parser.add_argument('--output_score',action='store_true',help="Write glint score to file")
-    parser.add_argument('--output_rrs',action='store_true',help="Write Rrs spectrum to file")
+    parser.add_argument('--output_Rrs',action='store_true',help="Write Rrs spectrum to file")
     parser.add_argument('--min_wavelength',default=420,type=int,help="Minimum wavelength for inversion")
     parser.add_argument('--max_wavelength',default=950,type=int,help="Maximum wavelength for inversion")
     parser.add_argument('--interleave',default='BIL',type=str,help="interleave")
@@ -118,10 +118,10 @@ def main():
             outglint = make_ouput_name(args.input_file, "_gao_glint")
             print(f"Creating output {outglint}")
             dst_glint = rio.open(outglint, 'w', **glint_profile)
-        if args.output_rrs:
-            outrrs = make_ouput_name(args.input_file, "_rrs")
+        if args.output_Rrs:
+            outrrs = make_ouput_name(args.input_file, "_Rrs")
             print(f"Creating output {outrrs}")
-            dst_rrs = rio.open(outrrs, 'w', **rrs_profile)
+            dst_Rrs = rio.open(outrrs, 'w', **Rrs_profile)
         if args.output_score:
             outscore = make_ouput_name(args.input_file, "_glint_score.tif")
             print(f"Creating output {outscore}")

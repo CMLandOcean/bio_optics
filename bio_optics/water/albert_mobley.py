@@ -16,13 +16,12 @@
 #
 #
 # Translated to Python by:
-#  Marcel König, mkoenig3 AT asu.edu 
-#  Phillip Noel, pnoel1 AT asu.edu
+#  Marcel König, mkoenig3 AT asu.edu / marcel.koenig AT brockmann-consult.de
 #
 # bio_optics
 #  This code base builds on the extensive work of many researchers. For example, models were developed by Albert & Mobley [1] and Gege [2]; 
 #  and the methodology was mainly developed by Gege [3,4,5] and Albert & Gege [6]. Please give proper attribution when using this code for publication.
-#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7].
+#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7]
 #
 #  When using this code, please use the following citation:
 #

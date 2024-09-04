@@ -4,6 +4,7 @@ from .. helper.resampling import resample_a_w, resample_bb_w
 from .. helper import owt
 from .. surface.air_water import above2below
 
+
 def petus(Rrs, wavelengths, a=12450, b=666.1, c=0.48, lambda0=645):
     """
     Empirical TSS model for MODIS [1] 
