@@ -21,7 +21,7 @@ Here we list the major changes of every release. Please take a look at the commi
 ## GLOSSARY
 | Symbol            | Code representation(s) | Description | Unit |
 | :---------------- | :------- | :---- | :---- |
-| $a(\lambda)$       |   `a`   | Absorption coefficient of water | $\text{m}^{-1}$ |
+| $a(\lambda)$       |   `a`   | Absorption coefficient of a natural water body as the sum of the absorption coefficients of pure water, phytoplankton, yellow substances/CDOM, and non-algal particles | $\text{m}^{-1}$ |
 | $a_w(\lambda)$       |   `a_w`   | Absorption coefficient of pure water | $\text{m}^{-1}$ |
 | $a_{ph}(\lambda)$       |   `a_ph`, `a_phy`,`a_Phi`   | Absorption coefficient of phytoplankton | $\text{m}^{-1}$ |
 | $a_Y(\lambda)$       |   `a_Y`,`a_Y_pow`,`a_Y_gauss`,`a_Y_exp_gauss`   | Absorption coefficient of CDOM or yellow substances | $\text{m}^{-1}$ |
@@ -29,8 +29,14 @@ Here we list the major changes of every release. Please take a look at the commi
 | $a_{NAP}(\lambda)$       |   `a_NAP`   | Absorption coefficient of non-algal particles | $\text{m}^{-1}$ |
 | $a_{NAP}^{norm}(\lambda)$       |   `a_NAP_norm`   | Normalized absorption coefficient of non-algal particles | $\text{m}^{-1}$ |
 | $b(\lambda)$       |   `b`   | Scattering coefficient of water | $\text{m}^{-1}$ |
-| $b_b(\lambda)$       |   `bb`   | Backscattering coefficient of water | $\text{m}^{-1}$ |
+| $b_{phy}(\lambda)$       |   `b_phy`   | Scattering coefficient of phytoplankton | $\text{m}^{-1}$ |
+| $b_b(\lambda)$       |   `bb`   | Backscattering coefficient of a natural water body as the sum of the backscattering coefficients of pure water, phytoplankton and non-algal particles | $\text{m}^{-1}$ |
+| $b_bphy(\lambda)$       |   `bb_phy`   | Backscattering coefficient of phytoplankton | $\text{m}^{-1}$ |
+| $b_bX(\lambda)$       |   `bb_X`   | Backscattering coefficient of particles of type I with arbitrary wavelength dependency | $\text{m}^{-1}$ |
+| $b_bMie(\lambda)$       |   `bb_Mie`   | Backscattering coefficient of particles of type II | $\text{m}^{-1}$ |
+| $b_bNAP(\lambda)$       |   `bb_NAP`   | Backscattering coefficient of non-algal particles (NAP) as a mixture of two types (I and II) with spectrally different backscattering coefficients | $\text{m}^{-1}$ |
 | $c(\lambda)$       |   `c`   | Attenuation coefficient of water | $\text{m}^{-1}$ |
+| $c_d(\lambda)$       |   `c_d`   | Attenuation coefficient of detritus | $\text{m}^{-1}$ |
 
 ## PLEASE GIVE US CREDIT
 This python package has initially been created by members of the CarbonMapper Land and Ocean Program at the Center for Global Discovery and Conservation Science at Arizona State University. When using this framework, please use the following citation:
