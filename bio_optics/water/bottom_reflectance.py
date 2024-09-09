@@ -81,7 +81,7 @@ def Rrs_b(f_0 = 0,
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
     if len(R_i_b_res)==0:
-        R_i_b = resampling.resample_R_i_b(wavelengths=wavelengths)
+        R_i_b = resampling.resample_Rb_i(wavelengths=wavelengths)
     else:
         R_i_b = R_i_b_res
     
@@ -105,7 +105,7 @@ B_0 = 1/np.pi,
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
     if len(R_i_b_res)==0:
-        R_i_b = resampling.resample_R_i_b(wavelengths=wavelengths)
+        R_i_b = resampling.resample_Rb_i(wavelengths=wavelengths)
     else: 
         R_i_b = R_i_b_res
     
@@ -136,7 +136,7 @@ def dRrs_b_div_dB_i(i,
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
     if len(R_i_b_res)==0:
-        R_i_b = resampling.resample_R_i_b(wavelengths=wavelengths)
+        R_i_b = resampling.resample_Rb_i(wavelengths=wavelengths)
     else: 
         R_i_b = R_i_b_res
     
