@@ -15,6 +15,7 @@ Here we list the major changes of every release. Please take a look at the commi
 - Integration of HEREON bio-optical model including a split of `a_d` into `a_md` and `a_bd`, and `b_d` into `b_bd` and `b_md` 
 - Renaming of key variables and functions following the style `Quantity_Specification` to better resemble symbolism typically used in the bio-optical community (e.g., $b_{bw}$ is now represented as `bb_w` instead of `b_bw` and $R_{rs}$ is now represented as `Rrs` instead of `R_rs`). See the new GLOSSARY for details.
 - Integration of OPSHAL for identification of optically shallow water
+- Integration of multiple (semi-)empirical and semi-analytical algorithms for Chlorophyll-a, CDOM, SPM and Turbidity retrieval
 </details>
 
 
