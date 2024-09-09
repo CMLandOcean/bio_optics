@@ -167,7 +167,7 @@ def main():
     a_w_res = resampling.resample_a_w(wavelengths[wl_mask])
     b_phy_norm_res = resampling.resample_b_phy_norm(wavelengths[wl_mask])
     bb_w_res = resampling.resample_bb_w(wavelengths[wl_mask])
-    R_i_b_res = resampling.resample_R_i_b(wavelengths[wl_mask])
+    R_i_b_res = resampling.resample_Rb_i(wavelengths[wl_mask])
     E0_res = resampling.resample_E0(wavelengths[wl_mask])
     a_oz_res = resampling.resample_a_oz(wavelengths[wl_mask])
     a_ox_res = resampling.resample_a_ox(wavelengths[wl_mask])
