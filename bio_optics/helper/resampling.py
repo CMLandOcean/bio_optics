@@ -222,7 +222,7 @@ def resample_R_b_i(wavelengths=np.arange(400,800)):
     """
     # read file
     # R_bottom_db = pd.read_csv("C://Users//mkoenig3//WASI6//DATA/R_bottom.csv", sep=",")
-    R_bottom_db = pd.read_csv(os.path.join(data_dir, 'Rb.txt'), skiprows=16, sep=",")
+    R_bottom_db = pd.read_csv(os.path.join(data_dir, 'R_b.txt'), skiprows=16, sep=",")
     # resample to sensor bands
     band_resampler = BandResampler(R_bottom_db.wavelength_nm.values, wavelengths)    
     R_b_i = band_resampler(np.asarray(R_bottom_db)[:,1:])
