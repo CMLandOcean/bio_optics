@@ -67,7 +67,7 @@ def invert_chunk(chunk,
                  a_w_res,
                  b_phy_norm_res,
                  bb_w_res,
-                 R_i_b_res,
+                 R_b_i_res,
                  E0_res,
                  a_oz_res,
                  a_ox_res,
@@ -96,7 +96,7 @@ def invert_chunk(chunk,
                            a_w_res=a_w_res,
                            b_phy_norm_res=b_phy_norm_res,
                            bb_w_res=bb_w_res,
-                           R_i_b_res=R_i_b_res,
+                           R_b_i_res=R_b_i_res,
                            E0_res = E0_res,
                            a_oz_res = a_oz_res,
                            a_ox_res = a_ox_res,
@@ -167,7 +167,7 @@ def main():
     a_w_res = resampling.resample_a_w(wavelengths[wl_mask])
     b_phy_norm_res = resampling.resample_b_phy_norm(wavelengths[wl_mask])
     bb_w_res = resampling.resample_bb_w(wavelengths[wl_mask])
-    R_i_b_res = resampling.resample_R_b_i(wavelengths[wl_mask])
+    R_b_i_res = resampling.resample_R_b_i(wavelengths[wl_mask])
     E0_res = resampling.resample_E0(wavelengths[wl_mask])
     a_oz_res = resampling.resample_a_oz(wavelengths[wl_mask])
     a_ox_res = resampling.resample_a_ox(wavelengths[wl_mask])
@@ -259,7 +259,7 @@ def main():
                                                        a_w_res=a_w_res,
                                                        b_phy_norm_res=b_phy_norm_res,
                                                        bb_w_res=bb_w_res,
-                                                       R_i_b_res=R_i_b_res,
+                                                       R_b_i_res=R_b_i_res,
                                                        E0_res = E0_res,
                                                        a_oz_res = a_oz_res,
                                                        a_ox_res = a_ox_res,
@@ -299,7 +299,7 @@ def main():
                                                         a_w_res=a_w_res,
                                                         b_phy_norm_res=b_phy_norm_res,
                                                         bb_w_res=bb_w_res,
-                                                        R_i_b_res=R_i_b_res,
+                                                        R_b_i_res=R_b_i_res,
                                                         E0_res = E0_res,
                                                         a_oz_res = a_oz_res,
                                                         a_ox_res = a_ox_res,

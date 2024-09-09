@@ -93,7 +93,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
             a_w_res=[],
             A_res=[],
             bb_w_res=[],
-            R_i_b_res=[]):
+            R_b_i_res=[]):
     """
     Subsurface reflectance of shallow water [sr-1] after Lee et al. (1998, 1999) [1,2].
     
@@ -142,7 +142,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
         a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
         A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
         bb_w_res: optional, precomputing bb_w bb_w saves a lot of time during inversion. Will be computed within function if not provided.
-        R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
+        R_b_i_res: optional, preresampling R_b_i before inversion saves a lot of time. Will be computed within function if not provided.
 
     Returns:
         rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
@@ -158,7 +158,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
     u = bs / kappa
     
     rrs_sh = (rrs_dp(u=u, g_0=g_0, g_1=g_1) * (1 - np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_C(u=u))))) + \
-              bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
+              bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_b_i_res=R_b_i_res) * \
               np.exp(-kappa * zB * (1/np.cos(air_water.snell(theta_inc=theta_sun, n1=n1, n2=n2)) + D_u_B(u=u)))
                 
     return rrs_sh
@@ -257,7 +257,7 @@ def forward(params,
                                     a_w_res=a_w_res,
                                     A_res=A_res,
                                     bb_w_res=bb_w_res,
-                                    R_i_b_res=R_i_b_res) + params['offset'])
+                                    R_b_i_res=R_i_b_res) + params['offset'])
     
     return Rrs_sim
 

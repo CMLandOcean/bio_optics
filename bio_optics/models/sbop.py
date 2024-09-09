@@ -32,7 +32,7 @@ def rrs_sh(C_Mie = 0,           # represents P from Eq. 10 [1]
            wavelengths = np.arange(400,800),
            a_w_res=[],
            bb_w_res=[],
-           R_i_b_res=[]):
+           R_b_i_res=[]):
     """
     Shallow water bio-optical properties (SBOP) model after Li et al. (2017) [1].
     
@@ -78,7 +78,7 @@ def rrs_sh(C_Mie = 0,           # represents P from Eq. 10 [1]
         a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
         A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
         b_bw_res: optional, precomputing b_bw b_bw saves a lot of time during inversion. Will be computed within function if not provided.
-        R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
+        R_b_i_res: optional, preresampling R_b_i before inversion saves a lot of time. Will be computed within function if not provided.
 
     Returns:
         rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
@@ -94,7 +94,7 @@ def rrs_sh(C_Mie = 0,           # represents P from Eq. 10 [1]
     u = bs / kappa
     
     rrs_sh = hope.rrs_dp(u, g_0=g_0, g_1=g_1) * (1 - np.exp(-hope.D_u_C(u, f1=1, f2=2.4) * kappa * zB)) + \
-             bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_i_b_res=R_i_b_res) * \
+             bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5, B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5, wavelengths=wavelengths, R_b_i_res=R_b_i_res) * \
              np.exp(-hope.D_u_B(u, f1=1, f2=5.5) * kappa * zB)
                     
     return rrs_sh
@@ -106,7 +106,7 @@ def invert(params,
            weights = [],
            a_w_res=[],
            bb_w_res=[],
-           R_i_b_res=[],
+           R_b_i_res=[],
            method="least-squares", 
            max_nfev=400
            ):
@@ -119,7 +119,7 @@ def invert(params,
     :param weights: spectral weighing coefficients
     :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
     :param bb_w_res: optional, precomputing bb_w saves a lot of time during inversion. Will be computed within function if not provided.
-    :param R_i_b_res: optional, preresampling R_i_b before inversion saves a lot of time. Will be computed within function if not provided.
+    :param R_b_i_res: optional, preresampling R_b_i before inversion saves a lot of time. Will be computed within function if not provided.
     :param method: name of the fitting method to use by lmfit, default: 'least-squares'
     :param max_nfev: maximum number of function evaluations, default: 400
     :return: object containing the optimized parameters and several goodness-of-fit statistics.
@@ -135,7 +135,7 @@ def invert(params,
                          weights,
                          a_w_res, 
                          bb_w_res, 
-                         R_i_b_res), 
+                         R_b_i_res), 
                    method=method, 
                    max_nfev=max_nfev) 
     return res
@@ -145,7 +145,7 @@ def forward(params,
             wavelengths,
             a_w_res=[],
             bb_w_res = [],
-            R_i_b_res = [],):
+            R_b_i_res = [],):
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
@@ -153,7 +153,7 @@ def forward(params,
     :param wavelengths: wavelengths of rrs bands [nm]
     :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
     :param bb_w_res: optional, precomputing bb_w saves a lot of time . Will be computed within function if not provided.
-    :param R_i_b_res: optional, preresampling R_i_b saves a lot of time. Will be computed within function if not provided.
+    :param R_b_i_res: optional, preresampling R_b_i saves a lot of time. Will be computed within function if not provided.
     :return: rrs: simulated remote sensing reflectance spectrum [sr-1]
     """
     rrs_sim = air_water.below2above(
@@ -184,7 +184,7 @@ def forward(params,
                                    g_1 = params['g_1'],
                                    a_w_res=a_w_res,
                                    bb_w_res=bb_w_res,
-                                   R_i_b_res=R_i_b_res) + params['offset'])
+                                   R_b_i_res=R_b_i_res) + params['offset'])
     
     return rrs_sim
 
@@ -195,7 +195,7 @@ def func2opt(params,
              weights = [],
              a_w_res=[],
              b_bw_res=[],
-             R_i_b_res=[]):
+             R_b_i_res=[]):
     """_summary_
 
     Args:
@@ -205,7 +205,7 @@ def func2opt(params,
         weights (list, optional): _description_. Defaults to [].
         a_w_res (list, optional): _description_. Defaults to [].
         b_bw_res (list, optional): _description_. Defaults to [].
-        R_i_b_res (list, optional): _description_. Defaults to [].
+        R_b_i_res (list, optional): _description_. Defaults to [].
 
     Returns:
         _type_: _description_
@@ -214,6 +214,6 @@ def func2opt(params,
                        params=params,    
                        a_w_res=a_w_res,
                        bb_w_res=b_bw_res,
-                       R_i_b_res=R_i_b_res) + params['offset']
+                       R_b_i_res=R_b_i_res) + params['offset']
     
     return utils.compute_residual(rrs, rrs_sim, method=params['error_method'], weights=weights)
