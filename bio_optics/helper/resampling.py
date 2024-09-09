@@ -206,7 +206,7 @@ def resample_b_phy_norm(wavelengths = np.arange(400,800)):
     return b_phy_norm
 
 
-def resample_Rb_i(wavelengths=np.arange(400,800)):
+def resample_R_b_i(wavelengths=np.arange(400,800)):
     """
     Irradiance reflectance or albedo [-] of bottom types f0..f5 to sensor's spectral sampling rate.
 
@@ -225,9 +225,9 @@ def resample_Rb_i(wavelengths=np.arange(400,800)):
     R_bottom_db = pd.read_csv(os.path.join(data_dir, 'Rb.txt'), skiprows=16, sep=",")
     # resample to sensor bands
     band_resampler = BandResampler(R_bottom_db.wavelength_nm.values, wavelengths)    
-    Rb_i = band_resampler(np.asarray(R_bottom_db)[:,1:])
+    R_b_i = band_resampler(np.asarray(R_bottom_db)[:,1:])
     
-    return Rb_i
+    return R_b_i
     
     
 ### Atmosphere
