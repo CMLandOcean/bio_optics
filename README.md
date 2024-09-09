@@ -37,6 +37,11 @@ Here we list the major changes of every release. Please take a look at the commi
 | $b_{bNAP}(\lambda)$       |   `bb_NAP`   | Backscattering coefficient of non-algal particles (NAP) as a mixture of two types (I and II) with spectrally different backscattering coefficients | $\text{m}^{-1}$ |
 | $c(\lambda)$       |   `c`   | Attenuation coefficient of water | $\text{m}^{-1}$ |
 | $c_d(\lambda)$       |   `c_d`   | Attenuation coefficient of detritus | $\text{m}^{-1}$ |
+| $R(\lambda)$       |   `R`   | Reflectance | unitless |
+| $R_b(\lambda)$       |   `R_b`   | Benthic reflectance | unitless |
+| $r_{rs}(\lambda)$       |   `rrs`   | Radiance reflectance | $\text{sr}^{-1}$ |
+| $R_{rs}(\lambda)$       |   `Rrs`   | Remote sensing reflectance | $\text{sr}^{-1}$ |
+
 
 ## PLEASE GIVE US CREDIT
 This python package has initially been created by members of the CarbonMapper Land and Ocean Program at the Center for Global Discovery and Conservation Science at Arizona State University. When using this framework, please use the following citation:
