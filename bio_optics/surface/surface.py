@@ -38,8 +38,8 @@
 def L_surf(L_s, rho_L):
     return rho_L * L_s
 
-def Rrs_surf(L_s, E_d, rho_L=0.02, d_r=0):
-    return (L_surf(L_s, rho_L) / E_d) + d_r
+def Rrs_surf(L_s, Ed, rho_L=0.02, d_r=0):
+    return (L_surf(L_s, rho_L) / Ed) + d_r
 
-def dRrs_surf_dp(L_s, dL_s_div_dp, E_d, dE_d_div_dp, rho_L):
-    return rho_L * ((dL_s_div_dp / E_d) + (L_s * E_d**-2 * dE_d_div_dp))
+def dRrs_surf_dp(L_s, dL_s_div_dp, Ed, dEd_div_dp, rho_L):
+    return rho_L * ((dL_s_div_dp / Ed) + (L_s * Ed**-2 * dEd_div_dp))
