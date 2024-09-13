@@ -309,7 +309,7 @@ def forward(parameters,
 
     kuB = attenuation.ku_b(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    Rrs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_W=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
+    Rrs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_w=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
 
     if parameters["fit_surface"].value:
         if len(Ed_d_res) == 0:
