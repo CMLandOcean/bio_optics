@@ -226,7 +226,7 @@ def forward(parameters,
 
     kuB = attenuation.ku_b(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    R_rs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_W=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
+    R_rs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_w=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
 
     if parameters["fit_surface"].value:
         if len(Ed_d_res) == 0:
@@ -424,7 +424,7 @@ def dfun(parameters,
 
     kuB = attenuation.ku_b(a=a_sim, bb=bb_sim, omega_b=ob, cos_t_sun_p=ctsp, cos_t_view_p=ctvp)
 
-    R_rs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_W=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
+    R_rs_water = air_water.below2above(water_alg.rrs_shallow(rrs_deep=rrsd, Kd=Kd, ku_w=kuW, zB=parameters["zB"], Rrs_b=Rrsb, ku_b=kuB)) # zeta & gamma
 
     if len(Ed_d_res) == 0:
         Ed_d  = downwelling_irradiance.Ed_d(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_d_res)
