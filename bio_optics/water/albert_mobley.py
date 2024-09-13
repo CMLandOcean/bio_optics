@@ -98,7 +98,7 @@ def drrs_deep_div_dp(f_rs,
 
 def rrs_shallow(rrs_deep,
                  Kd,
-                 ku_W,
+                 ku_w,
                  zB,
                  Rrs_b,
                  ku_b,
@@ -114,7 +114,7 @@ def rrs_shallow(rrs_deep,
     # Math: r_{rs}^{sh-} = r_{rs}^{deep-} * \left[ 1 - A_{rs,1} * e^{-(K_d + k_{uW}) * zB} \right] + A_{rs,2} * R_{rs}^b * e^{-(K_d + k_{uB}) * zB}
     """
     return rrs_deep * \
-            (1 - A_rs1 * np.exp(-(Kd + ku_W) * zB)) + \
+            (1 - A_rs1 * np.exp(-(Kd + ku_w) * zB)) + \
             A_rs2 * Rrs_b * np.exp(-(Kd + ku_b) * zB)
 
 def drrs_shallow_div_dp(r_rs_deep,
