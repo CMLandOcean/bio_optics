@@ -4,7 +4,7 @@
 The bio_optics python package is an open-source framework for forward and inverse modelling of above-water multi- and hyperspectral observations of natural water bodies. It contains the bio-optical models of Albert & Mobley (2003)[^1] and couples them to the surface reflectance model of Gege (2012)[^2]. The intention of the authors was to build a modular and extendable software package that allows the combination and creation of different models to study optical properties of natural water bodies. It can be used for simulation and analysis of spectroscopy data through inversion of the above-mentioned models. Single parts of the models can also be run as single modules, e.g., for the analysis of spectral backscattering or absorption measurements, or the correction of sun and sky glint at the water surface. 
 
 ## HOW TO CONTRIBUTE
-This framework was intentionally built to be a community project. If you want to contribute or have any questions please get in touch with Marcel. If you find errors, bugs or if you have other suggestions, please use the ... functionality.
+This framework was intentionally built to be a community project. If you want to contribute or have any questions please get in touch with Marcel [marcel.koenig AT brockmann-consult.de]. If you find errors, bugs or if you have other suggestions, you can also use GitHub's issue functionality.
 
 ## UPDATES
 Here we list the major changes of every release. Please take a look at the commit history for all details.
