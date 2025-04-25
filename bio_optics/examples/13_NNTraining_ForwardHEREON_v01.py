@@ -163,22 +163,22 @@ def plot_Hist_categories(ytest, ypred, output_label, plotPath, model_fn, epoch=N
             plt.close()
 
 
-def transform_NorthSea_IOPs(iopArr, reverse = False):
+def transform_NorthSea_IOPs(iopArr, varList, rangeDict, reverse = False):
     # set fixed IOP values, for variable: 'C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'
-    varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
-    rangeDict = {
-        'C_0': [0., 1000.],
-        'C_2': [0., 1000.],
-        'C_5': [0., 1000.],
-        'C_6': [0., 1000.],
-        'C_7': [0., 1.],
-        'C_Y': [0., 2.],
-        'C_ism': [0., 100.],
-        'L_fl_lambda0': [0., 0.2],
-        'b_ratio_md': [0.021, 0.3756],
-        'b_ratio_bd': [0.021, 0.3756],
-        'S_cdom': [0.005, 0.032]
-    }
+    # varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
+    # rangeDict = {
+    #     'C_0': [0., 1000.],
+    #     'C_2': [0., 1000.],
+    #     'C_5': [0., 1000.],
+    #     'C_6': [0., 1000.],
+    #     'C_7': [0., 1.],
+    #     'C_Y': [0., 2.],
+    #     'C_ism': [0., 100.],
+    #     'L_fl_lambda0': [0., 0.2],
+    #     'b_ratio_md': [0.021, 0.3756],
+    #     'b_ratio_bd': [0.021, 0.3756],
+    #     'S_cdom': [0.005, 0.032]
+    # }
 
     iopArrT = np.zeros(iopArr.shape)
     for i, v in enumerate(varList):
@@ -190,22 +190,62 @@ def transform_NorthSea_IOPs(iopArr, reverse = False):
 
     return iopArrT
 
-def transform_NorthSea_IOPs_single(x, v, reverse = False):
+def transform_NorthSea_IOPs_log(iopArr,
+                            varList,
+                            rangeDict,
+                            reverse=False):
+    ## log-Transform for all concentration values!
+    ## scaling for all else.
+
+    # varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
+    # rangeDict = {
+    #     'C_0': [0., 1000.],
+    #     'C_2': [0., 1000.],
+    #     'C_5': [0., 1000.],
+    #     'C_6': [0., 1000.],
+    #     'C_7': [0., 1.],
+    #     'C_Y': [0., 2.],
+    #     'C_ism': [0., 100.],
+    #     'L_fl_lambda0': [0., 0.2],
+    #     'b_ratio_md': [0.021, 0.3756],
+    #     'b_ratio_bd': [0.021, 0.3756],
+    #     'S_cdom': [0.005, 0.032]
+    # }
+
+    iopArrT = np.zeros(iopArr.shape)
+    for i, v in enumerate(varList):
+        if v.startswith('C'):
+            if reverse:
+                iopArrT[:, i] = np.power(10., iopArr[:, i])
+            else:
+                iopArrT[:, i] = np.log10(iopArr[:, i])
+
+        else:
+            delta = rangeDict[v][1] - rangeDict[v][0]
+            if reverse:
+                iopArrT[:, i] = iopArr[:, i] * delta + delta / 2.
+            else:
+                iopArrT[:, i] = (iopArr[:, i] - delta / 2.) / delta
+
+    return iopArrT
+
+
+def transform_NorthSea_IOPs_single(x, v, rangeDict, reverse = False):
     # set fixed IOP values, for variable: 'C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'
-    varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
-    rangeDict = {
-        'C_0': [0., 1000.],
-        'C_2': [0., 1000.],
-        'C_5': [0., 1000.],
-        'C_6': [0., 1000.],
-        'C_7': [0., 1.],
-        'C_Y': [0., 2.],
-        'C_ism': [0., 100.],
-        'L_fl_lambda0': [0., 0.2],
-        'b_ratio_md': [0.021, 0.3756],
-        'b_ratio_bd': [0.021, 0.3756],
-        'S_cdom': [0.005, 0.032]
-    }
+    # varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
+    # rangeDict = {
+    #     'C_0': [0., 1000.],
+    #     'C_2': [0., 1000.],
+    #     'C_5': [0., 1000.],
+    #     'C_6': [0., 1000.],
+    #     'C_7': [0., 1.],
+    #     'C_Y': [0., 2.],
+    #     'C_ism': [0., 100.],
+    #     'L_fl_lambda0': [0., 0.2],
+    #     'b_ratio_md': [0.021, 0.3756],
+    #     'b_ratio_bd': [0.021, 0.3756],
+    #     'S_cdom': [0.005, 0.032]
+    # }
 
     delta = rangeDict[v][1] - rangeDict[v][0]
     if reverse:
@@ -224,21 +264,27 @@ def NN_tensorflow_training_IOP2Model(d, NNdict, NNtraining_metadata, outpath = '
 
     ###
     # split into trainig + validation.
-    X, Y = setup_input_output_data_byLabel(d, NNtraining_metadata['output_label'], NNtraining_metadata['input_names'])
+    X, Y = setup_input_output_data_byLabel(d, NNtraining_metadata['output_label'], NNtraining_metadata['input_label'])
 
     print('training data', X.shape)
 
     ###
     # Transformation of input data
-    if NNtraining_metadata['transformation_method'] != '' :
-        if NNtraining_metadata['transformation_method'] == 'log10':
+    if NNtraining_metadata['transformation_method_input'] != '' :
+        if NNtraining_metadata['transformation_method_input'] == 'log10':
             X = np.log10(X)
-        if NNtraining_metadata['transformation_method'] == 'sqrt':
+        if NNtraining_metadata['transformation_method_input'] == 'sqrt':
             X = np.sqrt(X)
-        if NNtraining_metadata['transformation_method'] == 'IOP_NorthSea_ranges':
+        if NNtraining_metadata['transformation_method_input'] == 'IOP_NorthSea_ranges':
             ###
             # transform/scale IOP data !
-            X = transform_NorthSea_IOPs(X)
+            X = transform_NorthSea_IOPs(X, varList=NNtraining_metadata['input_label'],
+                                        rangeDict=NNtraining_metadata['input_ranges'])
+        if NNtraining_metadata['transformation_method_input'] == 'IOP_NorthSea_log+scaled':
+            ###
+            # transform/scale IOP data !
+            X = transform_NorthSea_IOPs_log(X, varList=NNtraining_metadata['input_label'],
+                                        rangeDict=NNtraining_metadata['input_ranges'])
 
     ###
     # check: remove nan!
@@ -276,14 +322,18 @@ def NN_tensorflow_training_IOP2Model(d, NNdict, NNtraining_metadata, outpath = '
         NNfnames = [fn for fn in NNfnames if fn.endswith('.h5')]
         epochs_ = [int(a.split('epoch')[1].split('_')[0]) for a in NNfnames]
         epochs_ = np.asarray(epochs_)
-        ID = np.array(epochs_ == np.max(epochs_))
+        # ID = np.array(epochs_ == np.max(epochs_))
+        epochs_ordered = np.sort(epochs_)
+        epoch_start = epochs_ordered[-2]
+        ID = np.array(epochs_ == epoch_start)
         bestLoss = [float(a.split('loss')[1].split('.h5')[0]) for a in NNfnames]
-        bestLoss = np.min(np.asarray(bestLoss))
+        # bestLoss = np.min(np.asarray(bestLoss))
+        bestLoss = np.asarray(bestLoss)[ID]
         if bestLoss == 0.:
             bestLoss = 0.001
         NNfnames = np.asarray(NNfnames)[ID][0]
         fwpath = outpath + NNfnames
-        epoch_start = np.max(epochs_)
+        # epoch_start = np.max(epochs_)
         model_ = tf.keras.models.load_model(fwpath)
 
     ##
@@ -390,6 +440,7 @@ def NN_tensorflow_training_IOP2Model(d, NNdict, NNtraining_metadata, outpath = '
 # setup Training data
 ###
 def setup_trainingdata():
+    # AC v1.3.3
     fname = "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\AANN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_InvertibleCategory_selection20240405_v2.txt"
     rrs_inv_fname = "E:\Documents\projects\EnsAD\inversion\HZG_HEREON_groups\\results_MK\inverted_Rrs_bio_optics_HEREONfull_NorthSeaEnMAPSouth20230815_V7AHall_md_bd_v2.txt"
     iop_inv_fname = "E:\Documents\projects\EnsAD\inversion\HZG_HEREON_groups\\results_MK\inverted_IOP_bio_optics_HEREONfull_NorthSeaEnMAPSouth20230815_V7AHall_md_bd_v2.txt"
@@ -453,8 +504,36 @@ NNdict = {
 
 
 NNtraining_metadata = {
-    'training_data_path': "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240408.txt",
-    'input_names': ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'],
+    # 'training_data_path': "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240408.txt", # AC v1.03.03
+    'training_data_path': "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240708_v2.txt", # AC v1.4.2
+    # AC v1.04.02
+    # 'input_label': ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'], # AC v1.03.03
+    'input_label': ['C_0', 'C_1', 'C_2', 'C_5', 'C_6', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'],  # AC v1.04.02
+
+    ## v 1.3.3
+    # 'input_Ranges': {'C_0': [0., 1000.],
+    #                'C_2': [0., 1000.],
+    #                'C_5': [0., 1000.],
+    #                'C_6': [0., 1000.],
+    #                'C_7': [0., 1.],
+    #                'C_Y': [0., 2.],
+    #                'C_ism': [0., 100.],
+    #                'L_fl_lambda0': [0., 0.2],
+    #                'b_ratio_md': [0.021, 0.3756],
+    #                'b_ratio_bd': [0.021, 0.3756],
+    #                'S_cdom': [0.005, 0.032]},
+    ## v1.4.2
+    'input_ranges': {'C_0': [0., 1000.],
+                    'C_1': [0., 1000.],
+                   'C_2': [0., 1000.],
+                   'C_5': [0., 1000.],
+                   'C_6': [0., 1000.],
+                   'C_Y': [0., 2.],
+                   'C_ism': [0., 50.],
+                   'L_fl_lambda0': [0., 0.2],
+                   'b_ratio_md': [0.021, 0.3756],
+                   'b_ratio_bd': [0.021, 0.3756],
+                   'S_cdom': [0.005, 0.032]},
     'output_label': ['inv_418.24', 'inv_423.874', 'inv_429.294', 'inv_434.528', 'inv_439.603', 'inv_444.549', 'inv_449.391', 'inv_454.159', 'inv_458.884',
                     'inv_463.584', 'inv_468.265', 'inv_472.934', 'inv_477.599', 'inv_482.265', 'inv_486.941', 'inv_491.633', 'inv_496.349', 'inv_501.094',
                     'inv_505.87', 'inv_510.678', 'inv_515.519', 'inv_520.397', 'inv_525.313', 'inv_530.268', 'inv_535.265', 'inv_540.305', 'inv_545.391',
@@ -462,10 +541,11 @@ NNtraining_metadata = {
                     'inv_599.267', 'inv_605.011', 'inv_610.833', 'inv_616.737', 'inv_622.732', 'inv_628.797', 'inv_634.919', 'inv_641.1', 'inv_647.341',
                     'inv_653.643', 'inv_660.007', 'inv_666.435', 'inv_672.927', 'inv_679.485', 'inv_686.11', 'inv_692.804', 'inv_699.567', 'inv_706.401',
                     'inv_713.307', 'inv_720.282', 'inv_727.324', 'inv_734.431', 'inv_741.601', 'inv_748.833'],
-    'transformation_method': 'IOP_NorthSea_ranges', # 'log', 'sqrt', 'IOP_NorthSea_ranges'
+    'transformation_method_input': 'IOP_NorthSea_log+scaled', # 'log', 'sqrt', 'IOP_NorthSea_ranges'
     'architectures': [[110, 70, 60]],  # [80, 80, 80, 80], [110, 100, 90], [80, 80, 80]
-    'outpath': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240409_v01\\",
-    'maxEpochs': 100000, #30, bei block_size=1; 15000 bei block_size=1000
+    # 'outpath': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240409_v01\\", ## AC v1.3.3
+    'outpath': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240708_v01\\", ## AC v1.4.2
+    'maxEpochs': 150000, #30, bei block_size=1; 15000 bei block_size=1000
     'file_ending': '_l1RegTrans',
     'InputMin': '',
     'InputMax': '',
@@ -480,11 +560,11 @@ trainingRun = True
 for arch in NNtraining_metadata['architectures'][:]:
     print(arch)
     NNdict['Nodes_layer'] = arch            #architecture of the hidden layers in the NN.
-    input_label = NNtraining_metadata['input_names'] # training data input, column names
+    input_label = NNtraining_metadata['input_label'] # training data input, column names
     output_label = NNtraining_metadata['output_label']  # training data output, column names (1 or more columns)
 
     Ninput = len(input_label)
-    file_ending = NNtraining_metadata['transformation_method'] + NNtraining_metadata['file_ending']
+    file_ending = NNtraining_metadata['transformation_method_input'] + NNtraining_metadata['file_ending']
 
     outpath = NNtraining_metadata['outpath']
     folder_NNtraining = setup_folder_NNtraining(outpath, arch, file_ending, Ninput, len(output_label))
@@ -503,7 +583,7 @@ for arch in NNtraining_metadata['architectures'][:]:
         file.close()
 
         NN_tensorflow_training_IOP2Model(d, NNdict, NNtraining_metadata, outpath=plotPath + 'temp/', image_outpath=plotPath,
-                                    epochs=NNtraining_metadata['maxEpochs'], batch_size=NNdict['batch_size'], resume=True)
+                                    epochs=NNtraining_metadata['maxEpochs'], batch_size=NNdict['batch_size'], resume=False)  # resume=False for a new set of NNs
 
     # if testTheBest:
         # find_bestNN_and_threshold_for_output_categories(d, NNtraining_metadata, NNpath=plotPath+ 'temp/', outpath=outpath)

@@ -341,7 +341,7 @@ def forward(parameters,
                                          fwhm=parameters['fwhm_phycocyanin'],
                                          lambda_C=parameters['lambda_C_phycocyanin'],
                                          h_C_phycocyanin_res=h_C_phycocyanin_res)
-    if parameters["C_4"] > 0.1:
+    if parameters["C_4"] > 0.1 or parameters["C_2"] > 0.1:  ## cyano_red, cryptophytes
         R_rs_water += fluorescence.R_rs_fl_phycoerythrin(wavelengths=wavelengths,
                                            L_fl_phycoerythrin=parameters['L_fl_phycoerythrin'],
                                            fwhm=parameters['fwhm_phycoerythrin'],

@@ -19,6 +19,7 @@ from bio_optics.helper import resampling, utils, owt, indices, plotting
 
 from bio_optics.water import fluorescence
 
+
 def setup_model_name(arch, Ninput, Noutput):
     nodes_layer = arch
     model_name = 'I' + str(Ninput) + 'x' + str(nodes_layer[0])
@@ -42,6 +43,7 @@ def setup_folder_NNtraining(path, arch, file_ending, Ninput, Noutput):
 
     return folder_name
 
+
 def setup_input_output_data_byLabel(data, output_labels=[], input_labels=[]):
     # Specify the data
     print(len(input_labels))
@@ -62,11 +64,12 @@ def setup_input_output_data_byLabel(data, output_labels=[], input_labels=[]):
 
     return X, Y
 
+
 def train_test_split(X, Y, abs_size=2000, returnSampleIDs=False):
     ## randomly split:
     ID = np.random.choice(np.arange(0, X.shape[0], 1, dtype='int'), size=abs_size, replace=False)
     X_test = X[ID, :]
-    if len(Y.shape)==1:
+    if len(Y.shape) == 1:
         Y_test = Y[ID,]
     else:
         Y_test = Y[ID, :]
@@ -93,7 +96,7 @@ def train_test_split(X, Y, abs_size=2000, returnSampleIDs=False):
 def setup_model_layers_tensorflow(model_dict):
     nodes_layer = model_dict['Nodes_layer']
     activation_layer = model_dict['activation_function_layer']
-    if len(nodes_layer)>1:
+    if len(nodes_layer) > 1:
         if len(activation_layer) == 1:
             activation_layer = np.repeat(activation_layer, len(nodes_layer))
 
@@ -124,8 +127,7 @@ def setup_model_layers_tensorflow(model_dict):
                 x = layers.Dense(nodes_layer[i], activation=activation_layer[i])(x)
         # model_list.append(layers.Dense(nodes_layer[i], activation=activation_layer[i])(last_layer))
         # last_layer = model_list[-1]
-        model_name += 'x'+str(nodes_layer[i])
-
+        model_name += 'x' + str(nodes_layer[i])
 
     # Add an output layer
     if model_dict['activation_function_output_layer'] == '':
@@ -140,12 +142,11 @@ def setup_model_layers_tensorflow(model_dict):
     return inputLayer, outputs, model_name
 
 
-def plot_Hist_categories(ytest, ypred, output_label, plotPath, model_fn, epoch=None, hist_range=(-0.2,1.2)):
-
+def plot_Hist_categories(ytest, ypred, output_label, plotPath, model_fn, epoch=None, hist_range=(-0.2, 1.2)):
     minY = np.min(ytest)
     maxY = np.max(ytest)
-    delta = (maxY-minY)/5.
-    hist_range = (minY-delta, maxY + delta)
+    delta = (maxY - minY) / 5.
+    hist_range = (minY - delta, maxY + delta)
 
     if len(ytest.shape) > 1:
         for i in range(ytest.shape[1]):
@@ -153,7 +154,8 @@ def plot_Hist_categories(ytest, ypred, output_label, plotPath, model_fn, epoch=N
             for lev in levels:
                 ID = np.array(ytest[:, i] == lev)
                 plt.hist(ypred[ID, i], 50, range=hist_range)
-                fig_path = plotPath + 'NN_test_' + output_label[i] + '_' + str(lev) + '_' + model_fn + '_' + str(epoch)+ '.png'
+                fig_path = plotPath + 'NN_test_' + output_label[i] + '_' + str(lev) + '_' + model_fn + '_' + str(
+                    epoch) + '.png'
                 plt.savefig(fig_path, dpi=200)
                 plt.close()
     elif len(ytest.shape) == 1:
@@ -161,67 +163,113 @@ def plot_Hist_categories(ytest, ypred, output_label, plotPath, model_fn, epoch=N
         for lev in levels:
             ID = np.array(ytest == lev)
             plt.hist(ypred[ID], 50, range=hist_range)
-            fig_path = plotPath + 'NN_test_' + output_label[0] + '_' + str(lev) + '_' + model_fn +'_' + str(epoch)+ '.png'
+            fig_path = plotPath + 'NN_test_' + output_label[0] + '_' + str(lev) + '_' + model_fn + '_' + str(
+                epoch) + '.png'
             plt.savefig(fig_path, dpi=200)
             plt.close()
 
 
-def transform_NorthSea_IOPs(iopArr, reverse = False):
+def transform_NorthSea_IOPs(iopArr,
+                            varList,
+                            rangeDict,
+                            reverse=False):
     # set fixed IOP values, for variable: 'C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'
-    varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
-    rangeDict = {
-        'C_0': [0., 1000.],
-        'C_2': [0., 1000.],
-        'C_5': [0., 1000.],
-        'C_6': [0., 1000.],
-        'C_7': [0., 1.],
-        'C_Y': [0., 2.],
-        'C_ism': [0., 100.],
-        'L_fl_lambda0': [0., 0.2],
-        'b_ratio_md': [0.021, 0.3756],
-        'b_ratio_bd': [0.021, 0.3756],
-        'S_cdom': [0.005, 0.032]
-    }
+
+    # varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
+    # rangeDict = {
+    #     'C_0': [0., 1000.],
+    #     'C_2': [0., 1000.],
+    #     'C_5': [0., 1000.],
+    #     'C_6': [0., 1000.],
+    #     'C_7': [0., 1.],
+    #     'C_Y': [0., 2.],
+    #     'C_ism': [0., 100.],
+    #     'L_fl_lambda0': [0., 0.2],
+    #     'b_ratio_md': [0.021, 0.3756],
+    #     'b_ratio_bd': [0.021, 0.3756],
+    #     'S_cdom': [0.005, 0.032]
+    # }
 
     iopArrT = np.zeros(iopArr.shape)
     for i, v in enumerate(varList):
         delta = rangeDict[v][1] - rangeDict[v][0]
         if reverse:
-            iopArrT[:, i] = iopArr[:, i]*delta + delta / 2.
+            iopArrT[:, i] = iopArr[:, i] * delta + delta / 2.
         else:
             iopArrT[:, i] = (iopArr[:, i] - delta / 2.) / delta
 
     return iopArrT
 
-def transform_NorthSea_IOPs_single(x, v, reverse = False):
+
+def transform_NorthSea_IOPs_log(iopArr,
+                            varList,
+                            rangeDict,
+                            reverse=False):
+    ## log-Transform for all concentration values!
+    ## scaling for all else.
+
+    # varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
+    # rangeDict = {
+    #     'C_0': [0., 1000.],
+    #     'C_2': [0., 1000.],
+    #     'C_5': [0., 1000.],
+    #     'C_6': [0., 1000.],
+    #     'C_7': [0., 1.],
+    #     'C_Y': [0., 2.],
+    #     'C_ism': [0., 100.],
+    #     'L_fl_lambda0': [0., 0.2],
+    #     'b_ratio_md': [0.021, 0.3756],
+    #     'b_ratio_bd': [0.021, 0.3756],
+    #     'S_cdom': [0.005, 0.032]
+    # }
+
+    iopArrT = np.zeros(iopArr.shape)
+    for i, v in enumerate(varList):
+        if v.startswith('C'):
+            if reverse:
+                iopArrT[:, i] = np.power(10., iopArr[:, i])
+            else:
+                iopArrT[:, i] = np.log10(iopArr[:, i])
+
+        else:
+            delta = rangeDict[v][1] - rangeDict[v][0]
+            if reverse:
+                iopArrT[:, i] = iopArr[:, i] * delta + delta / 2.
+            else:
+                iopArrT[:, i] = (iopArr[:, i] - delta / 2.) / delta
+
+    return iopArrT
+
+
+def transform_NorthSea_IOPs_single(x, v, rangeDict, reverse=False):
     # set fixed IOP values, for variable: 'C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'
-    varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
-    rangeDict = {
-        'C_0': [0., 1000.],
-        'C_2': [0., 1000.],
-        'C_5': [0., 1000.],
-        'C_6': [0., 1000.],
-        'C_7': [0., 1.],
-        'C_Y': [0., 2.],
-        'C_ism': [0., 100.],
-        'L_fl_lambda0': [0., 0.2],
-        'b_ratio_md': [0.021, 0.3756],
-        'b_ratio_bd': [0.021, 0.3756],
-        'S_cdom': [0.005, 0.032]
-    }
+    # varList = ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom']
+    # rangeDict = {
+    #     'C_0': [0., 1000.],
+    #     'C_2': [0., 1000.],
+    #     'C_5': [0., 1000.],
+    #     'C_6': [0., 1000.],
+    #     'C_7': [0., 1.],
+    #     'C_Y': [0., 2.],
+    #     'C_ism': [0., 100.],
+    #     'L_fl_lambda0': [0., 0.2],
+    #     'b_ratio_md': [0.021, 0.3756],
+    #     'b_ratio_bd': [0.021, 0.3756],
+    #     'S_cdom': [0.005, 0.032]
+    # }
 
     delta = rangeDict[v][1] - rangeDict[v][0]
     if reverse:
-        x = x*delta + delta / 2.
+        x = x * delta + delta / 2.
     else:
         x = (x - delta / 2.) / delta
 
     return x
 
 
-
-def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath = '', epochs=1000, batch_size=500,
-                                    resume=False, ndigits=5, intermediate_results=True, image_outpath='', wavelengths=None):
+def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath='', epochs=1000, batch_size=500,
+                                        resume=False, ndigits=5, intermediate_results=True, image_outpath='',
+                                        wavelengths=None):
     print(tf.__version__)
     print(tf.keras.__version__)
 
@@ -233,15 +281,21 @@ def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath 
 
     ###
     # Transformation of input data
-    if NNtraining_metadata['transformation_method'] != '' :
-        if NNtraining_metadata['transformation_method'] == 'log10':
-            X = np.log10(X)
-        if NNtraining_metadata['transformation_method'] == 'sqrt':
-            X = np.sqrt(X)
-        if NNtraining_metadata['transformation_method'] == 'IOP_NorthSea_ranges':
+    if NNtraining_metadata['transformation_method_output'] != '':
+        if NNtraining_metadata['transformation_method_output'] == 'log10':
+            Y = np.log10(Y)
+        if NNtraining_metadata['transformation_method_output'] == 'sqrt':
+            Y = np.sqrt(Y)
+        if NNtraining_metadata['transformation_method_output'] == 'IOP_NorthSea_ranges':
             ###
             # transform/scale IOP data !
-           Y = transform_NorthSea_IOPs(Y)
+            Y = transform_NorthSea_IOPs(Y, varList=NNtraining_metadata['output_label'],
+                                        rangeDict=NNtraining_metadata['output_ranges'])
+        if NNtraining_metadata['transformation_method_output'] == 'IOP_NorthSea_log+scale':
+            ###
+            # transform/scale IOP data !
+            Y = transform_NorthSea_IOPs_log(Y, varList=NNtraining_metadata['output_label'],
+                                        rangeDict=NNtraining_metadata['output_ranges'])
 
     ###
     # check: remove nan!
@@ -256,22 +310,21 @@ def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath 
     else:
         Y = Y[ID, :]
     print('training data', X.shape)
-    print('test size N: ', int(X.shape[0]*NNdict['test_size']))
+    print('test size N: ', int(X.shape[0] * NNdict['test_size']))
 
-
-    X_train, X_test, Y_train, Y_test, ID_test, ID_train = train_test_split(X, Y, abs_size=int(X.shape[0]*NNdict['test_size']),
-                                                                           returnSampleIDs=True) #2000
+    X_train, X_test, Y_train, Y_test, ID_test, ID_train = train_test_split(X, Y, abs_size=int(
+        X.shape[0] * NNdict['test_size']),
+                                                                           returnSampleIDs=True)  # 2000
     # ###
     # # transform/scale IOP data !
     # Y_trans = transform_NorthSea_IOPs(Y)
     # Y_trans_train = Y_trans[ID_train,:]
     # Y_trans_test = Y_trans[ID_test,:]
 
-
     if NNdict.get('Ninput') != X.shape[1]:
         NNdict['Ninput'] = X.shape[1]
 
-    if len(Y.shape)==1:
+    if len(Y.shape) == 1:
         NNdict['Noutput'] = 1
     else:
         if NNdict.get('Noutput') != Y.shape[1]:
@@ -313,7 +366,7 @@ def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath 
         model_.compile(optimizer=optimizer, loss="categorical_crossentropy")
     elif NNdict['activation_function_output_layer'] == 'sigmoid':
         loss_fn = keras.losses.BinaryCrossentropy()
-        model_.compile(loss='binary_crossentropy', optimizer=optimizer) # optimizer = 'sgd'
+        model_.compile(loss='binary_crossentropy', optimizer=optimizer)  # optimizer = 'sgd'
     else:
         # def minimise_rhow(IOP_pred, training_input):
         #     rhow_pred = forwardNN_HEREON(IOP_pred)
@@ -328,7 +381,6 @@ def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath 
 
         loss_fn = minimise_rhow_AND_iop
         model_.compile(optimizer=optimizer, loss="mean_squared_error")
-
 
     # Prepare the training dataset.
     train_dataset_fw = tf.data.Dataset.from_tensor_slices((Y_train, X_train))
@@ -383,15 +435,14 @@ def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath 
                     # plot_Hist_categories(ytest=Y_test, ypred=clearNN_pred, output_label=NNtraining_metadata['output_label'],
                     #                      model_fn=outfname, epoch=epoch, plotPath=image_outpath)
 
-                    writeNextBestNN =False
-
+                    writeNextBestNN = False
 
             if epoch % 100 == 0:
                 print('Training loss (for one batch) at step %s: %s' % (epoch, float(loss_value_)))
                 print('Seen so far: %s samples' % ((epoch + 1) * batch_size))
 
-
-    outfname = NNname + '_batch'+ str(batch_size) + '_epoch' + str(epochs) +'_loss'+ str(np.round(loss_[-1], ndigits))
+    outfname = NNname + '_batch' + str(batch_size) + '_epoch' + str(epochs) + '_loss' + str(
+        np.round(loss_[-1], ndigits))
     model_.save(outpath + outfname + '.h5')
 
     clearNN_pred = model_.predict(X_test)
@@ -400,7 +451,7 @@ def NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath 
 
     fig, axes = plt.subplots(1, 1, figsize=(8, 4))
     axes.semilogy(loss_, 'g-')
-    fig.savefig(image_outpath + 'loss_'+outfname+'.png', dpi=200)
+    fig.savefig(image_outpath + 'loss_' + outfname + '.png', dpi=200)
     plt.close()
     # plt.show()
 
@@ -418,12 +469,12 @@ def setup_trainingdata():
     rrs_inv_fname = "E:\Documents\projects\EnsAD\inversion\HZG_HEREON_groups\\results_MK\inverted_Rrs_bio_optics_HEREONfull_NorthSeaEnMAPSouth20230815_V7AHall_md_bd_v2.txt"
     iop_inv_fname = "E:\Documents\projects\EnsAD\inversion\HZG_HEREON_groups\\results_MK\inverted_IOP_bio_optics_HEREONfull_NorthSeaEnMAPSouth20230815_V7AHall_md_bd_v2.txt"
 
-    df = pd.read_csv(fname, header=0, sep='\t') # already filtered for nan OWT
-    rrs_inv = pd.read_csv(rrs_inv_fname, header=0, sep='\t') # remove the first 300 spectra (OWT nan)
-    iop_inv = pd.read_csv(iop_inv_fname, header=0, sep='\t') # remove the first 300 spectra (OWT nan)
+    df = pd.read_csv(fname, header=0, sep='\t')  # already filtered for nan OWT
+    rrs_inv = pd.read_csv(rrs_inv_fname, header=0, sep='\t')  # remove the first 300 spectra (OWT nan)
+    iop_inv = pd.read_csv(iop_inv_fname, header=0, sep='\t')  # remove the first 300 spectra (OWT nan)
 
     rrscols = rrs_inv.columns.values
-    invcols = ['inv_'+col for col in rrs_inv.columns.values]
+    invcols = ['inv_' + col for col in rrs_inv.columns.values]
 
     wavelengths = np.asarray([float(wl) for wl in rrs_inv.columns.values])
     ID = np.array(df['invertible'].values == 1)
@@ -433,7 +484,7 @@ def setup_trainingdata():
     print(iop_inv.columns.values)
 
     for col in rrs_inv.columns.values:
-        rrs_inv = rrs_inv.rename(columns={col: 'inv_'+col})
+        rrs_inv = rrs_inv.rename(columns={col: 'inv_' + col})
 
     rrs_inv = rrs_inv.iloc[300:, :]
     iop_inv = iop_inv.iloc[300:, :]
@@ -444,8 +495,10 @@ def setup_trainingdata():
     print(df.shape, rrs_inv.shape, iop_inv.shape)
     print(out.shape)
 
-    out = out.loc[ID,:]
-    out.to_csv("E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240408_v2.txt", header=True, index=False, sep='\t')
+    out = out.loc[ID, :]
+    out.to_csv(
+        "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240408_v2.txt",
+        header=True, index=False, sep='\t')
     # return out, rrscols, invcols
 
     # NList = [1, 350, 602]
@@ -457,45 +510,83 @@ def setup_trainingdata():
     #     plt.show()
 
 
-
 NNdict = {
     'Ninput': 21,
     'Noutput': 10,
-    'Nodes_layer': [], #set an architecture of fully connected hidden layers
+    'Nodes_layer': [],  # set an architecture of fully connected hidden layers
     'model_type': 'regression_nadam',  # 'regression' or 'regression_nadam', uses optimizer 'nadam'
     # 'regulizer_layer': 0.001, #old comment: ist noch hartcodiert in trainingNN_general, Mit regulizer trainiert das Netz nicht mehr!!
-    'activation_function_layer': ['leakyRelu'], #relu # https://www.v7labs.com/blog/neural-networks-activation-functions: softmax should be the right choice #relu, tanh, sigmoid; for OLCI_Schiller: sigmoid, relu; 'leakyReLu'
-    'activation_function_output_layer': '', #softmax for mutually exclusive categories!, sigmoid
+    'activation_function_layer': ['leakyRelu'],
+    # relu # https://www.v7labs.com/blog/neural-networks-activation-functions: softmax should be the right choice #relu, tanh, sigmoid; for OLCI_Schiller: sigmoid, relu; 'leakyReLu'
+    'activation_function_output_layer': '',  # softmax for mutually exclusive categories!, sigmoid
     # 'gaussian_noise_std': 0.05, # für OLCI_Schiller ohne noise
     'test_size': 0.2,
     'callbacks': [],  # or csv_logger
     'learning_rate': [],
-    'batch_size': 10, # 10 # 500; für OLCI_Schiller: 1 # für 6NodesOutput blocksize = 1000
+    'batch_size': 10,  # 10 # 500; für OLCI_Schiller: 1 # für 6NodesOutput blocksize = 1000
     'scaling': False
 }
 
-
 NNtraining_metadata = {
-    'training_data_path': "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240408.txt",
-    'output_label': ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'],
-    'input_names': ['inv_418.24', 'inv_423.874', 'inv_429.294', 'inv_434.528', 'inv_439.603', 'inv_444.549', 'inv_449.391', 'inv_454.159', 'inv_458.884',
-                    'inv_463.584', 'inv_468.265', 'inv_472.934', 'inv_477.599', 'inv_482.265', 'inv_486.941', 'inv_491.633', 'inv_496.349', 'inv_501.094',
-                    'inv_505.87', 'inv_510.678', 'inv_515.519', 'inv_520.397', 'inv_525.313', 'inv_530.268', 'inv_535.265', 'inv_540.305', 'inv_545.391',
-                    'inv_550.525', 'inv_555.71', 'inv_560.947', 'inv_566.239', 'inv_571.587', 'inv_576.995', 'inv_582.464', 'inv_587.997', 'inv_593.596',
-                    'inv_599.267', 'inv_605.011', 'inv_610.833', 'inv_616.737', 'inv_622.732', 'inv_628.797', 'inv_634.919', 'inv_641.1', 'inv_647.341',
-                    'inv_653.643', 'inv_660.007', 'inv_666.435', 'inv_672.927', 'inv_679.485', 'inv_686.11', 'inv_692.804', 'inv_699.567', 'inv_706.401',
+    # 'training_data_path': "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240408.txt", # AC v1.03.03
+    'training_data_path': "E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\NN_NorthSea\\trainingData_EnMAPSpectra_NorthSeaEnMAPSouth20230815_Model2IOP_invertible_v20240708_v2.txt", # AC v1.4.2
+    # AC v1.04.02
+    # 'output_label': ['C_0', 'C_2', 'C_5', 'C_6', 'C_7', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'], # AC v1.03.03
+    'output_label': ['C_0', 'C_1', 'C_2', 'C_5', 'C_6', 'C_Y', 'C_ism', 'L_fl_lambda0', 'b_ratio_md', 'b_ratio_bd', 'S_cdom'],  # AC v1.04.02
+
+    ## v 1.3.3
+    # 'output_Ranges': {'C_0': [0., 1000.],
+    #                'C_2': [0., 1000.],
+    #                'C_5': [0., 1000.],
+    #                'C_6': [0., 1000.],
+    #                'C_7': [0., 1.],
+    #                'C_Y': [0., 2.],
+    #                'C_ism': [0., 100.],
+    #                'L_fl_lambda0': [0., 0.2],
+    #                'b_ratio_md': [0.021, 0.3756],
+    #                'b_ratio_bd': [0.021, 0.3756],
+    #                'S_cdom': [0.005, 0.032]},
+    ## v1.4.2
+    'output_ranges': {'C_0': [0., 1000.],
+                    'C_1': [0., 1000.],
+                   'C_2': [0., 1000.],
+                   'C_5': [0., 1000.],
+                   'C_6': [0., 1000.],
+                   'C_Y': [0., 2.],
+                   'C_ism': [0., 50.],
+                   'L_fl_lambda0': [0., 0.2],
+                   'b_ratio_md': [0.021, 0.3756],
+                   'b_ratio_bd': [0.021, 0.3756],
+                   'S_cdom': [0.005, 0.032]},
+
+    'input_names': ['inv_418.24', 'inv_423.874', 'inv_429.294', 'inv_434.528', 'inv_439.603', 'inv_444.549',
+                    'inv_449.391', 'inv_454.159', 'inv_458.884',
+                    'inv_463.584', 'inv_468.265', 'inv_472.934', 'inv_477.599', 'inv_482.265', 'inv_486.941',
+                    'inv_491.633', 'inv_496.349', 'inv_501.094',
+                    'inv_505.87', 'inv_510.678', 'inv_515.519', 'inv_520.397', 'inv_525.313', 'inv_530.268',
+                    'inv_535.265', 'inv_540.305', 'inv_545.391',
+                    'inv_550.525', 'inv_555.71', 'inv_560.947', 'inv_566.239', 'inv_571.587', 'inv_576.995',
+                    'inv_582.464', 'inv_587.997', 'inv_593.596',
+                    'inv_599.267', 'inv_605.011', 'inv_610.833', 'inv_616.737', 'inv_622.732', 'inv_628.797',
+                    'inv_634.919', 'inv_641.1', 'inv_647.341',
+                    'inv_653.643', 'inv_660.007', 'inv_666.435', 'inv_672.927', 'inv_679.485', 'inv_686.11',
+                    'inv_692.804', 'inv_699.567', 'inv_706.401',
                     'inv_713.307', 'inv_720.282', 'inv_727.324', 'inv_734.431', 'inv_741.601', 'inv_748.833'],
-    'transformation_method': 'IOP_NorthSea_ranges', # 'log', 'sqrt'
+    'transformation_method': 'log', #'IOP_NorthSea_ranges',  # 'log', 'sqrt'
     'architectures': [[80, 80, 80], [60, 80, 50], [90, 60, 30]],  # [80, 80, 80]
-    'outpath': "E:\Documents\projects\EnsAD\\NN_training\\NN_ModelRrs2IOP\\nn_EnMAP_20240408_v01\\",
-    'maxEpochs': 30000, #30, bei block_size=1; 15000 bei block_size=1000
+    # 'outpath': "E:\Documents\projects\EnsAD\\NN_training\\NN_ModelRrs2IOP\\nn_EnMAP_20240408_v01\\", # AC v1.03.03
+    'outpath': "E:\Documents\projects\EnsAD\\NN_training\\NN_ModelRrs2IOP\\nn_EnMAP_20240708_v01\\",  # AC v1.04.02
+    'maxEpochs': 30000,  # 30, bei block_size=1; 15000 bei block_size=1000
     'file_ending': '_MinRrsIOPTrans',
     'InputMin': '',
     'InputMax': '',
     'OutputMin': '',
     'OutputMax': '',
-    # 'forwardNN_path': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240409_v01\I11x110x70x60xO60__l1Reg\\temp\I11x110x70x60xO60_batch10_epoch42233_loss0.0.h5"
-    'forwardNN_path': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240409_v01\I11x110x70x60xO60_IOP_NorthSea_ranges_l1RegTrans\\temp\\I11x110x70x60xO60_batch10_epoch39064_loss0.0.h5"
+    # ## AC v1.3.3
+    # # 'forwardNN_path': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240409_v01\I11x110x70x60xO60__l1Reg\\temp\I11x110x70x60xO60_batch10_epoch42233_loss0.0.h5"
+    # 'forwardNN_path': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240409_v01\I11x110x70x60xO60_IOP_NorthSea_ranges_l1RegTrans\\temp\\I11x110x70x60xO60_batch10_epoch39064_loss0.0.h5"
+    ## AC v1.4.2
+    'forwardNN_path': "E:\Documents\projects\EnsAD\\NN_training\\NN_IOP2ModelRrs_fwHEREON\\fwnn_HEREON_20240708_v01\I11x110x70x60xO60_IOP_NorthSea_ranges_l1RegTrans\\temp\\I11x110x70x60xO60_batch5_epoch139977_loss0.0.h5"
 }
 
 ###
@@ -504,8 +595,8 @@ trainingRun = True
 
 for arch in NNtraining_metadata['architectures'][:1]:
     print(arch)
-    NNdict['Nodes_layer'] = arch            #architecture of the hidden layers in the NN.
-    input_label = NNtraining_metadata['input_names'] # training data input, column names
+    NNdict['Nodes_layer'] = arch  # architecture of the hidden layers in the NN.
+    input_label = NNtraining_metadata['input_names']  # training data input, column names
     output_label = NNtraining_metadata['output_label']  # training data output, column names (1 or more columns)
     wavelengths = np.asarray([float(a.split('_')[1]) for a in input_label])
 
@@ -528,15 +619,17 @@ for arch in NNtraining_metadata['architectures'][:1]:
             file.write(json.dumps(NNdict))
         file.close()
 
-        NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath=plotPath + 'temp/', image_outpath=plotPath,
-                                    epochs=NNtraining_metadata['maxEpochs'], batch_size=NNdict['batch_size'], resume=False,
+        NN_tensorflow_training_ModelRrs2IOP(d, NNdict, NNtraining_metadata, outpath=plotPath + 'temp/',
+                                            image_outpath=plotPath,
+                                            epochs=NNtraining_metadata['maxEpochs'], batch_size=NNdict['batch_size'],
+                                            resume=False,
                                             wavelengths=wavelengths)
 
     # if testTheBest:
-        # find_bestNN_and_threshold_for_output_categories(d, NNtraining_metadata, NNpath=plotPath+ 'temp/', outpath=outpath)
-        # find_bestNN_and_threshold_for_output_categories_with_N_levels(d, NNtraining_metadata, NNpath=plotPath+'temp/',
-        #                                                               outpath=outpath, sigmoid=True, levels=[0., 0.5, 1.],
-        #                                                               plotThis=True)
-        # find_bestNN_BinaryOutput(d, NNtraining_metadata, NNpath=plotPath+'temp/', outpath=outpath)
+    # find_bestNN_and_threshold_for_output_categories(d, NNtraining_metadata, NNpath=plotPath+ 'temp/', outpath=outpath)
+    # find_bestNN_and_threshold_for_output_categories_with_N_levels(d, NNtraining_metadata, NNpath=plotPath+'temp/',
+    #                                                               outpath=outpath, sigmoid=True, levels=[0., 0.5, 1.],
+    #                                                               plotThis=True)
+    # find_bestNN_BinaryOutput(d, NNtraining_metadata, NNpath=plotPath+'temp/', outpath=outpath)
 
 # setup_trainingdata()

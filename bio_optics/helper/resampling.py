@@ -143,6 +143,69 @@ def resample_a_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     return a_i_spec
 
 
+def resample_a_i_spec_EnSAD_Standardv3(wavelengths=np.arange(400, 720)):
+    """
+    Specific absorption coefficients [m2 mg-1] of eight phytoplankton types from the supplemental data of [1] and [2].
+
+    Group N	a_phy	bb_phy
+    C_0	Diatoms (6 spectra from Lomas et al 2024; coastal species: Thalassiosira nordenskioeldi, Thalassiosira guilardi, Rhizoselenia setigera, Chaetoceros diadem, Chaetoceros socialis)	Diatoms -> cp Brown group Bi et al 2023
+    C_1	Green (Bi et al 2023)	Green Bi et al 2023
+    C_2	Cryptophytes (2 spectra from Lomas et al 2024; Rhodomonas salina)	cp from Cryptophyte Bi et al 2023
+    C_3	Synecochoccus bacillaris (2 spectra Lomas et al 2024) -> Cyano blue	cp from Cyano_blue Bi et al 2023
+    C_4	Synecochoccus  sp (2 spectra Lomas et al 2024) -> Cyano red	cp from Cyano_red Bi et al 2023
+    C_5	Coccolithophore (6 spectra Lomas et al 2024; Emiliania huxleyi)	cp from Coccolithophore Bi et al 2023
+    C_6	Dinoflagellates (5 spectra from Lomas et al 2024; coastal species: Prorocentrum minimum, Karenia brevis, Prorocentrum lima)	Dinoflagellate -> cp Brown group Bi et al 2023
+    C_7	case_1 (2 spectra Lomas et al 2024; Prochlorococcus marinus)	cp from Case-1 Bi et al 2023
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
+    [2] Lomas et al (2024): Phytoplankton optical fingerprint libraries for development of phytoplankton
+    ocean color satellite products. Sci Data 11, 168 (2024). https://doi.org/10.1038/s41597-024-03001-z
+
+    :param wavelengths: wavelengths to resample the specific absorption coefficients to
+    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    """
+    # read file
+    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSAD_Standardv3.txt'), skiprows=16, sep=",")
+    # resample to sensor bands
+    band_resampler = BandResampler(a_phyto_db.wavelength_nm.values, wavelengths)
+    a_i_spec = band_resampler(np.asarray(a_phyto_db)[:, 1:])
+
+    return a_i_spec
+
+
+def resample_a_i_spec_EnSAD_SummerBloomsv3(wavelengths=np.arange(400, 720)):
+    """
+    Specific absorption coefficients [m2 mg-1] of eight phytoplankton types from the supplemental data of [1], [2], [3].
+
+    Group N	a_phy	bb_phy
+    C_0	Diatoms (6 spectra from Lomas et al 2024; coastal species: Thalassiosira nordenskioeldi, Thalassiosira guilardi, Rhizoselenia setigera, Chaetoceros diadem, Chaetoceros socialis)	Diatoms -> cp Brown group Bi et al 2023
+    C_1	Green (Bi et al 2023)	Green Bi et al 2023
+    C_2	Cryptophytes (2 spectra from Lomas et al 2024; Rhodomonas salina)	cp from Cryptophyte Bi et al 2023
+    C_3	Synecochoccus bacillaris (2 spectra Lomas et al 2024) -> Cyano blue	cp from Cyano_blue Bi et al 2023
+    C_4	Synecochoccus  sp (2 spectra Lomas et al 2024) -> Cyano red	cp from Cyano_red Bi et al 2023
+    C_5*	Phaeocystis globosa (2 spectra Lomas et al 2024)	Haptophyte -> cp Brown group Bi et al 2023.
+    C_6	Dinoflagellates (5 spectra from Lomas et al 2024; coastal species: Prorocentrum minimum, Karenia brevis, Prorocentrum lima)	Dinoflagellate -> cp Brown group Bi et al 2023
+    C_7*	Noctiluca (digitized from Astoreca et al 2005); scaled at 650nm to 0.008623 (same as Brown Group HEREON); no peak at 679nm	Dinoflagellate -> cp Brown group Bi et al 2023
+
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
+    [2] Lomas et al (2024): Phytoplankton optical fingerprint libraries for development of phytoplankton
+    ocean color satellite products. Sci Data 11, 168 (2024). https://doi.org/10.1038/s41597-024-03001-z
+    [3] Astoreca et al 2005: Optical properties of algal blooms in an eutrophicated coastal area and its relevance to remote sensing. Proceedings of SPIE DOI: 10.1117/12.615160
+
+
+    :param wavelengths: wavelengths to resample the specific absorption coefficients to
+    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    """
+    # read file
+    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSAD_NSSummerBloomsv3.txt'), skiprows=18, sep=",")
+    # resample to sensor bands
+    band_resampler = BandResampler(a_phyto_db.wavelength_nm.values, wavelengths)
+    a_i_spec = band_resampler(np.asarray(a_phyto_db)[:, 1:])
+
+    return a_i_spec
+
+
 def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     """
     Specific scattering coefficients [m2 mg-1] of seven phytoplankton types from the supplemental data of [1].
@@ -167,6 +230,71 @@ def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     band_resampler = BandResampler(b_phyto_db.wavelength_nm.values, wavelengths) 
     b_i_spec = band_resampler(np.asarray(b_phyto_db)[:,1:])
     
+    return b_i_spec
+
+
+def resample_b_i_spec_EnSAD_Standardv3(wavelengths=np.arange(400, 720)):
+    """
+    Specific scattering coefficients [m2 mg-1] of eight phytoplankton types from the supplemental data of [1], [2].
+
+    Group N	a_phy	bb_phy
+    C_0	Diatoms (6 spectra from Lomas et al 2024; coastal species: Thalassiosira nordenskioeldi, Thalassiosira guilardi, Rhizoselenia setigera, Chaetoceros diadem, Chaetoceros socialis)	Diatoms -> cp Brown group Bi et al 2023
+    C_1	Green (Bi et al 2023)	Green Bi et al 2023
+    C_2	Cryptophytes (2 spectra from Lomas et al 2024; Rhodomonas salina)	cp from Cryptophyte Bi et al 2023
+    C_3	Synecochoccus bacillaris (2 spectra Lomas et al 2024) -> Cyano blue	cp from Cyano_blue Bi et al 2023
+    C_4	Synecochoccus  sp (2 spectra Lomas et al 2024) -> Cyano red	cp from Cyano_red Bi et al 2023
+    C_5	Coccolithophore (6 spectra Lomas et al 2024; Emiliania huxleyi)	cp from Coccolithophore Bi et al 2023
+    C_6	Dinoflagellates (5 spectra from Lomas et al 2024; coastal species: Prorocentrum minimum, Karenia brevis, Prorocentrum lima)	Dinoflagellate -> cp Brown group Bi et al 2023
+    C_7	case_1 (2 spectra Lomas et al 2024; Prochlorococcus marinus)	cp from Case-1 Bi et al 2023
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
+    [2] Lomas et al (2024): Phytoplankton optical fingerprint libraries for development of phytoplankton
+    ocean color satellite products. Sci Data 11, 168 (2024). https://doi.org/10.1038/s41597-024-03001-z
+
+
+    :param wavelengths: wavelengths to resample the specific absorption coefficients to
+    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    """
+    # read file
+    b_phyto_db = pd.read_csv(os.path.join(data_dir, 'b_phy_spec_EnSAD_Standardv3.txt'), skiprows=16, sep=",")
+    # resample to sensor bands
+    band_resampler = BandResampler(b_phyto_db.wavelength_nm.values, wavelengths)
+    b_i_spec = band_resampler(np.asarray(b_phyto_db)[:, 1:])
+
+    return b_i_spec
+
+
+def resample_b_i_spec_EnSAD_SummerBloomsv3(wavelengths=np.arange(400, 720)):
+    """
+    Specific scattering coefficients [m2 mg-1] of eight phytoplankton types from the supplemental data of [1], [2], [3].
+
+    Group N	a_phy	bb_phy
+    C_0	Diatoms (6 spectra from Lomas et al 2024; coastal species: Thalassiosira nordenskioeldi, Thalassiosira guilardi, Rhizoselenia setigera, Chaetoceros diadem, Chaetoceros socialis)	Diatoms -> cp Brown group Bi et al 2023
+    C_1	Green (Bi et al 2023)	Green Bi et al 2023
+    C_2	Cryptophytes (2 spectra from Lomas et al 2024; Rhodomonas salina)	cp from Cryptophyte Bi et al 2023
+    C_3	Synecochoccus bacillaris (2 spectra Lomas et al 2024) -> Cyano blue	cp from Cyano_blue Bi et al 2023
+    C_4	Synecochoccus  sp (2 spectra Lomas et al 2024) -> Cyano red	cp from Cyano_red Bi et al 2023
+    C_5*	Phaeocystis globosa (2 spectra Lomas et al 2024)	Haptophyte -> cp Brown group Bi et al 2023.
+    C_6	Dinoflagellates (5 spectra from Lomas et al 2024; coastal species: Prorocentrum minimum, Karenia brevis, Prorocentrum lima)	Dinoflagellate -> cp Brown group Bi et al 2023
+    C_7*	Noctiluca (digitized from Astoreca et al 2005); scaled at 650nm to 0.008623 (same as Brown Group HEREON); no peak at 679nm	Dinoflagellate -> cp Brown group Bi et al 2023
+
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
+    [2] Lomas et al (2024): Phytoplankton optical fingerprint libraries for development of phytoplankton
+    ocean color satellite products. Sci Data 11, 168 (2024). https://doi.org/10.1038/s41597-024-03001-z
+    [3] Astoreca et al 2005: Optical properties of algal blooms in an eutrophicated coastal area and its relevance to remote sensing. Proceedings of SPIE DOI: 10.1117/12.615160
+
+
+
+    :param wavelengths: wavelengths to resample the specific absorption coefficients to
+    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    """
+    # read file
+    b_phyto_db = pd.read_csv(os.path.join(data_dir, 'b_phy_spec_EnSAD_NSSummerBloomsv3.txt'), skiprows=18, sep=",")
+    # resample to sensor bands
+    band_resampler = BandResampler(b_phyto_db.wavelength_nm.values, wavelengths)
+    b_i_spec = band_resampler(np.asarray(b_phyto_db)[:, 1:])
+
     return b_i_spec
 
 

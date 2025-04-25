@@ -29,6 +29,21 @@ def set_valid_bands_PACE(version=2):
                  '684', '686', '687', '688', '689', '691', '692', '693', '694', '696', '697',
                  '698', '699', '701', '702', '703', '704', '706', '707', '708', '709', '711',
                  '712', '713', '714', '717']
+    if version == 3:
+        wlstr = ['400', '403', '405', '408', '410', '413', '415', '418', '420', '422', '425',
+                 '427', '430', '432', '435', '437', '440', '442', '445', '447', '450', '452',
+                 '455', '457', '460', '462', '465', '467', '470', '472', '475', '477', '480',
+                 '482', '485', '487', '490', '492', '495', '497', '500', '502', '505', '507',
+                 '510', '512', '515', '517', '520', '522', '525', '527', '530', '532', '535',
+                 '537', '540', '542', '545', '547', '550', '553', '555', '558', '560', '563',
+                 '565', '568', '570', '573', '575', '578', '580', '583', '586', '588', '613',
+                 '615', '618', '620', '623', '625', '627', '630', '632', '635', '637', '640',
+                 '641', '642', '643', '645', '646', '647', '648', '650', '651', '652', '653',
+                 '655', '656', '657', '658', '660', '661', '662', '663', '665', '666', '667',
+                 '668', '670', '671', '672', '673', '675', '676', '677', '678', '679', '681',
+                 '682', '683', '684', '686', '687', '688', '689', '691', '692', '693', '694',
+                 '696', '697', '698', '699', '701', '702', '703', '704', '706', '707', '708',
+                 '709', '711', '712', '713', '714', '717', '719']
     return wlstr
 
 
@@ -49,11 +64,13 @@ def set_wavelengths_bySensor(sensor, versionAC):
 
 
 def read_PACE_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
+                       regionName = '',
                        OWTList = [],
+                       versionAC = 2,
                        outpath = r"E:\Documents\projects\EnsAD\data\PACE_test\extracts_Baltic\\",
                        datasetDate = '20240925'):
 
-    if seaName == 'Baltic Sea':
+    if seaName == 'Baltic Sea' and versionAC==2:
         ## Baltic Sea PACE, all OWT, all subregions combined
         path = "Z:\projects\ongoing\EnsAD\workspace\data\PACE_extracts_v2\OWT_Baltic\\"
         # OWTList = ['1', '2', '3a', '3b', '4a', '4b', '5a', '5b', '6', '7']
@@ -73,7 +90,7 @@ def read_PACE_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
             OWTstr += owt + '_'
         print(fnameL)
 
-        wlstr = set_valid_bands_PACE()
+        wlstr = set_valid_bands_PACE(versionAC)
 
         datasetName = 'PACE_BalticSea_OWT' + OWTstr + datasetDate
         if os.path.exists(outpath + 'extracts_' + datasetName + '.txt'):
@@ -102,6 +119,30 @@ def read_PACE_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
             meta.to_csv(outpath + 'extracts_' + datasetName + '.txt', sep='\t', header=True, index=False)
 
         # simple correction of negative Rrs
+        r_rs = Rrs.copy()
+        minRrs = np.min(Rrs.values, axis=1)
+        print(minRrs.shape)
+        ID = np.array(minRrs < 0)
+        rrs = Rrs.values.copy()
+        for i in range(Rrs.shape[1]):  # iterate along wavelengths
+            rrs[ID, i] = rrs[ID, i] - minRrs[ID]
+
+        wavelengths = np.asarray([float(a) for a in wlstr])
+        r_rs.loc[:, :] = rrs.copy()
+
+    if seaName == 'Baltic Sea' and versionAC==3:
+        # simple correction of negative Rrs
+        wlstr = set_valid_bands_PACE(versionAC)
+        fnamesL = os.listdir(outpath)
+        fnamesL = [fn for fn in fnamesL if 'OWT'+OWTList[0] in fn and fn.startswith('extracts')]
+        if len(regionName)>0:
+            fnamesL = [fn for fn in fnamesL if regionName in fn]
+
+        if len(fnamesL) == 0:
+            return None, None, None, None
+        datasetName = fnamesL[0].split('extracts_')[1].split('.txt')[0]
+        d = pd.read_csv(outpath + fnamesL[0], sep='\t', header=0)
+        Rrs = d[wlstr].copy()
         r_rs = Rrs.copy()
         minRrs = np.min(Rrs.values, axis=1)
         print(minRrs.shape)
@@ -172,7 +213,7 @@ def read_PACE_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
         #     meta.to_csv(outpath + 'extracts_' + datasetName + '.txt', sep='\t', header=True, index=False)
 
         # simple correction of negative Rrs
-        wlstr = set_valid_bands_PACE()
+        wlstr = set_valid_bands_PACE(versionAC)
         fnamesL = os.listdir(outpath)
         fnamesL = [fn for fn in fnamesL if 'OWT'+OWTList[0] in fn and fn.startswith('extracts')]
         datasetName = fnamesL[0].split('extracts_')[1].split('.txt')[0]

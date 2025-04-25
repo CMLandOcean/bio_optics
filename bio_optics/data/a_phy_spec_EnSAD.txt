@@ -4,7 +4,7 @@ Dinflagellates is from WASI [2] and derived from pure cultures grown in the labo
 								
 [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]								
 [2] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.								
-[4] Gege (1994): Gew�sseranalyse mit passiver Fernerkundung: Ein Modell zur Interpretation optischer Spektralmessungen. PhD thesis. DLR-Forschungsbericht 94-15, 171 p								
+[4] Gege (1994): Gewaesseranalyse mit passiver Fernerkundung: Ein Modell zur Interpretation optischer Spektralmessungen. PhD thesis. DLR-Forschungsbericht 94-15, 171 p
 [5] Gege (1995): Water analysis by remote sensing: A model for the interpretation of optical spectral measurements. Technical Translation ESA-TT-1324, 231 pp.								
 [6] Gege (1998): Correction of specular reflections at the water surface. Ocean Optics XIV, Conference Papers, Vol. 2.								
 
