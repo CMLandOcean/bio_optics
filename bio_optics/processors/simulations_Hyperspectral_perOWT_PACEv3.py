@@ -130,7 +130,7 @@ wavelengths=np.arange(400,900, 1)
 
 # Select iop-model setup!
 
-AlgaeGroupType = 'Summer' # 'Standardv2': HEREON, 'Standardv3': 'Standard', NSSummerBloomsv3': 'Summer'
+AlgaeGroupType = 'Standard' # 'Standardv2': HEREON, 'Standardv3': 'Standard', NSSummerBloomsv3': 'Summer'
 
 
 # global inputs that don't change with fit params
@@ -168,10 +168,15 @@ E_d_res = E_dd_res + E_dsa_res + E_dsr_res
 ## Parallelised version!
 
 ## read parameters from inversion results
-OWTList = ['1', '2',  '3b', '4a', '4b', '5a', '5b', '6', '7'] #'3a'
+# OWTList = ['1', '2',  '3b', '4a', '4b', '5a', '5b', '6', '7'] #'3a'
+OWTList = ['1', '2', '3a_g', '3a_y', '3b', '4a_g', '4a_y', '4b', '5a', '5b', '6', '7']
 
-outpath = "E:\Documents\projects\EnsAD\data\PACE_NN_training\TrainingData_PACE_v3_comb_fullSimulation\\"
-path = "E:\Documents\projects\EnsAD\data\PACE_NN_training\TrainingData_PACE_v3_comb\\"
+# outpath = "E:\Documents\projects\EnsAD\data\PACE_NN_training\TrainingData_PACE_v3_comb_fullSimulation\\"
+# path = "E:\Documents\projects\EnsAD\data\PACE_NN_training\TrainingData_PACE_v3_comb\\"
+
+outpath = "E:\Documents\projects\EnsAD\data\PACE_NN_training\TrainingData_PACE_v3_OWTrefined_comb_fullSimulation\\"
+path = "E:\Documents\projects\EnsAD\data\PACE_NN_training\TrainingData_PACE_v3_OWTrefined_comb\\"
+
 fnames_ = os.listdir(path)
 iopFnames = [fn for fn in fnames_ if fn.startswith('iop_')]
 origFnames = [fn for fn in fnames_ if fn.startswith('orig_')]

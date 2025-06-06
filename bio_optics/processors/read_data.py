@@ -47,7 +47,7 @@ def set_valid_bands_PACE(version=2):
     return wlstr
 
 
-def set_wavelengths_bySensor(sensor, versionAC):
+def set_wavelengths_bySensor(sensor, versionAC, maxWL=None):
     if sensor == 'PACE':
         wlstr = set_valid_bands_PACE(versionAC)
 
@@ -57,8 +57,18 @@ def set_wavelengths_bySensor(sensor, versionAC):
             d = pd.read_csv(fname, header=0, sep='\t')
             wlstr = [b for b in d.columns.values if
                      not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum']]
+        if versionAC == 'v010502L':
+            fname = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\extracts_byOWTrefined_combined\extracts_OWT3a_g_Lakes_EnMAP_20250516_Rrs_flags.txt"
+            d = pd.read_csv(fname, header=0, sep='\t')
+            wlstr = [b for b in d.columns.values if
+                     not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum']]
+
 
     wavelength = np.asarray([float(a) for a in wlstr])
+    if not maxWL is None:
+        ID = wavelength <maxWL
+        wavelength = wavelength[ID]
+
     return wavelength
 
 
@@ -216,6 +226,7 @@ def read_PACE_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
         wlstr = set_valid_bands_PACE(versionAC)
         fnamesL = os.listdir(outpath)
         fnamesL = [fn for fn in fnamesL if 'OWT'+OWTList[0] in fn and fn.startswith('extracts')]
+        fnamesL = [fn for fn in fnamesL if seaName.replace(' ', '_') in fn]
         datasetName = fnamesL[0].split('extracts_')[1].split('.txt')[0]
         d = pd.read_csv(outpath + fnamesL[0], sep='\t', header=0)
         Rrs = d[wlstr].copy()
@@ -234,14 +245,52 @@ def read_PACE_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
 
 
 def read_EnMAP_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
+                        regionName = '',
                         OWTList = [],
                         outpath = r"E:\Documents\projects\EnsAD\data\EnMAP_NN_training\\extracts_NorthSea\\",
                         datasetDate = '20241118',
                         datasetID = 'membSumFilt2_QWIPfilt', # Baltic: 'QWIPfilt'
-                        dataType = 'orig'
+                        dataType = 'orig',
+                        maxWL=750.
     ):
 
     if dataType=='orig':
+        if seaName == 'Lakes':
+            path = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\extracts_byOWTrefined_combined\\"
+            fnamesL = os.listdir(outpath)
+            fnamesL = [fn for fn in fnamesL if 'OWT' + OWTList[0] in fn and fn.startswith('extracts')]
+            if len(regionName) > 0:
+                fnamesL = [fn for fn in fnamesL if regionName in fn]
+
+            if len(fnamesL) == 0:
+                return None, None, None, None
+
+            d = pd.read_csv(path + fnamesL[0], header=0, sep='\t')
+            wlstr = [b for b in d.columns.values if
+                     not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum']]
+
+            wavelengths = np.asarray([float(a) for a in wlstr])
+            ## reduce the number of bands in the visible
+            IDwv = np.array(wavelengths < maxWL)
+            wlstr = np.asarray(wlstr)[IDwv]
+            wavelengths = wavelengths[IDwv]
+
+            Rrs = d[wlstr].copy()
+            r_rs = Rrs.copy()
+
+            minRrs = np.min(Rrs.values, axis=1)
+            print(minRrs.shape)
+            ID = np.array(minRrs < 0)
+            rrs = Rrs.values.copy()
+            for i in range(Rrs.shape[1]):  # iterate along wavelengths
+                rrs[ID, i] = rrs[ID, i] - minRrs[ID]
+
+            datasetName = "EnMAP_"+ seaName+"_OWT"+OWTList[0]
+
+            r_rs.loc[:, :] = rrs.copy()
+
+
+
         if seaName == 'North Sea':
             ## North Sea EnMAP, all OWT, all days combined, Classifiable
             path = "Z:\projects\ongoing\EnsAD\workspace\data\EnMAP_extracts\OWT_NorthSea\\"
