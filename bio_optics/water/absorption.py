@@ -818,7 +818,7 @@ def correct_a_phy(a_phy_res,
         a_phy_lambda_0 = a_phy_res[utils.find_closest(wavelengths, lambda_0_phy)[1]] 
 
     E = E0 if C_phy <= 1. else E1
-    a_phy_res *= (A * C_phy**E) / a_phy_lambda_0  
+    a_phy_res *= (A * C_phy**E) / a_phy_lambda_0
 
     return a_phy_res
 
@@ -877,7 +877,10 @@ def a_total(wavelengths=np.arange(400,800),
     if len(a_phy_res)==0:
         a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, C_6=C_6, C_7=C_7, a_i_spec_res=a_i_spec_res)
 
-    a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate) + \
+
+    a_phy_corr = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate)
+    # print(a_phy_corr[0])
+    a_wc = a_phy_corr + \
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
            a_md_res + \
            a_bd_res

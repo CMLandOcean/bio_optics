@@ -141,7 +141,7 @@ def processor_bioOptics_hyperspectral_byOWT(
         AlgaeGroupType = '',
         OWTsingleList = [], # single OWTs only!
         path = '',
-        outpath = r"E:\Documents\projects\EnsAD\data\EnMAP_NN_training\extracts_NorthSea\\",
+        outpath = None, # r"E:\Documents\projects\EnsAD\data\EnMAP_NN_training\extracts_NorthSea\\",
         r_rs=None,
         wlstr=[],
         wavelengths=None,
@@ -172,11 +172,37 @@ def processor_bioOptics_hyperspectral_byOWT(
         paramDict = processingDict_Kellersee[OWTsingleList[0]]
     elif regionName == 'Grosser-Binnensee' or regionName == 'Sibbersdorfer-See' or regionName == 'Stendorfer-See':
         paramDict = processingDict_GrosserBinnensee[OWTsingleList[0]]
+    elif regionName == 'Mueggelsee': #HEATWISE
+        paramDict = processingDict_Mueggelsee[OWTsingleList[0]]
+    elif regionName == 'Helsinki': #HEATWISE
+        paramDict = processingDict_Helsinki[OWTsingleList[0]]
+    elif regionName == 'oder_hohenwutzen' or regionName == 'oder_frankfurt': #AQUATIME
+        paramDict = processingDict_Oder[OWTsingleList[0]]
+    elif regionName == 'elbe_seemannshöft' or regionName == 'elbe_bunthaus': #AQUATIME
+        paramDict = processingDict_Elbe[OWTsingleList[0]]
+    elif regionName == 'dalaro-2' or regionName == 'pyhajarvi':
+        paramDict = processingDict_Helsinki[OWTsingleList[0]]
     # if seaName == 'Baltic Sea':
     #     paramDict = processingDict_BalticSea[OWTsingleList[0]]
 
     ## weights
     weights = np.ones(len(wavelengths))
+    ## modify weights:
+    def gaus2(x, a=0.5, sigma=1, posMax=0):
+        return a * np.exp(-(x - posMax) ** 2 / (2 * sigma ** 2))
+
+    modifyDict = {'+': [[550, 20], [640, 20]],
+                  '-': [[700, 20]]}
+
+    weights_mod = np.zeros(len(wavelengths))
+    for key in modifyDict.keys():
+        if key == '+':
+            for posMax, sigma in modifyDict[key]:
+                weights_mod += gaus2(wavelengths, sigma=np.sqrt(sigma), posMax=posMax)
+        elif key == '-':
+            for posMax, sigma in modifyDict[key]:
+                weights_mod -= gaus2(wavelengths, sigma=np.sqrt(sigma), posMax=posMax)
+    weights += weights_mod
 
     @ray.remote
     def invert_chunk(chunk,
@@ -255,10 +281,14 @@ def processor_bioOptics_hyperspectral_byOWT(
 
     chunk_size = data.shape[0] // num_chunks  # Size of each chunk
     chunks = [data[i:i + chunk_size, :] for i in range(0, data.shape[0], chunk_size)]  # Split the DF into chunks
-    while chunks[-1].shape[0] == 1:
+    while chunks[-1].shape[0] == 1 and num_chunks>0:
         num_chunks -= 1
-        chunk_size = data.shape[0] // num_chunks  # Size of each chunk
-        chunks = [data[i:i + chunk_size, :] for i in  range(0, data.shape[0], chunk_size)]  # Split the DF into chunks
+        if num_chunks >0:
+            # print(data.shape[0],  num_chunks)
+            chunk_size = data.shape[0] // num_chunks  # Size of each chunk
+            chunks = [data[i:i + chunk_size, :] for i in  range(0, data.shape[0], chunk_size)]  # Split the DF into chunks
+        else:
+            chunks = [data]
 
     print(chunks[-1].shape[0])
     print('chunks N', len(chunks))
@@ -373,7 +403,11 @@ def processor_bioOptics_hyperspectral_byOWT(
                                                            Ls_Ed=[])
                                   ))
 
+    # print('Rrs_sim.shape', R_rs_sim.shape, len(R_rs_sim.shape))
+    if len(R_rs_sim.shape) == 1:
+        R_rs_sim = R_rs_sim.reshape((1, R_rs_sim.shape[0]))
     R_rs_sim = pd.DataFrame(R_rs_sim, columns=wavelengths.astype(str))
+
 
     ###
     # Write results
@@ -398,15 +432,15 @@ def processor_bioOptics_hyperspectral_byOWT(
     if params['offset'].vary:
         groupStr = groupStr + 'offset'
 
-
-    outDF.to_csv(outpath + "inverted_IOP_bio_optics_HEREONfull_" + datasetName + "_V"+str(int(Ngroups)) +
+    if not outpath is None:
+        outDF.to_csv(outpath + "inverted_IOP_bio_optics_HEREONfull_" + datasetName + "_V"+str(int(Ngroups)) +
                  "AH_"+groupStr+"_restrict.txt",
                  sep='\t', header=True, index=False)
-    R_rs_sim.to_csv(outpath + "inverted_Rrs_bio_optics_HEREONfull_" + datasetName + "_V"+str(int(Ngroups)) +
+        R_rs_sim.to_csv(outpath + "inverted_Rrs_bio_optics_HEREONfull_" + datasetName + "_V"+str(int(Ngroups)) +
                  "AH_"+groupStr+"_restrict.txt",
                     sep='\t', header=True, index=False)
 
-    return None
+    return outDF, R_rs_sim
 
 ## 20250307
 # first test with new specific absorption and scattering values
@@ -844,6 +878,574 @@ processingDict_GrosserBinnensee = {
           }
 }
 
+processingDict_Mueggelsee = {
+    # '1': {'C_7': setDictValues(0,0,1)},
+    # '2': {'C_0': setDictValues(0,0,1),
+    #       'C_2': setDictValues(0,0,1),
+    #       'C_3': setDictValues(0,0,1), # Synechococcus
+    #       'C_6': setDictValues(0,0,1),
+    #       'C_7': setDictValues(0,0,1),
+    #       'C_Y': setDictValues(0,0,0.1),
+    #       'C_ism': setDictValues(0,0,1)}, # no fluorescence!
+    '3a_g': {'C_0': setDictValues(0,0,10),
+          #   'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+          #  'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           #  'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3a_y': {'C_0': setDictValues(0,0,10),
+          #   'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+          #  'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,3),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           #  'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3b': {'C_0': setDictValues(0,0,10),
+          #   'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+          #   'C_3': setDictValues(0,0,10),
+           # 'C_5': setDictValues(0,0,10), # coccolith.
+          # 'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,10),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycocyanin': setDictValues(0,0,0.2)
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '4a_g': {'C_0': setDictValues(0,0,30),
+          #   'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+          #  'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,5),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4a_y': {'C_0': setDictValues(0.1,0,30),
+           #  'C_1': setDictValues(0,0,30),
+           #  'C_2': setDictValues(0,0,30),
+           # 'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4b': {'C_0': setDictValues(0,0,200),
+            # 'C_1': setDictValues(0,0,200),
+            # 'C_2': setDictValues(0,0,300),
+            # 'C_3': setDictValues(0,0, 200), # Synechococcus
+        #   'C_4': setDictValues(0,0,100),
+        #     'C_5': setDictValues(0,0,10), # coccolith.
+        #   'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5a': {'C_0': setDictValues(0.,0,200),
+           # 'C_1': setDictValues(0,0,200),
+           #  'C_2': setDictValues(0,0,300),
+           # 'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+           'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5b': {'C_0': setDictValues(0,0,200),
+          #   'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,1000),
+          #   'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,1000),
+          'C_Y': setDictValues(0,0, 1),
+          'C_ism': setDictValues(0,0, 2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '6': {'C_0': setDictValues(0.,0,200),
+          # 'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,500),
+          #   'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,500),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          },
+    '7': {'C_0': setDictValues(0.,0,200),
+          # 'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,200),
+          #   'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,200),
+          # 'C_6': setDictValues(0,0,200),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          # 'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          }
+}
+
+processingDict_Helsinki = {
+    # '1': {'C_7': setDictValues(0,0,1)},
+    # '2': {'C_0': setDictValues(0,0,1),
+    #       'C_2': setDictValues(0,0,1),
+    #       'C_3': setDictValues(0,0,1), # Synechococcus
+    #       'C_6': setDictValues(0,0,1),
+    #       'C_7': setDictValues(0,0,1),
+    #       'C_Y': setDictValues(0,0,0.1),
+    #       'C_ism': setDictValues(0,0,1)}, # no fluorescence!
+    '3a_g': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+           'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3a_y': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+           'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,3),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3b': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+            'C_3': setDictValues(0,0,10),
+          #  'C_5': setDictValues(0,0,10), # coccolith.
+          # 'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,10),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '4a_g': {'C_0': setDictValues(0,0,30),
+            # 'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+           'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,5),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4a_y': {'C_0': setDictValues(0,0,30),
+        'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+           'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4b': {'C_0': setDictValues(0,0,200),
+        'C_1': setDictValues(0,0,200),
+        #   'C_2': setDictValues(0,0,300),
+        'C_3': setDictValues(0,0, 200), # Synechococcus
+        #   'C_4': setDictValues(0,0,100),
+        #     'C_5': setDictValues(0,0,10), # coccolith.
+        #   'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5a': {'C_0': setDictValues(0.,0,200),
+           'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,300),
+           'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          #  'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5b': {'C_0': setDictValues(0,0,200),
+            'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,1000),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,1000),
+          'C_Y': setDictValues(0,0, 1),
+          'C_ism': setDictValues(0,0, 2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '6': {'C_0': setDictValues(0.,0,200),
+          'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,500),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,500),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          },
+    '7': {'C_0': setDictValues(0.,0,200),
+          # 'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,200),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,200),
+          # 'C_6': setDictValues(0,0,200),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          }
+}
+
+processingDict_Oder = {
+    '1': {'C_7': setDictValues(0,0,1)},
+    '2': {'C_0': setDictValues(0,0,1),
+       #   'C_2': setDictValues(0,0,1),
+       #   'C_3': setDictValues(0,0,1), # Synechococcus
+       #   'C_6': setDictValues(0,0,1),
+       #   'C_7': setDictValues(0,0,1),
+          'C_Y': setDictValues(0,0,0.1),
+          'C_ism': setDictValues(0,0,1)}, # no fluorescence!
+    '3a_g': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+           'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3a_y': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+           'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,3),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3b': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+            'C_3': setDictValues(0,0,10),
+          #  'C_5': setDictValues(0,0,10), # coccolith.
+          # 'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,10),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '4a_g': {'C_0': setDictValues(0,0,30),
+            # 'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+           'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,5),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4a_y': {'C_0': setDictValues(0,0,30),
+        'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+           'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4b': {'C_0': setDictValues(0,0,200),
+        'C_1': setDictValues(0,0,200),
+        #   'C_2': setDictValues(0,0,300),
+        'C_3': setDictValues(0,0, 200), # Synechococcus
+        #   'C_4': setDictValues(0,0,100),
+        #     'C_5': setDictValues(0,0,10), # coccolith.
+        #   'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5a': {'C_0': setDictValues(0.,0,200),
+           'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,300),
+           'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          #  'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5b': {'C_0': setDictValues(0,0,200),
+            'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,1000),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,1000),
+          'C_Y': setDictValues(0,0, 1),
+          'C_ism': setDictValues(0,0, 50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '6': {'C_0': setDictValues(0.,0,200),
+          'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,500),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,500),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          },
+    '7': {'C_0': setDictValues(0.,0,200),
+          # 'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,200),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,200),
+          # 'C_6': setDictValues(0,0,200),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          }
+}
+
+processingDict_Elbe = {
+    # '1': {'C_7': setDictValues(0,0,1)},
+    # '2': {'C_0': setDictValues(0,0,1),
+    #       'C_2': setDictValues(0,0,1),
+    #       'C_3': setDictValues(0,0,1), # Synechococcus
+    #       'C_6': setDictValues(0,0,1),
+    #       'C_7': setDictValues(0,0,1),
+    #       'C_Y': setDictValues(0,0,0.1),
+    #       'C_ism': setDictValues(0,0,1)}, # no fluorescence!
+    '3a_g': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+           'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3a_y': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+           'C_3': setDictValues(0,0,10), # Synechococcus
+          # 'C_4': setDictValues(0,0,10),
+          #  'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,3),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '3b': {'C_0': setDictValues(0,0,10),
+            # 'C_1': setDictValues(0,0,10),
+          # 'C_2': setDictValues(0,0,10),
+            'C_3': setDictValues(0,0,10),
+          #  'C_5': setDictValues(0,0,10), # coccolith.
+          # 'C_6': setDictValues(0,0,10),
+          'C_Y': setDictValues(0,0,10),
+          'C_ism': setDictValues(0,0,10),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2)
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2)
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '4a_g': {'C_0': setDictValues(0,0,30),
+            # 'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+           'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,5),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4a_y': {'C_0': setDictValues(0,0,30),
+        'C_1': setDictValues(0,0,30),
+          # 'C_2': setDictValues(0,0,30),
+           'C_3': setDictValues(0,0,30), # Synechococcus
+          # 'C_4': setDictValues(0,0,30),
+          # 'C_6': setDictValues(0,0,30),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,20),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+             },
+    '4b': {'C_0': setDictValues(0,0,200),
+        'C_1': setDictValues(0,0,200),
+        #   'C_2': setDictValues(0,0,300),
+        'C_3': setDictValues(0,0, 200), # Synechococcus
+        #   'C_4': setDictValues(0,0,100),
+        #     'C_5': setDictValues(0,0,10), # coccolith.
+        #   'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+           # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+           'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5a': {'C_0': setDictValues(0.,0,200),
+           'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,300),
+           'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          #  'C_6': setDictValues(0,0,300),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '5b': {'C_0': setDictValues(0,0,200),
+            'C_1': setDictValues(0,0,200),
+          # 'C_2': setDictValues(0,0,1000),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,1000),
+          'C_Y': setDictValues(0,0, 1),
+          'C_ism': setDictValues(0,0, 50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+            # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+            'L_fl_phycocyanin': setDictValues(0,0,0.2),
+           # 'offset': setDictValues(0, -0.1, 0.1)
+           },
+    '6': {'C_0': setDictValues(0.,0,200),
+          'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,500),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,300),
+          # 'C_6': setDictValues(0,0,500),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,50),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          },
+    '7': {'C_0': setDictValues(0.,0,200),
+          # 'C_1': setDictValues(0.,0,200),
+          # 'C_2': setDictValues(0,0,200),
+            'C_3': setDictValues(0,0,200), # Synechococcus
+          # 'C_4': setDictValues(0,0,200),
+          # 'C_6': setDictValues(0,0,200),
+          'C_Y': setDictValues(0,0,1),
+          'C_ism': setDictValues(0,0,2),
+           'L_fl_lambda0': setDictValues(0,0,0.2),
+          # 'L_fl_phycoerythrin': setDictValues(0,0,0.2),
+          'L_fl_phycocyanin': setDictValues(0,0,0.2),
+        # 'offset': setDictValues(0, -0.1, 0.1)
+          }
+}
+
 
 ## Summer ##
 # processingDict_NorthSea = {
@@ -1083,14 +1685,14 @@ processingDict_GrosserBinnensee = {
 
 
 ### Begin MAIN ###
-sensor = 'EnMAP'
-versionAC = 'v010502L'
-dataType = 'Orig'
-seaName = 'SHLakes' #'Lakes'
-regionName = 'Stendorfer-See' #'Stendorfer-See' #'Sibbersdorfer-See' #'Grosser-Binnensee' # 'Kellersee'
+sensor = 'CHIME_Sim'
+versionAC = 'v1'
+dataType = 'Sim'
+seaName = 'AQUATIME' #'HEATWISE' #'Lakes'
+regionName = 'oder_frankfurt' # 'dalaro-2' #'pyhajarvi' # #'elbe_seemannshöft', 'elbe_bunthaus' #'oder_frankfurt'#'oder_hohenwutzen' #'Helsinki' # Mueggelsee, Helsinki, //'Stendorfer-See' #'Sibbersdorfer-See' #'Grosser-Binnensee' # 'Kellersee'
 AlgaeGroupType = 'Standardv2' # 'Standardv3' # 'NSSummerBloomsv3' Standardv2
-datasetDate = '20250827' # '20250516'
-datasetID = 'Rrs_flags'
+datasetDate = '20251211' # '20250516'
+# datasetID = 'Rrs_flags'
 maxWavelength= 750.
 wavelengths = set_wavelengths_bySensor(sensor, versionAC, maxWL= maxWavelength)
 
@@ -1136,68 +1738,85 @@ E_d_res = E_dd_res + E_dsa_res + E_dsr_res
 
 
 ### 20250516 ###
-OWTList = ['1', '2', '3a_g', '3a_y', '3b', '4a_g', '4a_y', '4b', '5a', '5b', '6', '7']
-# path = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\extracts_byOWTrefined_combined\\"
-# outpath = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\EnMAP_fullInversion_v3_20250516_HEREON\\"
+OWTList = [ '1', '2', '3a_g', '3a_y', '3b', '4a_g', '4a_y', '4b', '5a', '5b', '6', '7']
 
-path = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\EnMAP_extracts_Lakes_LandAC_v010502\extracts_byOWTrefined_combined\\"
-outpath = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\EnMAP_extracts_Lakes_LandAC_v010502\EnMAP_fullInversion_v3_20250827_HEREON\\"
+metaDict = {
+    'elbe_bunthaus' : {'path': "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\\RTM_simulations\Simulated Spectra\elbe_bunthaus\\",
+                    'datasetName' : 'CHIME_sim_AQUATIME_elbe_bunthaus'},
+    'dalaro-2': {'path' : "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\\RTM_simulations\Simulated Spectra\dalaro-2\\",
+             'datasetName': 'CHIME_sim_AQUATIME_dalaro-2'},
+    'pyhajarvi': {'path' : "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\\RTM_simulations\Simulated Spectra\pyhajarvi\\",
+                  'datasetName' :'CHIME_sim_AQUATIME_pyhajarvi'},
+    'elbe_seemannshöft' :{ 'path': "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\\RTM_simulations\Simulated Spectra\elbe_seemannshöft\\",
+                           'datasetName': 'CHIME_sim_AQUATIME_elbe-seemannshöft' },
+    'oder_frankfurt': {'path': "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\\RTM_simulations\Simulated Spectra\oder_frankfurt\\",
+                       'datasetName': 'CHIME_sim_AQUATIME_oder_frankfurt'},
+    'oder_hohenwutzen': {'path': "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\\RTM_simulations\Simulated Spectra\oder_hohenwutzen\\",
+                         'datasetName': 'CHIME_sim_AQUATIME_oder_hohenwutzen'},
+    'Helsinki_SS': {
+        'path': "Z:\projects\ongoing\HEATWISE\sharepoint\WP2_workspace\Water Quality\\representative_dataset\helsinki_siljaserenade\\"},
+    'Helsinki_FM': {
+        'path': "Z:\projects\ongoing\HEATWISE\sharepoint\WP2_workspace\Water Quality\\representative_dataset\helsinki_finnmaid\\"},
+    'Mueggelsee': {'path' : "Z:\projects\ongoing\HEATWISE\sharepoint\WP2_workspace\Water Quality\\representative_dataset\\berlin_muggelsee\\"}
+}
 
+path = metaDict[regionName]['path']
+datasetName = metaDict[regionName]['datasetName']
 
-maxNspectra = 40000  # 40000 #test on 5000
-for owt in OWTList[7:]:
-    OWTsingleList = [owt]
-    # for regionName in regionNameList[-1:]: # for Baltic Region with several subsets
-    #     print(owt, regionName)
+if seaName == 'HEATWISE':
+     outpath = "Z:\projects\ongoing\HEATWISE\sharepoint\WP2_workspace\Water Quality\FullInversion\\"
+if seaName == 'AQUATIME':
+    outpath = "Z:\projects\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\RTM_simulations\FullInversion\\"
+
+fname = os.listdir(path)
+fname = [fn for fn in fname if 'Rrs' in fn]
+dat = pd.read_csv(path+ fname[0])
+wlstr = [str(int(wl)) for wl in wavelengths]
+
+print(dat.columns.values)
+
+r_rs_all = dat[wlstr]
+
+# resultInvDF = pd.DataFrame()
+# resultSimDF = pd.DataFrame()
+resultInvArr = None
+resultSimArr = None
+# resultArr = None
+
+for owt in OWTList[:]:
     print(owt)
-    subsetN = 1
-    ## read data + prepare subsets of 40.000 spectra
-    if sensor == 'EnMAP':
-        r_rs, wlstr, wavelengths, datasetName = read_EnMAP_extracts(seaName=seaName,
-                                                                   OWTList=OWTsingleList,
-                                                                    regionName= regionName, #'Stendorfer-See',  #'Sibbersdorfer-See', #'Grosser-Binnensee', #'Kellersee',
-                                                                   # versionAC=versionAC,
-                                                                   outpath=path,
-                                                                   datasetDate=datasetDate, maxWL=maxWavelength,
-                                                                    negativeCorr=True)
-        if r_rs is None:
-            continue
+    OWTsingleList = [owt]
 
-    Nlines = r_rs.shape[0]
-    print(Nlines)
-    # Nlines = maxNspectra # test run, small sample
-    while subsetN*maxNspectra < Nlines:
-        print('part', subsetN)
-        ID = np.arange(((subsetN-1)*maxNspectra),(subsetN*maxNspectra+1), 1, dtype='int32')
-        r_rs_sub = r_rs.loc[ID,:]
+    ID = dat.OWT == owt
+    if np.sum(ID)>0:
+        r_rs_sub = r_rs_all.loc[ID,:]
 
-        processor_bioOptics_hyperspectral_byOWT(
+        thisResultInv, thisResultSim = processor_bioOptics_hyperspectral_byOWT(
             datasetDate = datasetDate,
-            datasetID = datasetID,
             versionAC = versionAC,
             regionName = regionName,
             AlgaeGroupType = AlgaeGroupType,
             OWTsingleList = OWTsingleList, # single OWTs only!
             path = path,
-            outpath=outpath,
-            r_rs=r_rs_sub, wavelengths=wavelengths,wlstr=wlstr, datasetName=datasetName+'_part'+str(subsetN))
+            outpath=None,
+            r_rs=r_rs_sub, wavelengths=wavelengths,wlstr=wlstr, datasetName=datasetName)
 
-        subsetN +=1
+        if resultInvArr is None:
+            resultInvArr = np.zeros((len(ID), thisResultInv.shape[1]))
+        resultInvArr[ID,:] = thisResultInv.values
+            # resultInvDF = thisResultInv.copy()
+        # else:
+        #     resultInvDF = pd.concat((resultInvDF, thisResultInv), axis=0)
 
-    ## the rest
-    # if r_rs.shape[0] < maxNspectra: # only for test
-    #     Nlines =  r_rs.shape[0]
-    ID = np.arange(((subsetN - 1) * maxNspectra), Nlines, 1, dtype='int32')
-    print('the rest', len(ID))
-    r_rs_sub = r_rs.loc[ID, :]
+        if resultSimArr is None:
+            resultSimArr = np.zeros((len(ID), thisResultSim.shape[1]))
+        resultSimArr[ID,:] = thisResultSim.values
+        # else:
+        #     resultSimDF = pd.concat((resultSimDF, thisResultSim), axis=0)
 
-    processor_bioOptics_hyperspectral_byOWT(
-        datasetDate=datasetDate,
-        datasetID=datasetID,
-        versionAC=versionAC,
-        regionName=regionName,
-        AlgaeGroupType=AlgaeGroupType,
-        OWTsingleList=OWTsingleList,  # single OWTs only!
-        path=path,
-        outpath=outpath,
-        r_rs=r_rs_sub, wavelengths=wavelengths, wlstr=wlstr, datasetName=datasetName + '_part' + str(subsetN))
+resultInvDF = pd.DataFrame(resultInvArr, columns=thisResultInv.columns.values)
+resultInvDF['date'] = dat['date'].values
+resultInvDF.to_csv(outpath + "inverted_IOP_bio_optics_HEREONfull_" + datasetName + "_allOWTs_Inv0.3b.txt")
+resultSimDF = pd.DataFrame(resultSimArr, columns=thisResultSim.columns.values)
+resultSimDF['date'] = dat['date'].values
+resultSimDF.to_csv(outpath + "inverted_Sim_bio_optics_HEREONfull_" + datasetName + "_allOWTs_Inv0.3b.txt")

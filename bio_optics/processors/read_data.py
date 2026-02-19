@@ -63,6 +63,9 @@ def set_wavelengths_bySensor(sensor, versionAC, maxWL=None):
             wlstr = [b for b in d.columns.values if
                      not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum']]
 
+    if sensor == 'CHIME_Sim':
+        wl = np.asarray([int(a) for a in np.arange(400, 955, 5)])
+        wlstr = [str(a) for a in wl]
 
     wavelength = np.asarray([float(a) for a in wlstr])
     if not maxWL is None:
@@ -251,7 +254,8 @@ def read_EnMAP_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
                         datasetDate = '20241118',
                         datasetID = 'membSumFilt2_QWIPfilt', # Baltic: 'QWIPfilt'
                         dataType = 'orig',
-                        maxWL=750.
+                        maxWL=750.,
+                        negativeCorr = True
     ):
 
     if dataType=='orig':
@@ -267,7 +271,7 @@ def read_EnMAP_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
 
             d = pd.read_csv(path + fnamesL[0], header=0, sep='\t')
             wlstr = [b for b in d.columns.values if
-                     not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum']]
+                     not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum', 'Area', 'NDI']]
 
             wavelengths = np.asarray([float(a) for a in wlstr])
             ## reduce the number of bands in the visible
@@ -289,7 +293,40 @@ def read_EnMAP_extracts(seaName = 'Baltic Sea' , #['Baltic Sea', 'North Sea']
 
             r_rs.loc[:, :] = rrs.copy()
 
+        if seaName == 'SHLakes':
+            path = "D:\Documents\projects\EnsAD\EnMAP\L2A_Land\\v010502\EnMAP_extracts_Lakes_LandAC_v010502\extracts_byOWTrefined_combined\\"
+            fnamesL = os.listdir(path)
+            fnamesL = [fn for fn in fnamesL if 'OWT' + OWTList[0] in fn and fn.startswith('extracts')]
+            if len(regionName) > 0:
+                fnamesL = [fn for fn in fnamesL if regionName in fn]
 
+            if len(fnamesL) == 0:
+                return None, None, None, None
+
+            d = pd.read_csv(path + fnamesL[0], header=0, sep='\t')
+            wlstr = [b for b in d.columns.values if
+                     not b in ['idx', 'idy', 'lon', 'lat', 'OWT', 'date', 'QWIP', 'AVW', 'AVW_', 'membSum', 'Area', 'NDI']]
+
+            wavelengths = np.asarray([float(a) for a in wlstr])
+            ## reduce the number of bands in the visible
+            IDwv = np.array(wavelengths < maxWL)
+            wlstr = np.asarray(wlstr)[IDwv]
+            wavelengths = wavelengths[IDwv]
+
+            Rrs = d[wlstr].copy()
+            r_rs = Rrs.copy()
+
+            if negativeCorr:
+                minRrs = np.min(Rrs.values, axis=1)
+                print(minRrs.shape)
+                ID = np.array(minRrs < 0)
+                rrs = Rrs.values.copy()
+                for i in range(Rrs.shape[1]):  # iterate along wavelengths
+                    rrs[ID, i] = rrs[ID, i] - minRrs[ID]
+
+                r_rs.loc[:, :] = rrs.copy()
+
+            datasetName = "EnMAP_" + regionName + "_OWT" + OWTList[0]
 
         if seaName == 'North Sea':
             ## North Sea EnMAP, all OWT, all days combined, Classifiable
