@@ -423,13 +423,13 @@ def b_bphy_hereon(C_0 = 0,
                   C_6 = 0,
                   C_7 = 0,
                   b_ratio_C_0 = 0.002,
-                  b_ratio_C_1 = 0.002,
-                  b_ratio_C_2 = 0.002,
-                  b_ratio_C_3 = 0.002,
-                  b_ratio_C_4 = 0.002, 
-                  b_ratio_C_5 = 0.002, 
-                  b_ratio_C_6 = 0.002, 
-                  b_ratio_C_7 = 0.002, 
+                  b_ratio_C_1 = 0.007, #0.002
+                  b_ratio_C_2 = 0.002, #0.002
+                  b_ratio_C_3 = 0.003, #0.002
+                  b_ratio_C_4 = 0.003, #0.002
+                  b_ratio_C_5 = 0.007, #0.002
+                  b_ratio_C_6 = 0.007, #0.002
+                  b_ratio_C_7 = 0.007, #0.002
                   wavelengths = np.arange(400,800),
                   b_i_spec_res = []):
     """
@@ -455,10 +455,22 @@ def b_bphy_hereon(C_0 = 0,
         b_i_spec = resampling.resample_b_i_spec_EnSAD(wavelengths=wavelengths)
     else:
         b_i_spec = b_i_spec_res
-    
-    b_bphy = 0
-    for i in range(b_i_spec.shape[1]): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
-    
+
+    ## author: Dagmar
+    # b_bphy = 0
+    # for i in range(b_i_spec.shape[1]): b_bphy += b_ratio_C_i[i] * C_i[i] * b_i_spec[:, i]
+
+    # author: Bi & Hieronymi
+    b_phy = 0
+    for i in range(b_i_spec.shape[1]): b_phy += C_i[i] * b_i_spec[:, i]
+    ID = np.round(C_i, 7) > 0
+    if np.sum(ID)>0:
+        b_ratio_mean = np.mean(b_ratio_C_i[ID])
+    else:
+        b_ratio_mean = 0.003
+    print('b_ratio_mean', b_ratio_mean)
+    b_bphy = b_ratio_mean * b_phy
+
     return b_bphy
 
 
