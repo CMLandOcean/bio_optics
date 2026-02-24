@@ -468,7 +468,7 @@ def b_bphy_hereon(C_0 = 0,
         b_ratio_mean = np.mean(b_ratio_C_i[ID])
     else:
         b_ratio_mean = 0.003
-    print('b_ratio_mean', b_ratio_mean)
+    # print('b_ratio_mean', b_ratio_mean)
     b_bphy = b_ratio_mean * b_phy
 
     return b_bphy

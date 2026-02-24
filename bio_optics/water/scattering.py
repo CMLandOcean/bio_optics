@@ -50,6 +50,12 @@ def b_phy(C_0 = 0,
         b_i_spec = b_i_spec_res
     
     b_phy = 0
-    for i in range(b_i_spec.shape[1]): b_phy += C_i[i] * b_i_spec[:, i]
-    
+    for i in range(b_i_spec.shape[1]):
+        if C_i[i] <=1:
+            b_phy += C_i[i] * b_i_spec[:, i]
+        else: # from HEREON web implementation
+            b_phy += C_i[i]**0.8943513 * b_i_spec[:, i]
+
+
+
     return b_phy

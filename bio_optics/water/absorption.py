@@ -793,7 +793,7 @@ def correct_a_phy(a_phy_res,
                   E0=1., 
                   E1=0.8987, 
                   lambda_0_phy=676.,
-                  interpolate=True):
+                  interpolate=bool(True)):
     """
     Correct a_ph for non-linear concentration-related effects (e.g., packaging) following [1] (Eqs. 14 and 21)
 
@@ -812,10 +812,12 @@ def correct_a_phy(a_phy_res,
     Returns:
         a_ph: Spectral absorption coefficient of phytoplankton corrected for non-linear concentration-related effects.
     """
-    if interpolate:
-        a_phy_lambda_0 = np.interp(lambda_0_phy, wavelengths, a_phy_res)
-    else:
-        a_phy_lambda_0 = a_phy_res[utils.find_closest(wavelengths, lambda_0_phy)[1]] 
+    ## todo: fix typeerror TypeError: __bool__ should return bool, returned numpy.bool_
+    ## Works in direct function call, but not in ray call for simulation! (Worked in ray call for inversion though)
+    # if interpolate:
+    #     a_phy_lambda_0 = np.interp(lambda_0_phy, wavelengths, a_phy_res)
+    # else:
+    a_phy_lambda_0 = a_phy_res[utils.find_closest(wavelengths, lambda_0_phy)[1]]
 
     E = E0 if C_phy <= 1. else E1
     a_phy_res *= (A * C_phy**E) / a_phy_lambda_0
@@ -852,9 +854,9 @@ def a_total(wavelengths=np.arange(400,800),
             interpolate=True, 
             T_W=20,
             T_W_0=20,
-            # a_d_res=[],
-            a_md_res=[],
-            a_bd_res=[],
+            a_d_res=[],
+            # a_md_res=[],
+            # a_bd_res=[],
             a_md_spec_res=[],
             a_bd_spec_res=[],
             a_i_spec_res=[],
@@ -865,14 +867,14 @@ def a_total(wavelengths=np.arange(400,800),
     
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
-    if len(a_md_res) == 0:
-        a_md_res = a_md(wavelengths=wavelengths, C_ism=C_ism, A_md=A_md, S_md=S_md, C_md=C_md, lambda_0_md=lambda_0_md, a_md_spec_res=a_md_spec_res)
+    # if len(a_md_res) == 0:
+    #     a_md_res = a_md(wavelengths=wavelengths, C_ism=C_ism, A_md=A_md, S_md=S_md, C_md=C_md, lambda_0_md=lambda_0_md, a_md_spec_res=a_md_spec_res)
+    #
+    # if len(a_bd_res) == 0:
+    #     a_bd_res = a_bd(wavelengths=wavelengths, C_phy=C_phy, A_bd=A_bd, S_bd=S_bd, C_bd=C_bd, lambda_0_bd=lambda_0_bd, a_bd_spec_res=a_bd_spec_res)
 
-    if len(a_bd_res) == 0:
-        a_bd_res = a_bd(wavelengths=wavelengths, C_phy=C_phy, A_bd=A_bd, S_bd=S_bd, C_bd=C_bd, lambda_0_bd=lambda_0_bd, a_bd_spec_res=a_bd_spec_res)
-
-    # if len(a_d_res)==0:
-    #     a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
+    if len(a_d_res)==0:
+        a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
     
     if len(a_phy_res)==0:
         a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, C_6=C_6, C_7=C_7, a_i_spec_res=a_i_spec_res)
@@ -880,11 +882,14 @@ def a_total(wavelengths=np.arange(400,800),
 
     a_phy_corr = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate)
     # print(a_phy_corr[0])
+    # a_wc = a_phy_corr + \
+    #        a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
+    #        a_md_res + \
+    #        a_bd_res
     a_wc = a_phy_corr + \
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
-           a_md_res + \
-           a_bd_res
-    
+           a_d_res
+
     a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res) + a_wc
 
     return a
