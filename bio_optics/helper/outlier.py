@@ -9,8 +9,10 @@ def outlier_1D(arr, m=2):
     Returns binary mask where True is NO OUTLIER!
     Requires scipy.stats.median_abs_deviation.
     """
-    return np.logical_and(abs(arr - np.median(arr)) < m * median_abs_deviation(arr),
-                            abs(arr + np.median(arr)) > m * median_abs_deviation(arr))
+    return np.logical_and(
+        abs(arr - np.median(arr)) < m * median_abs_deviation(arr),
+        abs(arr + np.median(arr)) > m * median_abs_deviation(arr)
+        )
                         
                         
 def outlier_2D(arr, m=2, n=25, axis=1):

@@ -27,29 +27,30 @@ def forward(parameters,
             bb_phy_res=[],
             b_md_res=[],
             b_bd_res=[],
-            b_bw_res=[],
+            bb_w_res=[],
             # b_d_res=[],
-            b_i_spec_res=[],
+            bb_i_spec_res=[],
             # c_d_res=[],
             c_md_res=[],
             c_bd_res=[],
             h_C_res=[],
             h_C_phycocyanin_res=[],
             h_C_phycoerythrin_res=[],
-            da_W_div_dT_res=[],
-            E_0_res=[],
+            da_w_div_dT_res=[],
+            E0_res=[],
             a_oz_res=[],
             a_ox_res=[],
             a_wv_res=[],
-            E_dd_res=[],
-            E_dsa_res=[],
-            E_dsr_res=[],
-            E_d_res=[],
-            E_ds_res=[],
+            Ed_d_res=[],
+            Ed_sa_res=[],
+            Ed_sr_res=[],
+            Ed_res=[],
+            Ed_s_res=[],
             n2_res=[],
             Ls_Ed=[]):
     """
     Forward function of the HEREON model described in [1]
+    a_d and b_d split are into a_md/a_bd and b_md/b_bd, respectively.
 
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
@@ -71,7 +72,7 @@ def forward(parameters,
         b_bd_res (list, optional): _description_. Defaults to [].
         b_bp_res (list, optional): _description_. Defaults to [].
         b_bphy_res (list, optional): _description_. Defaults to [].
-        b_bw_res (list, optional): _description_. Defaults to [].
+        bb_w_res (list, optional): _description_. Defaults to [].
         b_d_res (list, optional): _description_. Defaults to [].
         b_i_spec_res (list, optional): _description_. Defaults to [].
         c_d_res (list, optional): _description_. Defaults to [].
@@ -95,9 +96,9 @@ def forward(parameters,
     if len(Ls_Ed) == 0:
         Ls_Ed = np.zeros_like(wavelengths)
 
-    # it makes sense to precompute some coefficients outside of a() and b_b() because they are used in both functions
-    if len(b_bw_res)==0:
-        b_bw_res = resampling.resample_b_bw(wavelengths=wavelengths)
+    # it makes sense to precompute some coefficients outside of a() and bb() because they are used in both functions
+    if len(bb_w_res)==0:
+        bb_w_res = resampling.resample_bb_w(wavelengths=wavelengths)
 
     # if len(a_d_res)==0:
     #     a_d_res = absorption.a_d(wavelengths=wavelengths,
@@ -201,13 +202,13 @@ def forward(parameters,
         b_bd_res = scattering.b(a=a_bd_res, c=c_bd_res)
     
     if len(bb_bd_res)==0:
-        bb_bd_res = backscattering.b_bd(b_d=b_bd_res, b_ratio_d=parameters["b_ratio_bd"])
+        bb_bd_res = backscattering.bb_d(b_d=b_bd_res, bb_ratio_d=parameters["b_ratio_bd"])
 
     if len(bb_md_res)==0:
-        bb_md_res = backscattering.b_bd(b_d=b_md_res, b_ratio_d=parameters["b_ratio_md"])
+        bb_md_res = backscattering.bb_d(b_d=b_md_res, bb_ratio_d=parameters["b_ratio_md"])
 
     if len(bb_phy_res)==0:
-        bb_phy_res = backscattering.b_bphy_hereon(wavelengths=wavelengths,
+        bb_phy_res = backscattering.bb_phy_hereon(wavelengths=wavelengths,
                                                   C_0=parameters["C_0"], 
                                                   C_1=parameters["C_1"], 
                                                   C_2=parameters["C_2"], 
@@ -216,7 +217,7 @@ def forward(parameters,
                                                   C_5=parameters["C_5"], 
                                                   C_6=parameters["C_6"], 
                                                   C_7=parameters["C_7"], 
-                                                  b_i_spec_res=b_i_spec_res)
+                                                  bb_i_spec_res=bb_i_spec_res)
     if len(bb_p_res)==0:
         bb_p_res = bb_bd_res + bb_md_res + bb_phy_res
 
@@ -259,11 +260,11 @@ def forward(parameters,
                                    a_phy_res=a_phy_res,
                                    a_Y_N_res=a_Y_N_res,
                                    a_w_res=a_w_res,
-                                   da_W_div_dT_res=da_W_div_dT_res)
+                                   da_W_div_dT_res=da_w_div_dT_res)
 
     if len(bb_res)==0:
         # C_phy could be used as an argument so it does not need to be recomputed inside functions
-        bb_res = backscattering.b_b_total(wavelengths=wavelengths,
+        bb_res = backscattering.bb_total(wavelengths=wavelengths,
                                            C_0=parameters["C_0"], 
                                            C_1=parameters["C_1"], 
                                            C_2=parameters["C_2"], 
@@ -273,14 +274,14 @@ def forward(parameters,
                                            C_6=parameters["C_6"], 
                                            C_7=parameters["C_7"], 
                                            C_ism=parameters["C_ism"], 
-                                           b_ratio_C_0=parameters["b_ratio_C_0"], 
-                                           b_ratio_C_1=parameters["b_ratio_C_1"], 
-                                           b_ratio_C_2=parameters["b_ratio_C_2"], 
-                                           b_ratio_C_3=parameters["b_ratio_C_3"], 
-                                           b_ratio_C_4=parameters["b_ratio_C_4"], 
-                                           b_ratio_C_5=parameters["b_ratio_C_5"], 
-                                           b_ratio_C_6=parameters["b_ratio_C_6"], 
-                                           b_ratio_C_7=parameters["b_ratio_C_7"], 
+                                           bb_ratio_C_0=parameters["b_ratio_C_0"], 
+                                           bb_ratio_C_1=parameters["b_ratio_C_1"], 
+                                           bb_ratio_C_2=parameters["b_ratio_C_2"], 
+                                           bb_ratio_C_3=parameters["b_ratio_C_3"], 
+                                           bb_ratio_C_4=parameters["b_ratio_C_4"], 
+                                           bb_ratio_C_5=parameters["b_ratio_C_5"], 
+                                           bb_ratio_C_6=parameters["b_ratio_C_6"], 
+                                           bb_ratio_C_7=parameters["b_ratio_C_7"], 
                                            b_ratio_md=parameters["b_ratio_md"],
                                            b_ratio_bd=parameters["b_ratio_bd"],
                                            fresh=parameters["fresh"],
@@ -308,25 +309,26 @@ def forward(parameters,
                                            a_md_spec_res=a_md_spec_res,
                                            a_bd_spec_res=a_bd_spec_res,
                                            b_md_res=b_md_res,
-                                           b_bd_res=b_bd_res,
+                                           bb_d_res=b_bd_res,
                                            bb_bd_res=bb_bd_res,
                                            bb_md_res=bb_md_res,
                                            bb_p_res=bb_p_res,
-                                           b_bw_res=b_bw_res,
-                                           b_i_spec_res=b_i_spec_res,
+                                           bb_w_res=bb_w_res,
+                                           b_i_spec_res=bb_i_spec_res,
                                            c_md_res=c_md_res,
                                            c_bd_res=c_bd_res)
     
-    R_rs_water = lee.R_rs_deep(a=a_res, 
-                               b_b=bb_res,
-                               b_bp=bb_p_res,
-                               b_bw=b_bw_res,
+    R_rs_water = lee.Rrs_deep(a=a_res, 
+                               bb=bb_res,
+                               bb_p=bb_p_res,
+                               bb_w=bb_w_res,
                                Gw0=parameters["Gw0"],
                                Gw1=parameters["Gw1"],
                                Gp0=parameters["Gp0"],
                                Gp1=parameters["Gp1"])
+    
     if parameters["C_0"]+parameters["C_1"]+parameters["C_2"]+parameters["C_3"]+parameters["C_4"]+parameters["C_5"]+parameters["C_6"]+parameters["C_7"] >0.1:
-        R_rs_water += fluorescence.R_rs_fl(wavelengths=wavelengths,
+        R_rs_water += fluorescence.Rrs_fl(wavelengths=wavelengths,
                                              L_fl_lambda0=parameters['L_fl_lambda0'],
                                              W=parameters['W'],
                                              fwhm1=parameters['fwhm1'],
@@ -336,65 +338,65 @@ def forward(parameters,
                                              double=parameters['double'],
                                              h_C_res=h_C_res)
     if parameters["C_3"] > 0.1:
-        R_rs_water += fluorescence.R_rs_fl_phycocyanin(wavelengths=wavelengths,
+        R_rs_water += fluorescence.Rrs_fl_phycocyanin(wavelengths=wavelengths,
                                          L_fl_phycocyanin=parameters['L_fl_phycocyanin'],
                                          fwhm=parameters['fwhm_phycocyanin'],
                                          lambda_C=parameters['lambda_C_phycocyanin'],
                                          h_C_phycocyanin_res=h_C_phycocyanin_res)
     if parameters["C_4"] > 0.1:
-        R_rs_water += fluorescence.R_rs_fl_phycoerythrin(wavelengths=wavelengths,
+        R_rs_water += fluorescence.Rrs_fl_phycoerythrin(wavelengths=wavelengths,
                                            L_fl_phycoerythrin=parameters['L_fl_phycoerythrin'],
                                            fwhm=parameters['fwhm_phycoerythrin'],
                                            lambda_C=parameters['lambda_C_phycoerythrin'],
                                            h_C_phycoerythrin_res=h_C_phycoerythrin_res)
     
     if parameters["fit_surface"].value:
-            if len(E_dd_res) == 0:
-                E_dd  = downwelling_irradiance.E_dd(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dd_res)
+            if len(Ed_d_res) == 0:
+                Ed_d  = downwelling_irradiance.Ed_d(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_d_res)
             else:
-                E_dd = E_dd_res
+                Ed_d = Ed_d_res
 
-            if len(E_dsa_res) == 0:
-                E_dsa = downwelling_irradiance.E_dsa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsa_res)
+            if len(Ed_sa_res) == 0:
+                Ed_sa = downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sa_res)
             else:
-                E_dsa = E_dsa_res
+                Ed_sa = Ed_sa_res
 
-            if len(E_dsr_res) == 0:
-                E_dsr = downwelling_irradiance.E_dsr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E_0_res, a_oz_res, a_ox_res, a_wv_res, E_dsr_res)
+            if len(Ed_sr_res) == 0:
+                Ed_sr = downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sr_res)
             else:
-                E_dsr = E_dsr_res
+                Ed_sr = Ed_sr_res
 
-            if len(E_ds_res) == 0:
-                E_ds = downwelling_irradiance.E_ds(E_dsr, E_dsa)
+            if len(Ed_s_res) == 0:
+                Ed_s = downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
             else:
-                E_ds = E_ds_res
+                Ed_s = Ed_s_res
 
-            if len(E_d_res) == 0:
-                E_d = downwelling_irradiance.E_d(E_dd, E_ds, parameters["f_dd"], parameters["f_ds"])
+            if len(Ed_res) == 0:
+                Ed = downwelling_irradiance.Ed(Ed_d, Ed_s, parameters["f_dd"], parameters["f_ds"])
             else:
-                E_d = E_d_res
+                Ed = Ed_res
 
-            L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], E_dd, parameters["f_ds"], parameters["g_dsr"], E_dsr, parameters["g_dsa"], E_dsa)
+            L_s = sky_radiance.L_s(parameters["f_dd"], parameters["g_dd"], Ed_d, parameters["f_ds"], parameters["g_dsr"], Ed_sr, parameters["g_dsa"], Ed_sa)
 
-            R_rs_surface = surface.R_rs_surf(L_s, E_d, rho_L, parameters["d_r"])
+            Rrs_surface = surface.Rrs_surf(L_s, Ed, rho_L, parameters["d_r"])
             
-            R_rs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
+            Rrs_surface += air_water.fresnel(parameters['theta_view'], n2=n2) * Ls_Ed
 
             # if R_rs_surface is negative, add a relatively large number so that the error between R_rs_sim and R_rs increases
             # this is supposed to avoid negative glint 
-            if np.any(R_rs_surface < 0):
-                R_rs_surface = R_rs_surface + 1
+            if np.any(Rrs_surface < 0):
+                Rrs_surface = Rrs_surface + 1
 
-            R_rs_sim = R_rs_water + R_rs_surface + parameters["offset"]
-            return R_rs_sim
+            Rrs_sim = R_rs_water + Rrs_surface + parameters["offset"]
+            return Rrs_sim
         
     else:
-        R_rs_sim = R_rs_water + parameters["offset"]
-        return R_rs_sim
+        Rrs_sim = R_rs_water + parameters["offset"]
+        return Rrs_sim
 
 
 def func2opt(parameters, 
-             R_rs,
+             Rrs,
              wavelengths,
              weights=[],
              a_res=[], # a_d_res=[],
@@ -410,7 +412,7 @@ def func2opt(parameters,
              bb_bd_res=[], #bb_md_res=[],
              bb_p_res=[],
              bb_phy_res=[],
-             b_bw_res=[],
+             bb_w_res=[],
              b_d_res=[],
              b_i_spec_res=[],
              c_bd_res=[],
@@ -418,8 +420,8 @@ def func2opt(parameters,
              h_C_res=[],
              h_C_phycocyanin_res=[],
              h_C_phycoerythrin_res=[],
-             da_W_div_dT_res=[],
-             E_0_res=[],
+             da_w_div_dT_res=[],
+             E0_res=[],
              a_oz_res=[],
              a_ox_res=[],
              a_wv_res=[],
@@ -454,7 +456,7 @@ def func2opt(parameters,
         b_bd_res (list, optional): _description_. Defaults to [].
         b_bp_res (list, optional): _description_. Defaults to [].
         b_bphy_res (list, optional): _description_. Defaults to [].
-        b_bw_res (list, optional): _description_. Defaults to [].
+        bb_w_res (list, optional): _description_. Defaults to [].
         b_d_res (list, optional): _description_. Defaults to [].
         b_i_spec_res (list, optional): _description_. Defaults to [].
         c_d_res (list, optional): _description_. Defaults to [].
@@ -470,7 +472,7 @@ def func2opt(parameters,
     if len(weights)==0:
         weights = np.ones(len(wavelengths))
 
-    R_rs_sim = forward(parameters=parameters,
+    Rrs_sim = forward(parameters=parameters,
                        wavelengths=wavelengths,
                        a_res=a_res,
                        a_md_res=a_md_res,
@@ -485,35 +487,35 @@ def func2opt(parameters,
                        bb_bd_res=bb_bd_res,
                        bb_p_res=bb_p_res,
                        bb_phy_res=bb_phy_res,
-                       b_bw_res=b_bw_res,
+                       bb_w_res=bb_w_res,
                        # b_d_res=b_d_res,
-                       b_i_spec_res=b_i_spec_res,
+                       bb_i_spec_res=b_i_spec_res,
                        c_bd_res=c_bd_res,
                        c_md_res=c_md_res,
                        h_C_res=h_C_res,
                        h_C_phycocyanin_res=h_C_phycocyanin_res,
                        h_C_phycoerythrin_res=h_C_phycoerythrin_res,
-                       da_W_div_dT_res=da_W_div_dT_res,
+                       da_w_div_dT_res=da_w_div_dT_res,
                        omega_d_lambda_0_res=omega_d_lambda_0_res,
                        a_d_lambda_0_res=a_d_lambda_0_res,
                        c_d_lambda_0_res=c_d_lambda_0_res,
-                       E_0_res=E_0_res,
+                       E0_res=E0_res,
                        a_oz_res=a_oz_res,
                        a_ox_res=a_ox_res,
                        a_wv_res=a_wv_res,
-                       E_dd_res=E_dd_res,
-                       E_dsa_res=E_dsa_res,
-                       E_dsr_res=E_dsr_res,
-                       E_d_res=E_d_res,
-                       E_ds_res=E_ds_res,
+                       Ed_d_res=E_dd_res,
+                       Ed_sa_res=E_dsa_res,
+                       Ed_sr_res=E_dsr_res,
+                       Ed_res=E_d_res,
+                       Ed_s_res=E_ds_res,
                        n2_res=n2_res,
                        Ls_Ed=Ls_Ed)
     
-    return utils.compute_residual(R_rs, R_rs_sim, method=parameters['error_method'], weights=weights)
+    return utils.compute_residual(Rrs, Rrs_sim, method=parameters['error_method'], weights=weights)
 
 
 def invert(params,
-           R_rs,
+           Rrs,
            wavelengths,
            weights,
            a_res=[],
@@ -529,7 +531,7 @@ def invert(params,
            bb_bd_res=[],
            bb_p_res=[],
            bb_phy_res=[],
-           b_bw_res=[],
+           bb_w_res=[],
            b_d_res=[],
            b_i_spec_res=[],
            c_bd_res=[],
@@ -537,16 +539,16 @@ def invert(params,
            h_C_res=[],
            h_C_phycocyanin_res=[],
            h_C_phycoerythrin_res=[],
-           da_W_div_dT_res=[],
-           E_0_res=[],
+           da_w_div_dT_res=[],
+           E0_res=[],
            a_oz_res=[],
            a_ox_res=[],
            a_wv_res=[],
-           E_dd_res=[],
-           E_dsa_res=[],
-           E_dsr_res=[],
-           E_d_res=[],
-           E_ds_res=[],
+           Ed_d_res=[],
+           Ed_sa_res=[],
+           Ed_sr_res=[],
+           Ed_res=[],
+           Ed_s_res=[],
            n2_res=[],
            Ls_Ed=[],
            omega_d_lambda_0_res=None,
@@ -576,7 +578,7 @@ def invert(params,
         b_bd_res (list, optional): _description_. Defaults to [].
         b_bp_res (list, optional): _description_. Defaults to [].
         b_bphy_res (list, optional): _description_. Defaults to [].
-        b_bw_res (list, optional): _description_. Defaults to [].
+        bb_w_res (list, optional): _description_. Defaults to [].
         b_d_res (list, optional): _description_. Defaults to [].
         b_i_spec_res (list, optional): _description_. Defaults to [].
         c_d_res (list, optional): _description_. Defaults to [].
@@ -592,12 +594,12 @@ def invert(params,
     """
 
     if len(weights)==0:
-        weights = np.ones(len(R_rs))
+        weights = np.ones(len(Rrs))
 
     if params['fit_surface'].value:
         res = minimize(func2opt, 
                         params, 
-                        args=(R_rs, 
+                        args=(Rrs, 
                               wavelengths, 
                               weights,
                               a_res,
@@ -613,7 +615,7 @@ def invert(params,
                               bb_bd_res,
                               bb_p_res,
                               bb_phy_res,
-                              b_bw_res,
+                              bb_w_res,
                               b_d_res,
                               b_i_spec_res,
                               c_bd_res,
@@ -621,16 +623,16 @@ def invert(params,
                               h_C_res,
                               h_C_phycocyanin_res,
                               h_C_phycoerythrin_res,
-                              da_W_div_dT_res,
-                              E_0_res,
+                              da_w_div_dT_res,
+                              E0_res,
                               a_oz_res,
                               a_ox_res,
                               a_wv_res,
-                              E_dd_res,
-                              E_dsa_res,
-                              E_dsr_res,
-                              E_d_res,
-                              E_ds_res,
+                              Ed_d_res,
+                              Ed_sa_res,
+                              Ed_sr_res,
+                              Ed_res,
+                              Ed_s_res,
                               n2_res,
                               Ls_Ed,
                               omega_d_lambda_0_res,
@@ -656,7 +658,7 @@ def invert(params,
 
         res = minimize(func2opt, 
                         params, 
-                        args=(R_rs, 
+                        args=(Rrs, 
                               wavelengths, 
                               weights,
                               a_res,
@@ -672,7 +674,7 @@ def invert(params,
                               bb_bd_res,
                               bb_p_res,
                               bb_phy_res,
-                              b_bw_res,
+                              bb_w_res,
                               b_d_res,
                               b_i_spec_res,
                               c_bd_res,
@@ -680,16 +682,16 @@ def invert(params,
                               h_C_res,
                               h_C_phycocyanin_res,
                               h_C_phycoerythrin_res,
-                              da_W_div_dT_res,
-                              E_0_res,
+                              da_w_div_dT_res,
+                              E0_res,
                               a_oz_res,
                               a_ox_res,
                               a_wv_res,
-                              E_dd_res,
-                              E_dsa_res,
-                              E_dsr_res,
-                              E_d_res,
-                              E_ds_res,
+                              Ed_d_res,
+                              Ed_sa_res,
+                              Ed_sr_res,
+                              Ed_res,
+                              Ed_s_res,
                               n2_res,
                               Ls_Ed,
                               omega_d_lambda_0_res,

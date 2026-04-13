@@ -16,17 +16,16 @@
 #
 #
 # Translated to Python by:
-#  Marcel König, mkoenig3 AT asu.edu 
+#  Marcel König, mkoenig3 AT asu.edu / marcel.koenig AT brockmann-consult.de
 #
-# WaterQuality
-#  Code is provided to Planet, PBC as part of the CarbonMapper Land and Ocean Program.
-#  It builds on the extensive work of many researchers. For example, models were developed  
-#  by Albert & Mobley [1] and Gege [2]; the methodology was mainly developed 
-#  by Gege [3,4,5] and Albert & Gege [6].
+# bio_optics
+#  This code base builds on the extensive work of many researchers. For example, models were developed by Albert & Mobley [1] and Gege [2]; 
+#  and the methodology was mainly developed by Gege [3,4,5] and Albert & Gege [6]. Please give proper attribution when using this code for publication.
+#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7]
 #
-#  Please give proper attribution when using this code for publication:
+#  When using this code, please use the following citation:
 #
-#  König, M., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): WaterQuality python package (Version x) [Software]. Available from https://github.com/CMLandOcean/WaterQuality
+#  König, M., Noel, P., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): bio_optics python package (Version x) [Software]. Available from https://github.com/CMLandOcean/bio_optics
 #
 # [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 # [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spectral irradiance in water. [10.1364/AO.51.001407]
@@ -34,6 +33,7 @@
 # [4] Gege (2014): WASI-2D: A software tool for regionally optimized analysis of imaging spectrometer data from deep and shallow waters. [10.1016/j.cageo.2013.07.022]
 # [5] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6. 
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
+# [7] König et al. (2023): WaterQuality python package (Version 1.2.0) [Software]. Available from https://github.com/CMLandOcean/WaterQuality. [10.5281/zenodo.7967294]
 
 
 import numpy as np
@@ -72,10 +72,10 @@ def a_w_T(wavelengths = np.arange(400,800), T_W_0=20, T_W=20, a_w_res=[], da_W_d
     :param da_W_div_dT_res: optional, preresampling da_W_div_dT before inversion saves a lot of time.
     :return: spectral absorption coefficient of pure water corrected for actual temperature
     """
-    a_w_T = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res)
+    a_w_T = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_w_div_dT(wavelengths=wavelengths, da_w_div_dT_res=da_W_div_dT_res)
     return a_w_T
 
-def da_W_div_dT(wavelengths = np.arange(400,800), da_W_div_dT_res=[]):
+def da_w_div_dT(wavelengths = np.arange(400,800), da_w_div_dT_res=[]):
     """
     Temperature gradient of pure water absorption resampled to sensor's spectral sampling rate.
     The spectrum is from Roettgers et al. [1].
@@ -86,12 +86,12 @@ def da_W_div_dT(wavelengths = np.arange(400,800), da_W_div_dT_res=[]):
     :param da_W_div_dT_res: optional, preresampling da_W_div_dT before inversion saves a lot of time.
     :return: temperature gradient of pure water absorption
     """
-    if len(da_W_div_dT_res) == 0:
-        da_W_div_dT = resampling.resample_da_W_div_dT(wavelengths=wavelengths)
+    if len(da_w_div_dT_res) == 0:
+        da_w_div_dT = resampling.resample_da_w_div_dT(wavelengths=wavelengths)
     else:
-        da_W_div_dT = da_W_div_dT_res
+        da_w_div_dT = da_w_div_dT_res
     
-    return da_W_div_dT
+    return da_w_div_dT
 
 
 def a_ph(C_0 = 0,
@@ -354,7 +354,7 @@ def a(C_0 = 0,
       T_W=20,
       T_W_0=20,
       a_w_res=[],
-      da_W_div_dT_res=[],
+      da_w_div_dT_res=[],
       a_i_spec_res=[],
       a_Y_N_res=[],
       a_NAP_N_res=[]
@@ -390,7 +390,7 @@ def a(C_0 = 0,
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S, lambda_0=lambda_0, K=K, a_Y_N_res=a_Y_N_res) + \
            a_NAP(C_X=C_X, C_Mie=C_Mie, wavelengths=wavelengths, a_NAP_spec_lambda_0=a_NAP_spec_lambda_0, S_NAP=S_NAP, lambda_0=lambda_0, a_NAP_N_res=a_NAP_N_res)
     
-    a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res) + a_wc
+    a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_w_div_dT(wavelengths=wavelengths, da_w_div_dT_res=da_w_div_dT_res) + a_wc
     
     return a
 
@@ -799,6 +799,6 @@ def a_total(wavelengths=np.arange(400,800),
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S_cdom, lambda_0=lambda_0_cdom, K=K, a_Y_N_res=a_Y_N_res) + \
            a_d_res
     
-    a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_W_div_dT(wavelengths=wavelengths, da_W_div_dT_res=da_W_div_dT_res) + a_wc
+    a = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_w_div_dT(wavelengths=wavelengths, da_w_div_dT_res=da_W_div_dT_res) + a_wc
 
     return a

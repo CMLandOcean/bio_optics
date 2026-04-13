@@ -31,7 +31,7 @@ def main():
     parser = argparse.ArgumentParser(description='Invert Reflectance [-] image')
     parser.add_argument('--output_glint',action='store_true',help="Write glint spectrum to file")
     parser.add_argument('--output_score',action='store_true',help="Write glint score to file")
-    parser.add_argument('--output_rrs',action='store_true',help="Write Rrs spectrum to file")
+    parser.add_argument('--output_Rrs',action='store_true',help="Write Rrs spectrum to file")
     parser.add_argument('--min_wavelength',default=420,type=int,help="Minimum wavelength for inversion")
     parser.add_argument('--max_wavelength',default=950,type=int,help="Maximum wavelength for inversion")
     parser.add_argument('--interleave',default='BIL',type=str,help="interleave")
@@ -95,8 +95,8 @@ def main():
         score_profile = profile.copy()
         score_profile['count'] = 1
 
-        R_rs_profile = profile.copy()
-        R_rs_profile['count'] = len(wavelengths)
+        Rrs_profile = profile.copy()
+        Rrs_profile['count'] = len(wavelengths)
 
         # # Create output files and close right away - this was a try to avoid the killings on Agave
         # dst_spm = rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_spm']), 'w', **spm_profile)
@@ -105,8 +105,8 @@ def main():
         # dst_glint = rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_glint']), 'w', **glint_profile)
         # dst_glint.close()
 
-        # dst_R_rs = rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_Rrs']), 'w', **R_rs_profile)
-        # dst_R_rs.close()
+        # dst_Rrs = rio.open(('/').join([output_dir, args.input_file.split('/')[-1] + '_Rrs']), 'w', **Rrs_profile)
+        # dst_Rrs.close()
 
         # Open output files and write row by row
         def make_ouput_name(inpath, suffix):
@@ -118,10 +118,10 @@ def main():
             outglint = make_ouput_name(args.input_file, "_gao_glint")
             print(f"Creating output {outglint}")
             dst_glint = rio.open(outglint, 'w', **glint_profile)
-        if args.output_rrs:
-            outrrs = make_ouput_name(args.input_file, "_rrs")
+        if args.output_Rrs:
+            outrrs = make_ouput_name(args.input_file, "_Rrs")
             print(f"Creating output {outrrs}")
-            dst_rrs = rio.open(outrrs, 'w', **rrs_profile)
+            dst_Rrs = rio.open(outrrs, 'w', **Rrs_profile)
         if args.output_score:
             outscore = make_ouput_name(args.input_file, "_glint_score.tif")
             print(f"Creating output {outscore}")
@@ -147,18 +147,18 @@ def main():
                     # Read row from xarray object
                     row = src.read(window=wind)
                 
-                    # Apply water mask and convert from reflectance R [-] to above-water radiance reflectance r_rs [sr-1]
-                    r_rs_water = np.where(indices.awei(row, wavelengths) > 0, row, np.nan) / np.pi
+                    # Apply water mask and convert from reflectance R [-] to above-water radiance reflectance rrs [sr-1]
+                    rrs_water = np.where(indices.awei(row, wavelengths) > 0, row, np.nan) / np.pi
                 
                     # Apply glint correction
-                    glint_reflectance = glint.gao(r_rs_water, wavelengths, n2=n_res)
+                    glint_reflectance = glint.gao(rrs_water, wavelengths, n2=n_res)
                     if args.output_score:
                         ##output avg of bands for wavelengths 500-560
                         glint_score = glint_reflectance[score_mask].mean(axis=0)
-                    R_rs = r_rs_water - glint_reflectance.astype('float32')
+                    Rrs = rrs_water - glint_reflectance.astype('float32')
 
                     # Compute spm
-                    out_spm = spm.jiang(R_rs[wl_mask], wavelengths[wl_mask])
+                    out_spm = spm.jiang(Rrs[wl_mask], wavelengths[wl_mask])
 
                     # Write output rows into the respective files
                     def format_arr(inarr):
@@ -169,7 +169,7 @@ def main():
                     if args.output_score:
                         dst_score.write(format_arr(glint_score[np.newaxis,:]), window=wind)
                     if args.output_rrs:
-                        dst_R_rs.write(format_arr(R_rs), window=wind)
+                        dst_Rrs.write(format_arr(Rrs), window=wind)
 
     ##Cleanup
     if args.output_glint:
@@ -179,8 +179,8 @@ def main():
         dst_score.close()
         dst_score = None
     if args.output_rrs:
-        dst_R_rs.close()
-        dst_R_rrs = None
+        dst_Rrs.close()
+        dst_Rrs = None
     stop = timeit.default_timer()
     print('Processing time: ', stop - start, '')  
 

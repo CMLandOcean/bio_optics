@@ -16,17 +16,16 @@
 #
 #
 # Translated to Python by:
-#  Marcel König, mkoenig3 AT asu.edu 
+#  Marcel König, mkoenig3 AT asu.edu / marcel.koenig AT brockmann-consult.de
 #
-# WaterQuality
-#  Code is provided to Planet, PBC as part of the CarbonMapper Land and Ocean Program.
-#  It builds on the extensive work of many researchers. For example, models were developed  
-#  by Albert & Mobley [1] and Gege [2]; the methodology was mainly developed 
-#  by Gege [3,4,5] and Albert & Gege [6].
+# bio_optics
+#  This code base builds on the extensive work of many researchers. For example, models were developed by Albert & Mobley [1] and Gege [2]; 
+#  and the methodology was mainly developed by Gege [3,4,5] and Albert & Gege [6]. Please give proper attribution when using this code for publication.
+#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7]
 #
-#  Please give proper attribution when using this code for publication:
+#  When using this code, please use the following citation:
 #
-#  König, M., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): WaterQuality python package (Version x) [Software]. Available from https://github.com/CMLandOcean/WaterQuality
+#  König, M., Noel, P., Hondula. K.L., Jamalinia, E., Dai, J., Vaughn, N.R., Asner, G.P. (2023): bio_optics python package (Version x) [Software]. Available from https://github.com/CMLandOcean/bio_optics
 #
 # [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 # [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spectral irradiance in water. [10.1364/AO.51.001407]
@@ -34,33 +33,34 @@
 # [4] Gege (2014): WASI-2D: A software tool for regionally optimized analysis of imaging spectrometer data from deep and shallow waters. [10.1016/j.cageo.2013.07.022]
 # [5] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6. 
 # [6] Gege & Albert (2006): A Tool for Inverse Modeling of Spectral Measurements in Deep and Shallow Waters. [10.1007/1-4020-3968-9_4]
+# [7] König et al. (2023): WaterQuality python package (Version 1.2.0) [Software]. Available from https://github.com/CMLandOcean/WaterQuality. [10.5281/zenodo.7967294]
 
 
-def L_s(f_dd, g_dd,  E_dd,
-        f_ds, g_dsr, E_dsr,
-        g_dsa, E_dsa):
+def L_s(f_dd, g_dd,  Ed_d,
+        f_ds, g_dsr, Ed_sr,
+        g_dsa, Ed_sa):
     """
     Sky radiance in W/m2 nm sr [1]
     
     "A parameterization similar to E_d is implemented for the sky radiance, L_s. The radiance downwelling from a part of the sky is treated 
-    as a weighted sum of three wavelength dependent functions, E_dd, E_dsr and E_dsa. In contrast to E_d, the two diffuse components are treated 
+    as a weighted sum of three wavelength dependent functions, Ed_d, Ed_sr and Ed_sa. In contrast to E_d, the two diffuse components are treated 
     separately since Rayleigh scattering has a much stronger angle dependency than aerosol scattering. The parameters g_dd, g_dsr and g_dsa are 
-    the intensities (in units of sr−1) of E_dd, E_dsr and E_dsa, respectively." [1]
+    the intensities (in units of sr−1) of Ed_d, Ed_sr and Ed_sa, respectively." [1]
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
     :return: sky radiance in W/m2 nm sr
     
     """
-    L_s = f_dd * (g_dd  * E_dd) + f_ds * (g_dsr * E_dsr + g_dsa * E_dsa)
+    L_s = f_dd * (g_dd  * Ed_d) + f_ds * (g_dsr * Ed_sr + g_dsa * Ed_sa)
     
     return L_s
 
-def d_LS_div_dg_dd(E_dd):
-    return E_dd
+def d_LS_div_dg_dd(Ed_d):
+    return Ed_d
 
-def d_LS_div_dg_dsr(E_dsr):
-    return E_dsr
+def d_LS_div_dg_dsr(Ed_sr):
+    return Ed_sr
 
-def d_LS_div_dg_dsa(E_dsa):
-    return E_dsa
+def d_LS_div_dg_dsa(Ed_sa):
+    return Ed_sa
