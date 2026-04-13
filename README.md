@@ -6,6 +6,44 @@ The bio_optics python package is an open-source framework for forward and invers
 ## HOW TO CONTRIBUTE
 This framework was intentionally built to be a community project. If you want to contribute or have any questions please get in touch with Marcel [marcel.koenig AT brockmann-consult.de]. If you find errors, bugs or if you have other suggestions, you can also use GitHub's issue functionality.
 
+## UPDATES
+Here we list the major changes of every release. Please take a look at the commit history for all details.
+
+<details>
+<summary>Version 0.0.2</summary>
+
+- Integration of HEREON bio-optical model including a split of `a_d` into `a_md` and `a_bd`, and `b_d` into `b_bd` and `b_md` 
+- Renaming of key variables and functions following the style `Quantity_Specification` to better resemble symbolism typically used in the bio-optical community (e.g., $b_{bw}$ is now represented as `bb_w` instead of `b_bw` and $R_{rs}$ is now represented as `Rrs` instead of `R_rs`). See the new GLOSSARY for details.
+- Integration of OPSHAL for identification of optically shallow water
+- Integration of multiple (semi-)empirical and semi-analytical algorithms for Chlorophyll-a, CDOM, SPM and Turbidity retrieval
+</details>
+
+
+## GLOSSARY
+| Symbol            | Code representation(s) | Description | Unit |
+| :---------------- | :------- | :---- | :---- |
+| $a(\lambda)$       |   `a`   | Absorption coefficient of a natural water body as the sum of the absorption coefficients of pure water, phytoplankton, yellow substances/CDOM, and non-algal particles | $\text{m}^{-1}$ |
+| $a_w(\lambda)$       |   `a_w`   | Absorption coefficient of pure water | $\text{m}^{-1}$ |
+| $a_{ph}(\lambda)$       |   `a_ph`, `a_phy`,`a_Phi`   | Absorption coefficient of phytoplankton | $\text{m}^{-1}$ |
+| $a_Y(\lambda)$       |   `a_Y`,`a_Y_pow`,`a_Y_gauss`,`a_Y_exp_gauss`   | Absorption coefficient of CDOM or yellow substances | $\text{m}^{-1}$ |
+| $a_Y^{norm}(\lambda)$       |   `a_Y_norm`   | Normalized absorption coefficient of CDOM or yellow substances | $\text{m}^{-1}$ |
+| $a_{NAP}(\lambda)$       |   `a_NAP`   | Absorption coefficient of non-algal particles | $\text{m}^{-1}$ |
+| $a_{NAP}^{norm}(\lambda)$       |   `a_NAP_norm`   | Normalized absorption coefficient of non-algal particles | $\text{m}^{-1}$ |
+| $b(\lambda)$       |   `b`   | Scattering coefficient of water | $\text{m}^{-1}$ |
+| $b_{phy}(\lambda)$       |   `b_phy`   | Scattering coefficient of phytoplankton | $\text{m}^{-1}$ |
+| $b_b(\lambda)$       |   `bb`   | Backscattering coefficient of a natural water body as the sum of the backscattering coefficients of pure water, phytoplankton and non-algal particles | $\text{m}^{-1}$ |
+| $b_{bphy}(\lambda)$       |   `bb_phy`   | Backscattering coefficient of phytoplankton | $\text{m}^{-1}$ |
+| $b_{bX}(\lambda)$       |   `bb_X`   | Backscattering coefficient of particles of type I with arbitrary wavelength dependency | $\text{m}^{-1}$ |
+| $b_{bMie}(\lambda)$       |   `bb_Mie`   | Backscattering coefficient of particles of type II | $\text{m}^{-1}$ |
+| $b_{bNAP}(\lambda)$       |   `bb_NAP`   | Backscattering coefficient of non-algal particles (NAP) as a mixture of two types (I and II) with spectrally different backscattering coefficients | $\text{m}^{-1}$ |
+| $c(\lambda)$       |   `c`   | Attenuation coefficient of water | $\text{m}^{-1}$ |
+| $c_d(\lambda)$       |   `c_d`   | Attenuation coefficient of detritus | $\text{m}^{-1}$ |
+| $R(\lambda)$       |   `R`   | Reflectance | unitless |
+| $R_b(\lambda)$       |   `R_b`   | Benthic reflectance | unitless |
+| $r_{rs}(\lambda)$       |   `rrs`   | Radiance reflectance | $\text{sr}^{-1}$ |
+| $R_{rs}(\lambda)$       |   `Rrs`   | Remote sensing reflectance | $\text{sr}^{-1}$ |
+
+
 ## PLEASE GIVE US CREDIT
 This python package has initially been created by members of the CarbonMapper Land and Ocean Program at the Center for Global Discovery and Conservation Science at Arizona State University. When using this framework, please use the following citation:
 

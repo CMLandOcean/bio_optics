@@ -1,7 +1,7 @@
 import numpy as np
 from .. models.qaa import qaa_shallow
 from .. water.attenuation import estimate_c
-from .. helper.resampling import resample_a_w, resample_b_bw
+from .. helper.resampling import resample_a_w, resample_bb_w
 from .. helper.utils import find_closest
 
 
@@ -23,7 +23,7 @@ def estimate_zeta(c, depth):
     return zeta_E
 
 
-def opshal(R_rs, 
+def opshal(Rrs, 
            wavelengths,
            depth,
            lambda_0=547,
@@ -34,14 +34,14 @@ def opshal(R_rs,
            eta_p=0.015,
            eta_w=0.5,
            a_w_res=[],
-           b_bw_res=[]):
+           bb_w_res=[]):
     """
     Approach for identifying optically shallow pixels when processing ocean-color imagery following McKinna & Werdell (2018) [1] based on an adapted version of the QAA.
 
     [1] McKinna & Werdell (2018): Approach for identifying optically shallow pixels when processing ocean-color imagery [10.1364/OE.26.00A915]
 
     Args:
-        R_rs: remote sensing reflectance [sr-1]. For matrices, bands need to be first axis.
+        Rrs: remote sensing reflectance [sr-1]. For matrices, bands need to be first axis.
         wavelengths: corresponding wavelengths [nm]
         depth: geometrical depth [m]
         lambda_0 (int, optional): reference wavelength [nm]. Defaults to 547.
@@ -52,7 +52,7 @@ def opshal(R_rs,
         eta_p (float, optional): particulate backscatter ratio. Defaults to 0.015; halfway between global average oceanic value of 0.01 and well known Petzold average particle value of 0.0183.
         eta_w (float, optional): backscatter ratio of pure water. Defaults to 0.5.
         a_w_res: absorption coefficient of pure water resampled to the sensors band setting [m-1]. Defaults to [], will be computed if not provided.
-        b_bw_res: backscattering coefficient of pure water resampled to the sensors band setting [m-1]. Defaults to [], will be computed if not provided.
+        bb_w_res: backscattering coefficient of pure water resampled to the sensors band setting [m-1]. Defaults to [], will be computed if not provided.
 
     Returns:
         is_optically_shallow: binary mask where optically shallow is True.
@@ -60,19 +60,19 @@ def opshal(R_rs,
        
     if len(a_w_res)==0:
         a_w_res = resample_a_w(wavelengths)
-    if len(b_bw_res)==0:
-        b_bw_res = resample_b_bw(wavelengths)
+    if len(bb_w_res)==0:
+        bb_w_res = resample_bb_w(wavelengths)
     
     # Step 1: Estimate a_t, b_bp and b_bw using the qaa_shallow
-    a, b_b, b_bp = qaa_shallow(R_rs=R_rs, wavelengths=wavelengths, lambdas=lambdas, g0=g0, g1=g1, a_w_res=a_w_res, b_bw_res=b_bw_res)
+    a, bb, bb_p = qaa_shallow(Rrs=Rrs, wavelengths=wavelengths, lambdas=lambdas, g0=g0, g1=g1, a_w_res=a_w_res, bb_w_res=bb_w_res)
 
     # Step 2: Estimate c
-    if len(R_rs.shape)==1:
-        c = estimate_c(a, b_bp, b_bw_res, eta_p=eta_p, eta_w=eta_w)
-    elif len(R_rs.shape)==2:
-        c = estimate_c(a, b_bp, b_bw_res[:, np.newaxis], eta_p=eta_p, eta_w=eta_w)
-    elif len(R_rs.shape)==3:
-        c = estimate_c(a, b_bp, b_bw_res[:, np.newaxis, np.newaxis], eta_p=eta_p, eta_w=eta_w)
+    if len(Rrs.shape)==1:
+        c = estimate_c(a, bb_p, bb_w_res, eta_p=eta_p, eta_w=eta_w)
+    elif len(Rrs.shape)==2:
+        c = estimate_c(a, bb_p, bb_w_res[:, np.newaxis], eta_p=eta_p, eta_w=eta_w)
+    elif len(Rrs.shape)==3:
+        c = estimate_c(a, bb_p, bb_w_res[:, np.newaxis, np.newaxis], eta_p=eta_p, eta_w=eta_w)
 
     # Step 3: Estimate zeta
     zeta_E = estimate_zeta(c, depth)

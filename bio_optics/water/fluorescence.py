@@ -16,13 +16,12 @@
 #
 #
 # Translated to Python by:
-#  Marcel König, mkoenig3 AT asu.edu 
-#  Phillip Noel, pnoel1 AT asu.edu
+#  Marcel König, mkoenig3 AT asu.edu / marcel.koenig AT brockmann-consult.de
 #
 # bio_optics
 #  This code base builds on the extensive work of many researchers. For example, models were developed by Albert & Mobley [1] and Gege [2]; 
 #  and the methodology was mainly developed by Gege [3,4,5] and Albert & Gege [6]. Please give proper attribution when using this code for publication.
-#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7].
+#  A former version of this code base was developed in the course of the CarbonMapper Land and Ocean Program [7]
 #
 #  When using this code, please use the following citation:
 #
@@ -79,15 +78,15 @@ def h_C_double(W=0.75, wavelengths=np.arange(400,800), fwhm1=25, fwhm2=50, lambd
     return h_C_double
 
 
-def R_rs_fl(wavelengths=np.arange(400,800), 
-            L_fl_lambda0=0.001, 
-            W=0.75, 
-            fwhm1=25, 
-            fwhm2=50, 
-            lambda_C1=685, 
-            lambda_C2=730, 
-            double=False, 
-            h_C_res=[]):
+def Rrs_fl(wavelengths=np.arange(400,800), 
+           L_fl_lambda0=0.001, 
+           W=0.75, 
+           fwhm1=25, 
+           fwhm2=50, 
+           lambda_C1=685, 
+           lambda_C2=730, 
+           double=False, 
+           h_C_res=[]):
     """
     Fluorescence reflectance accounting for Chl a pigment fluorescence as presented in Eq. 8 in 
     Groetsch et al. (2020) [1] following Eq. 7.36 in Gilerson & Huot (2017) [2, 3].
@@ -113,16 +112,16 @@ def R_rs_fl(wavelengths=np.arange(400,800),
     """
     if len(h_C_res)==0:
         if double:
-            R_rs_fl = L_fl_lambda0 * h_C_double(W=W, wavelengths=wavelengths, fwhm1=fwhm1, fwhm2=fwhm2, lambda_C1=lambda_C1, lambda_C2=lambda_C2)
+            Rrs_fl = L_fl_lambda0 * h_C_double(W=W, wavelengths=wavelengths, fwhm1=fwhm1, fwhm2=fwhm2, lambda_C1=lambda_C1, lambda_C2=lambda_C2)
         else:
-            R_rs_fl = L_fl_lambda0 * h_C(wavelengths=wavelengths, fwhm=fwhm1, lambda_C=lambda_C1)
+            Rrs_fl = L_fl_lambda0 * h_C(wavelengths=wavelengths, fwhm=fwhm1, lambda_C=lambda_C1)
     else:
-        R_rs_fl = L_fl_lambda0 * h_C_res
+        Rrs_fl = L_fl_lambda0 * h_C_res
 
-    return R_rs_fl
+    return Rrs_fl
 
 
-def R_rs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=644, h_C_phycocyanin_res=[]):
+def Rrs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=644, h_C_phycocyanin_res=[]):
     """
     Fluorescence of phycocyanin (cyano red)
 
@@ -135,14 +134,14 @@ def R_rs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), 
        Fluorescence radiance reflectance due to phycocyanin [sr-1]
     """
     if len(h_C_phycocyanin_res)==0:
-        R_rs_fl_phycocyanin = L_fl_phycocyanin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+        Rrs_fl_phycocyanin = L_fl_phycocyanin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
     else:
-        R_rs_fl_phycocyanin = L_fl_phycocyanin * h_C_phycocyanin_res
+        Rrs_fl_phycocyanin = L_fl_phycocyanin * h_C_phycocyanin_res
 
-    return R_rs_fl_phycocyanin
+    return Rrs_fl_phycocyanin
 
 
-def R_rs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=573, h_C_phycoerythrin_res=[]):
+def Rrs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=573, h_C_phycoerythrin_res=[]):
     """
     Fluorescence of phycoerythrin (cyano blue)
 
@@ -155,8 +154,8 @@ def R_rs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,80
        Fluorescence radiance reflectance due to phycoerythrin [sr-1]
     """
     if len(h_C_phycoerythrin_res)==0:
-        R_rs_fl_phycoerythrin = L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
+        Rrs_fl_phycoerythrin = L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
     else:
-        R_rs_fl_phycoerythrin = L_fl_phycoerythrin * h_C_phycoerythrin_res
+        Rrs_fl_phycoerythrin = L_fl_phycoerythrin * h_C_phycoerythrin_res
         
-    return R_rs_fl_phycoerythrin
+    return Rrs_fl_phycoerythrin
