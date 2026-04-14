@@ -44,9 +44,12 @@ def ndi(band1, band2):
     """
     Normalized Difference Index (NDI)
 
-    :param band1: first band
-    :param band2: second band
-    :return: NDI
+    Args:
+        band1: first band value
+        band2: second band value
+
+    Returns:
+        NDI: normalized difference index [dimensionless]
     """
     return (band1 - band2) / (band1 + band2)
 
@@ -156,13 +159,17 @@ def awei(R, wavelengths, band1=485, band2=560, band3=830, band4=1650, band5=2215
     [1] Feyisa et al. (2014) [doi.org/10.1016/j.rse.2013.08.029]
     
     Args:
-        R (_type_): Spectrum or image in units of Reflectance [-]
-        wavelengths (_type_): _description_
-        band1 (int, optional): _description_. Defaults to 485.
-        band2 (int, optional): _description_. Defaults to 560.
-        band3 (int, optional): _description_. Defaults to 830.
-        band4 (int, optional): _description_. Defaults to 1650.
-        band5 (int, optional): _description_. Defaults to 2215.
+        R: reflectance spectrum or image [-]
+        wavelengths: wavelengths corresponding to R bands [nm]
+        band1 (int, optional): blue band wavelength [nm], default: 485
+        band2 (int, optional): green band wavelength [nm], default: 560
+        band3 (int, optional): NIR band wavelength [nm], default: 830
+        band4 (int, optional): SWIR1 band wavelength [nm], default: 1650
+        band5 (int, optional): SWIR2 band wavelength [nm], default: 2215
+        shade (bool, optional): use AWEIsh (shadow-resistant) variant, default: False
+
+    Returns:
+        AWEI: water index value; positive values indicate water pixels
     """
     R_b1 = R[find_closest(wavelengths, band1)[1]]
     R_b2 = R[find_closest(wavelengths, band2)[1]]

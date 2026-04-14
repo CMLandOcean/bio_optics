@@ -50,10 +50,13 @@ def morel(wavelengths: np.array = np.arange(400,800),
     
     [1] Morel, A. (1974): Optical properties of pure water and pure Sea water.
     
-    :param wavelengths: wavelengths to compute backscattering coefficient of pure water for, default: np.arange(400,800)
-    :param fresh: boolean to decide if backscattering coefficient is to be computed for fresh (True, default) or oceanic water (False) with a salinity of 35-38 per mille. Values are only valid of lambda_0==500 nm.
-    :param lambda_1: reference wavelength for backscattering of pure water [nm], default: 500
-    :return: spectral backscattering coefficient of pure water
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fresh: True for fresh water, False for oceanic water (salinity 35-38 per mille); values valid only for lambda_1=500 nm, default: True
+        lambda_1: reference wavelength [nm], default: 500
+
+    Returns:
+        b_bw: spectral backscattering coefficient of pure water [m-1]
     """
     b1 = 0.00111 if fresh==True else 0.00144
         
@@ -70,10 +73,13 @@ def bb_w(wavelengths: np.array = np.arange(400,800),
     
     [1] Morel, A. (1974): Optical properties of pure water and pure Sea water.
     
-    :param wavelengths: wavelengths to compute b_bw for, default: np.arange(400,800)
-    :param fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: True
-    :param bb_w_res: optional, precomputing b_bw before inversion saves a lot of time.
-    :return: spectral backscattering coefficients of pure water [m-1]
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fresh: True for fresh water, False for oceanic water, default: True
+        bb_w_res: optional precomputed pure water backscattering; if provided, skips computation
+
+    Returns:
+        bb_w: spectral backscattering coefficient of pure water [m-1]
     """
     if len(bb_w_res)==0:
         bb_w = morel(wavelengths=wavelengths, fresh=fresh)
@@ -93,11 +99,14 @@ def bb_phy(C_phy: float = 0,
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
-    :param C_phy: phytoplankton concentration [ug L-1], default: 0
-    :param wavelengths: wavelengths to compute b_bphy for [nm], default: np.arange(400,800)
-    :param bb_phy_spec:  specific backscattering coefficient of phytoplankton at 550 nm in [m2 mg-1], default: 0.0010
-    :param b_phy_norm_res: optional, preresampling b_phy_norm before inversion saves a lot of time.
-    :return:
+    Args:
+        C_phy: phytoplankton concentration [ug L-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        bb_phy_spec: specific backscattering coefficient of phytoplankton at 550 nm [m2 mg-1], default: 0.0010
+        b_phy_norm_res: optional precomputed normalized phytoplankton scattering; if provided, skips resampling
+
+    Returns:
+        b_bphy: spectral backscattering coefficient of phytoplankton [m-1]
 
     # Math: b_{b,phy} = C_{phy} * b_{b, phy}^* * b_{b, phy}^N(\lambda)
     """       
@@ -144,12 +153,15 @@ def bb_X(C_X: float = 0,
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Heege, T. (2000): Flugzeuggestützte Fernerkundung von Wasserinhaltsstoffen am Bodensee. PhD thesis. DLR-Forschungsbericht 2000-40, 134 p.
     
-    :param C_X: concentration of non-algal particles type I [mg L-1], default: 0
-    :param wavelengths: wavelengths to compute b_bX for [nm], default: np.arange(400,800)
-    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
-    :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time.
-    :return: spectral backscattering coefficient of particles of type I
+    Args:
+        C_X: concentration of non-algal particles type I [mg L-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086
+        b_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency [dimensionless], default: 1
+        b_X_norm_res: optional precomputed normalized scattering; if provided, skips computation
+
+    Returns:
+        bb_X: spectral backscattering coefficient of non-algal particles type I [m-1]
     """
     if len(b_X_norm_res)==0:
         b_X_norm = np.ones(wavelengths.shape) * b_X_norm_factor
@@ -197,13 +209,16 @@ def bb_Mie(C_Mie: float = 0,
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Heege, T. (2000): Flugzeuggestützte Fernerkundung von Wasserinhaltsstoffen am Bodensee. PhD thesis. DLR-Forschungsbericht 2000-40, 134 p.
     
-    :param C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
-    :param wavelengths: wavelengths to compute b_bMie for [nm], default: np.arange(400,800)
-    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1], default: 0.0042
-    :param lambda_S: reference wavelength [nm], default: 500 nm
-    :param n: Angström exponent of particle type II backscattering, default: -1
-    :param bb_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
-    :return: spectral backscattering coefficient of particles of type II
+    Args:
+        C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1], default: 0.0042
+        lambda_S: reference wavelength [nm], default: 500
+        n: Angström exponent of particle type II backscattering [dimensionless], default: -1
+        b_Mie_norm_res: optional precomputed Mie scattering shape term; if provided, skips computation
+
+    Returns:
+        bb_Mie: spectral backscattering coefficient of non-algal particles type II [m-1]
 
     # Math: b_{b,Mie} = C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n
     """
@@ -268,17 +283,20 @@ def bb_NAP(C_X: float = 0,
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Heege, T. (2000): Flugzeuggestützte Fernerkundung von Wasserinhaltsstoffen am Bodensee. PhD thesis. DLR-Forschungsbericht 2000-40, 134 p.
     
-    :param C_X: concentration of non-algal particles type I [mg L-1], default: 0
-    :param C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
-    :param wavelengths: wavelengths to compute b_bNAP for [nm], default: np.arange(400,800)
-    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
-    :param lambda_S: reference wavelength for scattering particles type II [nm], default: 500 nm
-    :param n: Angström exponent of particle type II backscattering, default: -1
-    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
-    :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time.
-    :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
-    :return: spectral backscattering coefficient of NAP
+    Args:
+        C_X: concentration of non-algal particles type I [mg L-1], default: 0
+        C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1], default: 0.0042
+        lambda_S: reference wavelength for Mie scattering [nm], default: 500
+        n: Angström exponent of particle type II backscattering [dimensionless], default: -1
+        bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086
+        bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency [dimensionless], default: 1
+        b_X_norm_res: optional precomputed normalized scattering for type I particles; if provided, skips computation
+        b_Mie_norm_res: optional precomputed Mie scattering shape term; if provided, skips computation
+
+    Returns:
+        bb_NAP: spectral backscattering coefficient of non-algal particles [m-1]
     """
     bb_NAP = bb_X(C_X=C_X, wavelengths=wavelengths, bb_X_spec=bb_X_spec, b_X_norm_factor=bb_X_norm_factor, b_X_norm_res=b_X_norm_res) + \
              bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, b_Mie_norm_res=b_Mie_norm_res)
@@ -344,22 +362,26 @@ def bb(C_X: float = 0,
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Heege, T. (2000): Flugzeuggestützte Fernerkundung von Wasserinhaltsstoffen am Bodensee. PhD thesis. DLR-Forschungsbericht 2000-40, 134 p.
     
-    :param C_X: concentration of non-algal particles type I [mg L-1], default: 0
-    :param C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
-    :param C_phy: phytoplankton concentration [ug L-1], default: 0
-    :param wavelengths: wavelengths to compute b_b for [nm], default: np.arange(400,800)
-    :param fresh: boolean to decide if to compute b_bw for fresh or oceanic water, default: True
-    :param bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] , default: 0.0042
-    :param lambda_S: reference wavelength for scattering particles type II [nm], default: 500 nm
-    :param n: Angström exponent of particle type II backscattering, default: -1
-    :param bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086 [2]
-    :param bb_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency, default: 1
-    :param bb_phy_spec:  specific backscattering coefficient at 550 nm in [m2 mg-1], default: 0.0010
-    :param bb_w_res: optional, precomputing b_bw b_bw saves a lot of time during inversion.
-    :param b_phy_norm_res: optional, preresampling b_phy_norm saves a lot of time during inversion.
-    :param b_X_norm_res: optional, precomputing b_bX_norm before inversion saves a lot of time.
-    :param b_Mie_norm_res: optional, if n and lambda_S are not fit params, the last part of the equation can be precomputed to save time.
-    :return:
+    Args:
+        C_X: concentration of non-algal particles type I [mg L-1], default: 0
+        C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
+        C_phy: phytoplankton concentration [ug L-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fresh: True for fresh water, False for oceanic water, default: True
+        bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1], default: 0.0042
+        lambda_S: reference wavelength for Mie scattering [nm], default: 500
+        n: Angström exponent of particle type II backscattering [dimensionless], default: -1
+        bb_X_spec: specific backscattering coefficient of non-algal particles type I [m2 g-1], default: 0.0086
+        b_X_norm_factor: normalized scattering coefficient with arbitrary wavelength dependency [dimensionless], default: 1
+        bb_phy_spec: specific backscattering coefficient of phytoplankton at 550 nm [m2 mg-1], default: 0.0010
+        bb_w_res: optional precomputed pure water backscattering; if provided, skips computation
+        b_phy_norm_res: optional precomputed normalized phytoplankton scattering; if provided, skips resampling
+        b_X_norm_res: optional precomputed normalized scattering for type I particles; if provided, skips computation
+        b_Mie_norm_res: optional precomputed Mie scattering shape term; if provided, skips computation
+        bb_res: optional precomputed total backscattering; if provided, skips all computation
+
+    Returns:
+        bb: spectral backscattering coefficient of a natural water body [m-1]
     """  
     if len(bb_res)==0:
         bb = bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
@@ -446,17 +468,28 @@ def bb_phy_hereon(C_0 = 0,
     """
     Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_7).
     
-    :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
-    :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
-    :param C_2: concentration of phytoplankton type 2 [ug/L], default: 0
-    :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
-    :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
-    :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
-    :param C_6: concentration of phytoplankton type 6 [ug/L], default: 0
-    :param C_7: concentration of phytoplankton type 7 [ug/L], default: 0
-    :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
-    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_7) before inversion saves a lot of time.
-    :return: spectral scattering coefficient of phytoplankton mixture
+    Args:
+        C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+        C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+        C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+        C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+        C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+        C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+        C_6: concentration of phytoplankton type 6 [ug/L], default: 0
+        C_7: concentration of phytoplankton type 7 [ug/L], default: 0
+        bb_ratio_C_0: backscattering ratio for phytoplankton type 0 [dimensionless], default: 0.002
+        bb_ratio_C_1: backscattering ratio for phytoplankton type 1 [dimensionless], default: 0.002
+        bb_ratio_C_2: backscattering ratio for phytoplankton type 2 [dimensionless], default: 0.002
+        bb_ratio_C_3: backscattering ratio for phytoplankton type 3 [dimensionless], default: 0.002
+        bb_ratio_C_4: backscattering ratio for phytoplankton type 4 [dimensionless], default: 0.002
+        bb_ratio_C_5: backscattering ratio for phytoplankton type 5 [dimensionless], default: 0.002
+        bb_ratio_C_6: backscattering ratio for phytoplankton type 6 [dimensionless], default: 0.002
+        bb_ratio_C_7: backscattering ratio for phytoplankton type 7 [dimensionless], default: 0.002
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        bb_i_spec_res: optional precomputed specific scattering spectra of phytoplankton types (EnSAD); if provided, skips resampling
+
+    Returns:
+        bb_phy: spectral backscattering coefficient of phytoplankton mixture [m-1]
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
 
@@ -539,51 +572,55 @@ def bb_total(wavelengths = np.arange(400,800),
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
-        C_0 (int, optional): _description_. Defaults to 0.
-        C_1 (int, optional): _description_. Defaults to 0.
-        C_2 (int, optional): _description_. Defaults to 0.
-        Cbb_w_res optional): _description_. Defaults to 0.
-        C_4 (int, optional): _description_. Defaults to 0.
-        C_5 (int, optional): _description_. Defaults to 0.
-        C_ism (int, optional): _description_. Defaults to 0.
-        b_ratio_C_0 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_1 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_2 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_3 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_4 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_C_5 (float, optional): _description_. Defaults to 0.002.
-        b_ratio_d (float, optional): _description_. Defaults to 0.0216.
-        fresh (bool, optional): _description_. Defaults to False.
-        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
-        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
-        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
-        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
-        C_md (_type_, optional): _description_. Defaults to 12.1700e-3.
-        C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
-        lambda_0_md (_type_, optional): _description_. Defaults to 550..
-        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
-        lambda_0_c_d (_type_, optional): _description_. Defaults to 550..
-        gamma_d (float, optional): _description_. Defaults to 0.3835.
-        x0 (int, optional): _description_. Defaults to 1.
-        x1 (int, optional): _description_. Defaults to 10.
-        x2 (float, optional): _description_. Defaults to -1.3390.
-        c_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
-        a_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
-        omega_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
-        interpolate (bool, optional): _description_. Defaults to True.
-        a_d_res (list, optional): _description_. Defaults to [].
-        a_md_spec_res (list, optional): _description_. Defaults to [].
-        a_bd_spec_res (list, optional): _description_. Defaults to [].
-        b_d_res (list, optional): _description_. Defaults to [].
-        bb_d_res (list, optional): _description_. Defaults to [].
-        bb_p_res (list, optional): _description_. Defaults to [].
-        bb_w_res (list, optional): _description_. Defaults to [].
-        b_i_spec_res (list, optional): _description_. Defaults to [].
-        c_d_res (list, optional): _description_. Defaults to [].
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+        C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+        C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+        C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+        C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+        C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+        C_6: concentration of phytoplankton type 6 [ug/L], default: 0
+        C_7: concentration of phytoplankton type 7 [ug/L], default: 0
+        C_ism: concentration of inorganic suspended matter [g/m3], default: 0
+        bb_ratio_C_0: backscattering ratio for phytoplankton type 0 [dimensionless], default: 0.002
+        bb_ratio_C_1: backscattering ratio for phytoplankton type 1 [dimensionless], default: 0.002
+        bb_ratio_C_2: backscattering ratio for phytoplankton type 2 [dimensionless], default: 0.002
+        bb_ratio_C_3: backscattering ratio for phytoplankton type 3 [dimensionless], default: 0.002
+        bb_ratio_C_4: backscattering ratio for phytoplankton type 4 [dimensionless], default: 0.002
+        bb_ratio_C_5: backscattering ratio for phytoplankton type 5 [dimensionless], default: 0.002
+        bb_ratio_C_6: backscattering ratio for phytoplankton type 6 [dimensionless], default: 0.002
+        bb_ratio_C_7: backscattering ratio for phytoplankton type 7 [dimensionless], default: 0.002
+        bb_ratio_d: backscattering ratio of detritus [dimensionless], default: 0.0216
+        fresh: True for fresh water, False for oceanic water, default: False
+        A_md: amplitude coefficient for minerogenic detritus specific absorption [m2/g], default: 13.4685e-3
+        A_bd: amplitude coefficient for biogenic detritus specific absorption [m2/mg], default: 0.3893e-3
+        S_md: spectral slope of minerogenic detritus [nm-1], default: 10.3845e-3
+        S_bd: spectral slope of biogenic detritus [nm-1], default: 15.7621e-3
+        C_md: constant offset for minerogenic detritus specific absorption [m2/g], default: 12.1700e-3
+        C_bd: constant offset for biogenic detritus specific absorption [m2/mg], default: 0.9994e-3
+        lambda_0_md: reference wavelength for minerogenic detritus [nm], default: 550
+        lambda_0_bd: reference wavelength for biogenic detritus [nm], default: 550
+        lambda_0_c_d: reference wavelength for detritus attenuation [nm], default: 550
+        gamma_d: power exponent for detritus attenuation spectral shape [dimensionless], default: 0.3835
+        x0: lower bound for detritus single-scattering albedo estimation, default: 1
+        x1: upper bound for detritus single-scattering albedo estimation, default: 10
+        x2: scaling exponent for detritus single-scattering albedo estimation, default: -1.3390
+        c_d_lambda_0_res: optional precomputed detritus attenuation at lambda_0_c_d; if provided, skips computation
+        a_d_lambda_0_res: optional precomputed detritus absorption at lambda_0_c_d; if provided, skips computation
+        omega_d_lambda_0_res: optional precomputed detritus single-scattering albedo at lambda_0_c_d; if provided, skips computation
+        interpolate: if True, interpolate to lambda_0_c_d; if False, use nearest band, default: True
+        a_d_res: optional precomputed detritus absorption spectrum; if provided, skips computation
+        a_md_spec_res: optional precomputed minerogenic detritus specific absorption; if provided, skips computation
+        a_bd_spec_res: optional precomputed biogenic detritus specific absorption; if provided, skips computation
+        b_d_res: optional precomputed detritus scattering; if provided, skips computation
+        bb_d_res: optional precomputed detritus backscattering; if provided, skips computation
+        bb_p_res: optional precomputed total particle backscattering; if provided, skips computation
+        bb_w_res: optional precomputed pure water backscattering; if provided, skips computation
+        b_i_spec_res: optional precomputed specific scattering spectra of phytoplankton types (EnSAD); if provided, skips resampling
+        c_d_res: optional precomputed detritus attenuation spectrum; if provided, skips computation
 
     Returns:
-        np.array: Total backscattering coefficient of natural water and water constituents [m-1]
+        bb: total backscattering coefficient of natural water and water constituents [m-1]
     """
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 

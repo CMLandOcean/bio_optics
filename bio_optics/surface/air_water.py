@@ -47,10 +47,13 @@ def below2above(rrs, zeta=0.52, Gamma=1.6):
     [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1. A semianalytical model [10.1364/AO.37.006329]
     [2] Giardino et al. (2019): Imaging Spectrometry of Inland and Coastal Waters: State of the Art, Achievements and Perspectives [10.1007/s10712-018-9476-0]
     
-    :param rrs: subsurface radiance reflectance
-    :return: remote sensing reflectance
-    
-    # Math: R_{rs}(\lambda) = \frac{\zeta * r_{rs}^*(\lambda)} {1 - \Gamma * r_{rs}^- (\lambda)}
+    Args:
+        rrs: subsurface radiance reflectance [sr-1]
+        zeta: proportionality factor, default: 0.52
+        Gamma: proportionality factor, default: 1.6
+
+    Returns:
+        Rrs: above-water remote sensing reflectance [sr-1]
     """
     return (zeta * rrs) / (1 - Gamma * rrs)
 
@@ -71,8 +74,13 @@ def above2below(Rrs, zeta=0.52, Gamma=1.6):
     [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1. A semianalytical model [10.1364/AO.37.006329]
     [2] Giardino et al. (2019): Imaging Spectrometry of Inland and Coastal Waters: State of the Art, Achievements and Perspectives [10.1007/s10712-018-9476-0]
     
-    :param Rrs: remote sensing reflectance
-    :return: subsurface radiance reflectance
+    Args:
+        Rrs: above-water remote sensing reflectance [sr-1]
+        zeta: proportionality factor, default: 0.52
+        Gamma: proportionality factor, default: 1.6
+
+    Returns:
+        rrs: subsurface radiance reflectance [sr-1]
     """
     return Rrs / (zeta + Gamma * Rrs)
     
@@ -81,10 +89,13 @@ def snell(theta_inc, n1=1, n2=1.33):
     """
     Compute the refraction angle using Snell's Law.
 
-    :param theta_inc: Incident angle [radians]
-    :param n1: Refractive index of origin medium, default: 1 for air
-    :param n2: Refractive index of destination medium, default: 1.33 for water
-    :returns theta: refraction angle in radians.
+    Args:
+        theta_inc: incident angle [radians]
+        n1: refractive index of origin medium, default: 1 for air
+        n2: refractive index of destination medium, default: 1.33 for water
+
+    Returns:
+        theta_refr: refraction angle [radians]
     """
     return np.arcsin(n1 / n2 * np.sin(theta_inc))
 
@@ -93,10 +104,13 @@ def fresnel(theta_inc, n1=1, n2=1.33):
     """
     Fresnel reflectance for unpolarized incoming light for a horizontally flat air-water interface.
 
-    :param theta_inc: Incident angle [radians]
-    :param n1: Refractive index of origin medium, default: 1 for air
-    :param n2: Refractive index of destination medium, default: 1.33 for water
-    :return: Fresnel reflectance for unpolarized incoming light
+    Args:
+        theta_inc: incident angle [radians]
+        n1: refractive index of origin medium, default: 1 for air
+        n2: refractive index of destination medium, default: 1.33 for water
+
+    Returns:
+        rho_F: Fresnel reflectance for unpolarized incoming light [dimensionless]
     """
     theta_inc_w = snell(theta_inc, n1, n2)
 

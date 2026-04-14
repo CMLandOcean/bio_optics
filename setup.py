@@ -23,6 +23,7 @@ setup(
         'scipy >= 1.7.3',
         'pandas >= 1.3.5',
         'pysolar >= 0.1',
+        'pyyaml >= 6.0',
         'spectral >= 0.22.4',
         'lmfit >= 1.0.3',
         'scikit-learn >= 1.0.2'

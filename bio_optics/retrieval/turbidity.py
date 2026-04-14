@@ -28,8 +28,8 @@ def chen(Rrs, wavelengths, a=1203.9, b=1.087, lambda0=645):
     [1] Chen et al. (2007): Monitoring turbidity in Tampa Bay using MODIS/Aqua 250-m imagery [10.1016/j.rse.2006.12.019]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): correspondong wavelengths [nm]
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
         a (float, optional): multiplier. Defaults to 1203.9.
         b (float, optional): exponent. Defaults to 1.087.
         lambda0 (int, optional): wavelength for turbidity estimation. Defaults to 645.
@@ -46,8 +46,8 @@ def hico(Rrs, wavelengths, a=2e6, b=2.7848, lambda0=646):
     [2] Chen et al. (2007): Monitoring turbidity in Tampa Bay using MODIS/Aqua 250-m imagery [10.1016/j.rse.2006.12.019]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): correspondong wavelengths [nm]
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
         a (float, optional): multiplier. Defaults to 1203.9.
         b (float, optional): exponent. Defaults to 1.087.
         lambda0 (int, optional): wavelength for turbidity estimation. Defaults to 646.

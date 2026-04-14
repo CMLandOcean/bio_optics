@@ -10,7 +10,8 @@ def Rrs_adjacency(C_adj=0.1,
                   n_r = -4,
                   R_bg=[],
                   b_ray=[]):
-    """_summary_
+    """
+    Adjacency reflectance contribution after a power-law Rayleigh scattering model.
 
     Args:
         C_adj (float, optional): Scalar for adjacency signal. Defaults to 0.1.

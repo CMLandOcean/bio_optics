@@ -131,10 +131,17 @@ def f_rs(omega_b,
         cos_t_sun_p = np.cos(np.radians(30)),
         cos_t_view_p = np.cos(np.radians(0))):
     """
-    # Math: f_{rs} = 0.0512 \times (1 + 4.6659 \times \omega_b - 7.8387 \times \omega_b^2 + 5.4571 \times \omega_b^3) \times (1 + \frac{0.1098}{cos \theta_{sun}'}) \times (1 + \frac{0.4021}{cos \theta_{sun}'})
-    
-    Applying Horner's method:
-    # Math: f_{rs} = 0.0512 \times (1 + \omega_b \times (4.6659 + \omega_b \times(-7.8387 + \omega_b \times (5.4571))) \times (1 + \frac{0.1098}{cos \theta_{sun}'}) \times (1 + \frac{0.4021}{cos \theta_{sun}'})
+    Irradiance-to-reflectance conversion factor after Albert & Mobley (2003) [1].
+
+    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
+
+    Args:
+        omega_b: single scattering albedo bb / (a + bb) [dimensionless]
+        cos_t_sun_p: cosine of the refracted sun zenith angle in water, default: cos(30°)
+        cos_t_view_p: cosine of the refracted viewing angle in water, default: cos(0°)
+
+    Returns:
+        f_rs: irradiance-to-reflectance conversion factor [sr-1]
     """
 
     return 0.0512 * (1 + omega_b * (4.6659 + omega_b * (-7.8387 + omega_b * (5.4571)))) * (1 + 0.1098 / cos_t_sun_p) * (1 + 0.4021 / cos_t_view_p)
@@ -159,17 +166,15 @@ def df_rs_div_dp(omega_b,
 def rrs_deep(f_rs, omega_b):
     """
     Subsurface radiance reflectance of optically deep water after Albert & Mobley (2003) [1].
-    
+
     [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 
-    :param u: ratio of backscattering coefficient to the sum of absorption and backscattering coefficients
-    :param theta_sun: sun zenith angle in air [radians], is converted to in water using Snell's law, default: np.radians(30)
-    :param theta_view: viewing angle in air in units [radians], is converted to in water using Snell's law, np.radians(0)
-    :param n1: refrective index of origin medium, default: 1 for air
-    :param n2: refrective index of destination medium, default: 1.33 for water
-    :return: subsurface radiance reflectance of deep water [sr-1]
+    Args:
+        f_rs: irradiance-to-reflectance conversion factor [sr-1]
+        omega_b: single scattering albedo bb / (a + bb) [dimensionless]
 
-    # Math: r_{rs}^{deep-} = f_{rs} * \omega_{b}
+    Returns:
+        rrs_deep: subsurface radiance reflectance of deep water [sr-1]
     """
     return f_rs * omega_b
 
@@ -193,12 +198,21 @@ def rrs_shallow(rrs_deep,
                  A_rs2=1.0389):
     """
     Subsurface radiance reflectance of optically shallow water after Albert & Mobley (2003) [1].
-    
-    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
-    [2] Heege, T. (2000): Flugzeuggestützte Fernerkundung von Wasserinhaltsstoffen am Bodensee. PhD thesis. DLR-Forschungsbericht 2000-40, 134 p.
-    [3] Albert, A., & Mobley, C. (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters [doi.org/10.1364/OE.11.002873]
 
-    # Math: r_{rs}^{sh-} = r_{rs}^{deep-} * \left[ 1 - A_{rs,1} * e^{-(K_d + k_{uW}) * zB} \right] + A_{rs,2} * R_{rs}^b * e^{-(K_d + k_{uB}) * zB}
+    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
+
+    Args:
+        rrs_deep: subsurface radiance reflectance of optically deep water [sr-1]
+        Kd: downwelling diffuse attenuation coefficient [m-1]
+        ku_w: upwelling attenuation coefficient for the water column [m-1]
+        zB: water depth [m]
+        Rrs_b: bottom reflectance contribution [sr-1]
+        ku_b: upwelling attenuation coefficient for the bottom [m-1]
+        A_rs1: empirical constant, default: 1.1576
+        A_rs2: empirical constant, default: 1.0389
+
+    Returns:
+        rrs_shallow: subsurface radiance reflectance of shallow water [sr-1]
     """
     return rrs_deep * \
             (1 - A_rs1 * np.exp(-(Kd + ku_w) * zB)) + \

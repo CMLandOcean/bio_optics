@@ -57,12 +57,18 @@ def avw(Rrs, wavelengths, sensor='hyperspectral'):
 
     [1] Vandermeulen (2022) [https://oceancolor.gsfc.nasa.gov/atbd/avw/].
     [2] Vandermeulen (no year) [https://oceancolor.gsfc.nasa.gov/resources/atbd/avw/#:~:text=The%20AVW%20is%20an%20optical,2020)]
-    
-    :param wavelengths: All available wavelengths between 400–700 nm
-    :param Rrs: Rrs at respective wavelengths
-    :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
-    :return:
-    """ 
+
+    Args:
+        Rrs: remote sensing reflectance spectrum or image (bands on first axis) [sr-1]
+        wavelengths: wavelengths of Rrs [nm]; values between 400 and 700 nm are used
+        sensor: sensor name for multispectral polynomial correction, default: 'hyperspectral'.
+            Options: 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', 'OLCI-S3B', 'MERIS', 'SeaWiFS',
+            'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', 'VIIRS-JPSS1', 'CZCS', 'MSI-S2A',
+            'MSI-S2B', 'OLI', 'SuperDove'.
+
+    Returns:
+        avw: apparent visible wavelength [nm]
+    """
     wavelength_mask = (wavelengths>=400) & (wavelengths<=700)
 
     if len(Rrs.shape)==2:
@@ -90,9 +96,12 @@ def qwip(avw):
 
     [1] Dierssen et al. (2022) [doi.org/10.3389/frsen.2022.869611].
     [2] Vandermeulen (2022) [https://oceancolor.gsfc.nasa.gov/atbd/avw/].
-    
-    :param avw: Apparent visible wavelength (AVW) [2].
-    :return: QWIP
+
+    Args:
+        avw: apparent visible wavelength [nm] as computed by avw() [2]
+
+    Returns:
+        qwip: Quality Water Index Polynomial value [dimensionless]
     """
     p = np.array([-8.399885e-9, 1.715532e-5, -1.301670e-2, 4.357838e0, -5.449532e2])    
     qwip = p[0]*avw**4 + p[1]*avw**3 + p[2]*avw**2 + p[3]*avw + p[4]
@@ -104,11 +113,17 @@ def qwip_score(Rrs, wavelengths, sensor='hyperspectral'):
     Quality Water Index Polynomial score (QWIP score) [1].
 
     [1] Dierssen et al. (2022) [doi.org/10.3389/frsen.2022.869611].
-    
-    :param wavelengths: All available wavelengths between 400 nm and 700 nm 
-    :param Rrs: Rrs at respective wavelengths
-    :param sensor: sensor name if not hyperspectral. Defaults to 'hyperspectral'. Options are 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', OLCI-S3B', 'MERIS', 'SeaWiFS', 'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', VIIRS-JPSS1', 'CZCS', 'MSI-S2A', 'MSI-S2B', 'OLI', 'SuperDove'.
-    :return: QWIP score
+
+    Args:
+        Rrs: remote sensing reflectance spectrum or image (bands on first axis) [sr-1]
+        wavelengths: wavelengths of Rrs [nm]; values between 400 and 700 nm are used
+        sensor: sensor name for multispectral polynomial correction, default: 'hyperspectral'.
+            Options: 'MODIS-Aqua', 'MODIS-Terra', 'OLCI-S3A', 'OLCI-S3B', 'MERIS', 'SeaWiFS',
+            'HawkEye', 'OCTS', 'GOCI', 'VIIRS-SNPP', 'VIIRS-JPSS1', 'CZCS', 'MSI-S2A',
+            'MSI-S2B', 'OLI', 'SuperDove'.
+
+    Returns:
+        qwip_score: QWIP score (NDI(665,492) minus QWIP polynomial) [dimensionless]
     """
     qwip_score = ndi(Rrs[find_closest(wavelengths, 665)[1]], Rrs[find_closest(wavelengths, 492)[1]]) - qwip(avw(Rrs=Rrs, wavelengths=wavelengths, sensor=sensor))
     return qwip_score
@@ -172,10 +187,14 @@ def forel_ule(Rrs, wavelengths, kind='slinear'):
     [3] Wernand et al. (2013): MERIS-based ocean colour classification with the discrete Forel-Ule scale [10.5194/os-9-477-2013]
     [4] Wang et al. (2021): A dataset of remote-sensed Forel-Ule Index for global inland waters during 2000–2018. [10.1038/s41597-021-00807-z]
 
-    :param Rrs: array of remote sensing reflectance, if more than 1D, first axis needs to be bands
-    :param wavelengths: corresponding wavelengths [nm]
-    :param kind: specifies kind of interpolation, parameter for interp1d, default: 'slinear'
+    Args:
+        Rrs: remote sensing reflectance spectrum or image (bands on first axis) [sr-1]
+        wavelengths: wavelengths of Rrs [nm]
+        kind: interpolation method passed to interp1d, default: 'slinear'
 
+    Returns:
+        fu_class: Forel-Ule class (1–21, integer)
+        dominant_wavelength: dominant wavelength corresponding to the FU class [nm]
     """
     fu_scale = pd.read_csv(os.path.join(data_dir, 'fu_scale.txt'), skiprows=7)
     cie = pd.read_csv(os.path.join(data_dir, 'cie.txt'), skiprows=5, sep='\t')

@@ -33,38 +33,40 @@ def forward(parameters,
         R_bg=[],
         b_ray=[]):
     """
-    Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
+    Forward simulation of shallow water Rrs with adjacency effect and surface reflectance after Albert & Mobley (2003) [1].
+
+    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 
     Args:
-        parameters (_type_): _description_
-        wavelengths (_type_): _description_
-        a_res (list, optional): _description_. Defaults to [].
-        bb_res (list, optional): _description_. Defaults to [].
-        a_w_res (list, optional): _description_. Defaults to [].
-        da_w_div_dT_res (list, optional): _description_. Defaults to [].
-        a_i_spec_res (list, optional): _description_. Defaults to [].
-        a_Y_N_res (list, optional): _description_. Defaults to [].
-        a_NAP_N_res (list, optional): _description_. Defaults to [].
-        b_phy_norm_res (list, optional): _description_. Defaults to [].
-        bb_w_res (list, optional): _description_. Defaults to [].
-        b_X_norm_res (list, optional): _description_. Defaults to [].
-        b_Mie_norm_res (list, optional): _description_. Defaults to [].
-        R_b_i_res (list, optional): _description_. Defaults to [].
-        E0_res (list, optional): _description_. Defaults to [].
-        a_oz_res (list, optional): _description_. Defaults to [].
-        a_ox_res (list, optional): _description_. Defaults to [].
-        a_wv_res (list, optional): _description_. Defaults to [].
-        Ed_d_res (list, optional): _description_. Defaults to [].
-        Ed_sa_res (list, optional): _description_. Defaults to [].
-        Ed_sr_res (list, optional): _description_. Defaults to [].
-        Ed_res (list, optional): _description_. Defaults to [].
-        Ed_s_res (list, optional): _description_. Defaults to [].
-        n2_res (list, optional): _description_. Defaults to [].
-        Ls_Ed (list, optional): _description_. Defaults to [].
-        R_bg (list, optional): _description_. Defaults to [].
+        parameters: lmfit Parameters object (must include C_adj, lambda_r, b_r_spec, n_r for adjacency)
+        wavelengths: wavelengths [nm]
+        a_res: optional precomputed total absorption coefficient [m-1]
+        bb_res: optional precomputed total backscattering coefficient [m-1]
+        a_w_res: optional precomputed pure water absorption [m-1]
+        da_w_div_dT_res: optional precomputed temperature gradient of pure water absorption [m-1 K-1]
+        a_i_spec_res: optional precomputed specific phytoplankton absorption spectra [m2 mg-1]
+        a_Y_N_res: optional precomputed normalised CDOM absorption
+        a_NAP_N_res: optional precomputed normalised NAP absorption
+        b_phy_norm_res: optional precomputed normalised phytoplankton backscattering
+        bb_w_res: optional precomputed water backscattering [m-1]
+        b_X_norm_res: optional precomputed normalised mineral backscattering
+        b_Mie_norm_res: optional precomputed normalised Mie backscattering
+        R_b_i_res: optional precomputed bottom reflectance spectra
+        E0_res: optional precomputed extraterrestrial solar irradiance
+        a_oz_res: optional precomputed ozone absorption
+        a_ox_res: optional precomputed oxygen absorption
+        a_wv_res: optional precomputed water vapour absorption
+        Ed_d_res: optional precomputed direct downwelling irradiance
+        Ed_sa_res: optional precomputed aerosol-scattered downwelling irradiance
+        Ed_sr_res: optional precomputed Rayleigh-scattered downwelling irradiance
+        Ed_res: optional precomputed total downwelling irradiance
+        Ed_s_res: optional precomputed diffuse downwelling irradiance
+        n2_res: optional precomputed refractive index of water
+        Ls_Ed: optional precomputed ratio of sky radiance to downwelling irradiance
+        R_bg: optional background reflectance spectrum for adjacency effect
 
     Returns:
-        _type_: _description_
+        Rrs_sim: above-water remote sensing reflectance [sr-1]
     """
     if len(n2_res) == 0:
         n2 = parameters["n2"]
@@ -154,16 +156,17 @@ def forward_adjacency(parameters,
                       wavelengths,
                       R_bg=[], 
                       b_ray=[]):
-    """_summary_
+    """
+    Compute the adjacency reflectance contribution using parameters from the lmfit Parameters object.
 
     Args:
-        parameters (_type_): _description_
-        wavelengths (_type_): _description_
-        R_bg (list, optional): _description_. Defaults to [].
-        b_ray (list, optional): _description_. Defaults to [].
+        parameters: lmfit Parameters object (must include C_adj, lambda_r, b_r_spec, n_r)
+        wavelengths: wavelengths [nm]
+        R_bg: optional background reflectance spectrum; zeros (no adjacency) if not provided
+        b_ray: optional precomputed Rayleigh scattering spectrum
 
     Returns:
-        _type_: _description_
+        Rrs_adjacency: adjacency radiance reflectance [sr-1]
     """
     Rrs_adjacency = adjacency_effect.Rrs_adjacency(C_adj=parameters["C_adj"], wavelengths=wavelengths, lambda_r=parameters["lambda_r"], b_r_spec=parameters["b_r_spec"], n_r=parameters["n_r"], R_bg=R_bg, b_ray=b_ray)
     

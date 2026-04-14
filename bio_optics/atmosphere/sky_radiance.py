@@ -40,27 +40,64 @@ def L_s(fd_d, g_dd,  Ed_d,
         fd_s, g_dsr, Ed_sr,
         g_dsa, Ed_sa):
     """
-    Sky radiance in W/m2 nm sr [1]
-    
-    "A parameterization similar to E_d is implemented for the sky radiance, L_s. The radiance downwelling from a part of the sky is treated 
-    as a weighted sum of three wavelength dependent functions, Ed_d, Ed_sr and Ed_sa. In contrast to E_d, the two diffuse components are treated 
-    separately since Rayleigh scattering has a much stronger angle dependency than aerosol scattering. The parameters g_dd, g_dsr and g_dsa are 
-    the intensities (in units of sr−1) of Ed_d, Ed_sr and Ed_sa, respectively." [1]
-    
+    Sky radiance [W m-2 nm-1 sr-1] after Gege (2021) [1].
+
+    "A parameterization similar to E_d is implemented for the sky radiance, L_s. The radiance downwelling from a part of the sky is treated
+    as a weighted sum of three wavelength dependent functions, Ed_d, Ed_sr and Ed_sa. In contrast to E_d, the two diffuse components are treated
+    separately since Rayleigh scattering has a much stronger angle dependency than aerosol scattering. The parameters g_dd, g_dsr and g_dsa are
+    the intensities (in units of sr-1) of Ed_d, Ed_sr and Ed_sa, respectively." [1]
+
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    
-    :return: sky radiance in W/m2 nm sr
-    
+
+    Args:
+        fd_d: fractional contribution of direct irradiance component [dimensionless]
+        g_dd: intensity of direct solar irradiance contribution [sr-1]
+        Ed_d: direct downwelling irradiance [W m-2 nm-1]
+        fd_s: fractional contribution of diffuse irradiance component [dimensionless]
+        g_dsr: intensity of Rayleigh-scattered irradiance contribution [sr-1]
+        Ed_sr: Rayleigh-scattered downwelling irradiance [W m-2 nm-1]
+        g_dsa: intensity of aerosol-scattered irradiance contribution [sr-1]
+        Ed_sa: aerosol-scattered downwelling irradiance [W m-2 nm-1]
+
+    Returns:
+        L_s: sky radiance [W m-2 nm-1 sr-1]
     """
     L_s = fd_d * (g_dd  * Ed_d) + fd_s * (g_dsr * Ed_sr + g_dsa * Ed_sa)
-    
+
     return L_s
 
 def d_LS_div_dg_dd(Ed_d):
+    """
+    Partial derivative of sky radiance with respect to g_dd.
+
+    Args:
+        Ed_d: direct downwelling irradiance [W m-2 nm-1]
+
+    Returns:
+        dL_s/dg_dd: partial derivative [W m-2 nm-1]
+    """
     return Ed_d
 
 def d_LS_div_dg_dsr(Ed_sr):
+    """
+    Partial derivative of sky radiance with respect to g_dsr.
+
+    Args:
+        Ed_sr: Rayleigh-scattered downwelling irradiance [W m-2 nm-1]
+
+    Returns:
+        dL_s/dg_dsr: partial derivative [W m-2 nm-1]
+    """
     return Ed_sr
 
 def d_LS_div_dg_dsa(Ed_sa):
+    """
+    Partial derivative of sky radiance with respect to g_dsa.
+
+    Args:
+        Ed_sa: aerosol-scattered downwelling irradiance [W m-2 nm-1]
+
+    Returns:
+        dL_s/dg_dsa: partial derivative [W m-2 nm-1]
+    """
     return Ed_sa

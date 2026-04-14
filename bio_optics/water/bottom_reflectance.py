@@ -56,26 +56,27 @@ def Rrs_b(f_0 = 0,
           R_b_i_res = []):
     """
     Radiance reflectance of benthic substrate [sr-1] as a mixture of up to 6 bottom types [1].
-    
-    [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    
-    :param f_0: fractional cover of bottom type 0
-    :param f_1: fractional cover of bottom type 1
-    :param f_2: fractional cover of bottom type 2
-    :param f_3: fractional cover of bottom type 3
-    :param f_4: fractional cover of bottom type 4
-    :param f_5: fractional cover of bottom type 5
-    :param B_0: proportion of radiation reflected towards the sensor from bottom type 0
-    :param B_1: proportion of radiation reflected towards the sensor from bottom type 1
-    :param B_2: proportion of radiation reflected towards the sensor from bottom type 2
-    :param B_3: proportion of radiation reflected towards the sensor from bottom type 3
-    :param B_4: proportion of radiation reflected towards the sensor from bottom type 4
-    :param B_5: proportion of radiation reflected towards the sensor from bottom type 5
-    :param wavelengths: wavelengths to resample R_b_i (albedo of bottom types 0..5) to
-    :param R_b_i_res: optional, preresampling R_b_i before inversion saves a lot of time.
-    :return: radiance reflectance of benthic substrate [sr-1]
 
-    # Math: R_{rs}^b(\lambda) = \sum_{n=0}^{N-1}f_n * B_n * a_n(\lambda)
+    [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+
+    Args:
+        f_0: fractional cover of bottom type 0 [dimensionless], default: 0
+        f_1: fractional cover of bottom type 1 [dimensionless], default: 0
+        f_2: fractional cover of bottom type 2 [dimensionless], default: 0
+        f_3: fractional cover of bottom type 3 [dimensionless], default: 0
+        f_4: fractional cover of bottom type 4 [dimensionless], default: 0
+        f_5: fractional cover of bottom type 5 [dimensionless], default: 0
+        B_0: proportion of radiation reflected towards the sensor from bottom type 0 [sr-1], default: 1/pi
+        B_1: proportion of radiation reflected towards the sensor from bottom type 1 [sr-1], default: 1/pi
+        B_2: proportion of radiation reflected towards the sensor from bottom type 2 [sr-1], default: 1/pi
+        B_3: proportion of radiation reflected towards the sensor from bottom type 3 [sr-1], default: 1/pi
+        B_4: proportion of radiation reflected towards the sensor from bottom type 4 [sr-1], default: 1/pi
+        B_5: proportion of radiation reflected towards the sensor from bottom type 5 [sr-1], default: 1/pi
+        wavelengths: wavelengths to resample bottom albedo spectra to [nm], default: np.arange(400, 800)
+        R_b_i_res: optional precomputed bottom albedo spectra (shape: wavelengths x 6)
+
+    Returns:
+        Rrs_b: radiance reflectance of benthic substrate [sr-1]
     """
     f_i = np.array([f_0,f_1,f_2,f_3,f_4,f_5])
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])

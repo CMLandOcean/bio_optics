@@ -55,24 +55,28 @@ def Ed_d(wavelengths=np.arange(400,800),
          a_wv_res=[],
          Ed_d_res=[]):
     """
-    Ed_d is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source [1]. 
-    
+    Direct component of downwelling irradiance, representing the sun disk as light source [1].
+
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    
-    :param wavelengths: wavelengths to compute tau_a fpr, default: np.arange(400,800)
-    :param theta_sun: sun zenith angle [radians], default: np.radians(30)
-    :param P: atmospheric pressure [mbar], default: 1013.25
-    :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
-    :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
-    :param H_oz: ozone scale height [cm], default: 0.381
-    :param WV: precipitable water [cm], default: 2.5
-    :param alpha: Angström exponent determining wavelength dependency (typically ranges from 0.2 to 2 [1]), default: 1.317
-    :param beta: turbidity coefficient as a measure of concentration (typically ranges from 0.16 to 0.50 [1]), default: 0.2606
-    :param E0_res: optional, precomputing E_0 saves a lot of time.
-    :param a_oz_res: optional, precomputing a_oz saves a lot of time.
-    :param a_ox_res: optional, precomputing a_ox saves a lot of time.
-    :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :return: Ed_d
+
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        theta_sun: sun zenith angle [radians], default: np.radians(30)
+        P: atmospheric pressure [mbar], default: 1013.25
+        AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
+        RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
+        H_oz: ozone scale height [cm], default: 0.381
+        WV: precipitable water [cm], default: 2.5
+        alpha: Angström exponent (typically 0.2–2), default: 1.317
+        beta: turbidity coefficient (typically 0.16–0.50), default: 0.2602
+        E0_res: optional precomputed extraterrestrial solar irradiance
+        a_oz_res: optional precomputed ozone absorption coefficient
+        a_ox_res: optional precomputed oxygen absorption coefficient
+        a_wv_res: optional precomputed water vapour absorption coefficient
+        Ed_d_res: optional precomputed Ed_d; if provided, all other args are ignored
+
+    Returns:
+        Ed_d: direct downwelling irradiance [W m-2 nm-1]
     """
     if len(Ed_d_res)==0:
         Ed_d = ET_solar_irradiance.E0(wavelengths,E0_res=E0_res) * np.cos(theta_sun) * \
@@ -102,22 +106,28 @@ def Ed_sr(wavelengths=np.arange(400,800),
           a_wv_res=[],
           Ed_sr_res=[]):
     """
-    Ed_sr represents Rayleigh scattering as part of the diffuse component of downwelling irradiance [1].
-    
+    Rayleigh-scattered component of diffuse downwelling irradiance [1].
+
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    
-    :param wavelengths: wavelengths to compute tau_a fpr, default: np.arange(400,800)
-    :param theta_sun: sun zenith angle [radians], default: np.radians(30)
-    :param P: atmospheric pressure [mbar], default: 1013.25
-    :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
-    :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
-    :param H_oz: ozone scale height [cm], default: 0.381
-    :param WV: precipitable water [cm], default: 2.5
-    :param E0_res: optional, precomputing E_0 saves a lot of time.
-    :param a_oz_res: optional, precomputing a_oz saves a lot of time.
-    :param a_ox_res: optional, precomputing a_ox saves a lot of time.
-    :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :return: Ed_sr
+
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        theta_sun: sun zenith angle [radians], default: np.radians(30)
+        P: atmospheric pressure [mbar], default: 1013.25
+        AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
+        RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
+        H_oz: ozone scale height [cm], default: 0.380
+        WV: precipitable water [cm], default: 2.5
+        alpha: Angström exponent (typically 0.2–2), default: 1.317
+        beta: turbidity coefficient (typically 0.16–0.50), default: 0.2602
+        E0_res: optional precomputed extraterrestrial solar irradiance
+        a_oz_res: optional precomputed ozone absorption coefficient
+        a_ox_res: optional precomputed oxygen absorption coefficient
+        a_wv_res: optional precomputed water vapour absorption coefficient
+        Ed_sr_res: optional precomputed Ed_sr; if provided, all other args are ignored
+
+    Returns:
+        Ed_sr: Rayleigh-scattered downwelling irradiance [W m-2 nm-1]
     """
     if len(Ed_sr_res)==0:
         Ed_sr = 0.5 * ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
@@ -146,24 +156,28 @@ def Ed_sa(wavelengths=np.arange(400,800),
           a_wv_res=[],
           Ed_sa_res=[]):
     """
-    Ed_sa represents aerosol scattering as part of the diffuse component of downwelling irradiance [1].
-    
+    Aerosol-scattered component of diffuse downwelling irradiance [1].
+
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    
-    :param wavelengths: wavelengths to compute tau_a fpr, default: np.arange(400,800)
-    :param theta_sun: sun zenith angle [radians], default: np.radians(30)
-    :param P: atmospheric pressure [mbar], default: 1013.25
-    :param AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
-    :param RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
-    :param H_oz: ozone scale height [cm], default: 0.381
-    :param WV: precipitable water [cm], default: 2.5
-    :param alpha: Angstroem exponent determining wavelength dependency (typically ranges from 0.2 to 2 [1]), default: 1.317
-    :param beta: turbidity coefficient as a measure of concentration (typically ranges from 0.16 to 0.50 [1]), default: 0.2606
-    :param E0_res: optional, precomputing E_0 saves a lot of time.
-    :param a_oz_res: optional, precomputing a_oz saves a lot of time.
-    :param a_ox_res: optional, precomputing a_ox saves a lot of time.
-    :param a_wv_res: optional, precomputing a_wv saves a lot of time.
-    :return: Ed_sa
+
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        theta_sun: sun zenith angle [radians], default: np.radians(30)
+        P: atmospheric pressure [mbar], default: 1013.25
+        AM: air mass type [1: open ocean aerosols .. 10: continental aerosols], default: 5
+        RH: relative humidity [%] (typical values range from 46 to 91 %), default: 80
+        H_oz: ozone scale height [cm], default: 0.38
+        WV: precipitable water [cm], default: 2.5
+        alpha: Angström exponent (typically 0.2–2), default: 1.317
+        beta: turbidity coefficient (typically 0.16–0.50), default: 0.2606
+        E0_res: optional precomputed extraterrestrial solar irradiance
+        a_oz_res: optional precomputed ozone absorption coefficient
+        a_ox_res: optional precomputed oxygen absorption coefficient
+        a_wv_res: optional precomputed water vapour absorption coefficient
+        Ed_sa_res: optional precomputed Ed_sa; if provided, all other args are ignored
+
+    Returns:
+        Ed_sa: aerosol-scattered downwelling irradiance [W m-2 nm-1]
     """
     if len(Ed_sa_res)==0:
         Ed_sa = ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
@@ -180,6 +194,18 @@ def Ed_sa(wavelengths=np.arange(400,800),
     return Ed_sa
     
 def Ed_s(Ed_sr, Ed_sa):
+    """
+    Diffuse downwelling irradiance as sum of Rayleigh and aerosol scattered components [1].
+
+    [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+
+    Args:
+        Ed_sr: Rayleigh-scattered downwelling irradiance [W m-2 nm-1]
+        Ed_sa: aerosol-scattered downwelling irradiance [W m-2 nm-1]
+
+    Returns:
+        Ed_s: diffuse downwelling irradiance [W m-2 nm-1]
+    """
     return Ed_sr + Ed_sa
 
 def Ed(Ed_d,
@@ -188,13 +214,21 @@ def Ed(Ed_d,
         fd_s=1
         ):
     """
-    Downwelling irradiance is split into a direct and a diffuse component [1]: 
-    * Ed_d is the direct component of the downwelling irradiance, representing the sun disk in the sky as light source. 
-    * Ed_s is the radiation from the sky, i.e. the diffuse downwelling irradiance. It is split into two components Ed_sr and Ed_sa:
-        * Ed_sr represents Rayleigh scattering
-        * Ed_sa represents aerosol scattering
-     
-     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+    Total downwelling irradiance as weighted sum of direct and diffuse components [1].
+
+    Ed_d is the direct component representing the sun disk; Ed_s is the diffuse sky component
+    composed of Rayleigh (Ed_sr) and aerosol (Ed_sa) contributions.
+
+    [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+
+    Args:
+        Ed_d: direct downwelling irradiance [W m-2 nm-1]
+        Ed_s: diffuse downwelling irradiance [W m-2 nm-1]
+        fd_d: fractional contribution of direct irradiance, default: 1
+        fd_s: fractional contribution of diffuse irradiance, default: 1
+
+    Returns:
+        Ed: total downwelling irradiance [W m-2 nm-1]
     """
 
     return fd_d * Ed_d + fd_s * Ed_s

@@ -1,0 +1,457 @@
+# bio_optics inversion configuration
+#
+# Parameters are grouped by model component.
+# Each parameter has the following fields:
+#   value:       initial (or fixed) value
+#   unit:        physical unit
+#   description: brief description
+#   vary:        whether to fit this parameter during inversion
+#   min/max:     lower/upper bounds (only required when vary: true)
+
+model:
+  type: albert_mobley_3C   # coupled forward model to use for inversion
+  method: leastsq          # lmfit minimization method (e.g. leastsq, least_squares, nelder, emcee)
+
+params:
+
+  # ---------------------------------------------------------------------------
+  # Water constituents
+  # ---------------------------------------------------------------------------
+
+  C_0:
+    value: 0
+    unit: ug/L
+    description: Chl-a concentration of phytoplankton type 0
+    vary: true
+    min: 0
+    max: 10
+
+  C_1:
+    value: 0
+    unit: ug/L
+    description: Chl-a concentration of phytoplankton type 1
+    vary: false
+    min: 0
+    max: 100
+
+  C_2:
+    value: 0
+    unit: ug/L
+    description: Chl-a concentration of phytoplankton type 2
+    vary: false
+    min: 0
+    max: 100
+
+  C_3:
+    value: 0
+    unit: ug/L
+    description: Chl-a concentration of phytoplankton type 3
+    vary: false
+    min: 0
+    max: 100
+
+  C_4:
+    value: 0
+    unit: ug/L
+    description: Chl-a concentration of phytoplankton type 4
+    vary: false
+    min: 0
+    max: 100
+
+  C_5:
+    value: 0
+    unit: ug/L
+    description: Chl-a concentration of phytoplankton type 5
+    vary: false
+    min: 0
+    max: 100
+
+  C_Y:
+    value: 0
+    unit: m-1
+    description: CDOM absorption coefficient at reference wavelength lambda_0
+    vary: true
+    min: 0
+    max: 2
+
+  C_X:
+    value: 0
+    unit: mg/L
+    description: Concentration of non-algal particles type I (spectrally flat scattering)
+    vary: true
+    min: 0
+    max: 25
+
+  C_Mie:
+    value: 0
+    unit: mg/L
+    description: Concentration of non-algal particles type II (Mie / power-law scattering)
+    vary: true
+    min: 0
+    max: 25
+
+  # ---------------------------------------------------------------------------
+  # Bottom
+  # ---------------------------------------------------------------------------
+
+  zB:
+    value: 10
+    unit: m
+    description: Water depth (bottom depth)
+    vary: true
+    min: 0
+    max: 100
+
+  f_0:
+    value: 0
+    unit: "-"
+    description: Areal fraction of substrate type 0
+    vary: true
+    min: 0
+    max: 1
+
+  f_1:
+    value: 0
+    unit: "-"
+    description: Areal fraction of substrate type 1
+    vary: true
+    min: 0
+    max: 1
+
+  f_2:
+    value: 0
+    unit: "-"
+    description: Areal fraction of substrate type 2
+    vary: true
+    min: 0
+    max: 1
+
+  f_3:
+    value: 0
+    unit: "-"
+    description: Areal fraction of substrate type 3
+    vary: true
+    min: 0
+    max: 1
+
+  f_4:
+    value: 0
+    unit: "-"
+    description: Areal fraction of substrate type 4
+    vary: true
+    min: 0
+    max: 1
+
+  f_5:
+    value: 0
+    unit: "-"
+    description: Areal fraction of substrate type 5
+    vary: true
+    min: 0
+    max: 1
+
+  B_0:
+    value: 0.3183098861837907   # 1/pi
+    unit: "-"
+    description: Irradiance distribution factor for substrate type 0 (1/pi for Lambertian)
+    vary: false
+
+  B_1:
+    value: 0.3183098861837907
+    unit: "-"
+    description: Irradiance distribution factor for substrate type 1 (1/pi for Lambertian)
+    vary: false
+
+  B_2:
+    value: 0.3183098861837907
+    unit: "-"
+    description: Irradiance distribution factor for substrate type 2 (1/pi for Lambertian)
+    vary: false
+
+  B_3:
+    value: 0.3183098861837907
+    unit: "-"
+    description: Irradiance distribution factor for substrate type 3 (1/pi for Lambertian)
+    vary: false
+
+  B_4:
+    value: 0.3183098861837907
+    unit: "-"
+    description: Irradiance distribution factor for substrate type 4 (1/pi for Lambertian)
+    vary: false
+
+  B_5:
+    value: 0.3183098861837907
+    unit: "-"
+    description: Irradiance distribution factor for substrate type 5 (1/pi for Lambertian)
+    vary: false
+
+  # ---------------------------------------------------------------------------
+  # Backscattering optical properties
+  # ---------------------------------------------------------------------------
+
+  b_bphy_spec:
+    value: 0.001
+    unit: m2/mg
+    description: Specific backscattering coefficient of phytoplankton at 550 nm
+    vary: false
+
+  b_bMie_spec:
+    value: 0.0042
+    unit: m2/g
+    description: Specific backscattering coefficient of non-algal particles type II (Mie)
+    vary: false
+
+  b_bX_spec:
+    value: 0.0086
+    unit: m2/g
+    description: Specific backscattering coefficient of non-algal particles type I
+    vary: false
+    min: 0
+    max: 1
+
+  b_bX_norm_factor:
+    value: 1
+    unit: "-"
+    description: Wavelength-independent normalization factor for type I particle scattering
+    vary: false
+
+  # ---------------------------------------------------------------------------
+  # Absorption optical properties
+  # ---------------------------------------------------------------------------
+
+  a_NAP_spec_lambda_0:
+    value: 0.041
+    unit: m2/g
+    description: Specific absorption coefficient of NAP at reference wavelength lambda_0
+    vary: false
+
+  S:
+    value: 0.014
+    unit: nm-1
+    description: Spectral slope of CDOM absorption
+    vary: false
+    min: 0.007
+    max: 0.026
+
+  S_NAP:
+    value: 0.011
+    unit: nm-1
+    description: Spectral slope of NAP absorption
+    vary: false
+
+  K:
+    value: 0
+    unit: m-1
+    description: Constant offset of the CDOM exponential absorption model
+    vary: false
+
+  lambda_0:
+    value: 440
+    unit: nm
+    description: Reference wavelength for CDOM and NAP absorption normalization
+    vary: false
+
+  lambda_S:
+    value: 500
+    unit: nm
+    description: Reference wavelength for Mie (type II) particle backscattering
+    vary: false
+
+  n:
+    value: 0
+    unit: "-"
+    description: Angstrom exponent of Mie (type II) particle backscattering
+    vary: false
+    min: -1
+    max: -0.5
+
+  # ---------------------------------------------------------------------------
+  # Sub-surface reflectance model (Albert & Mobley 2003)
+  # ---------------------------------------------------------------------------
+
+  A:
+    value: 0.0006
+    unit: "-"
+    description: Empirical constant A in the Albert & Mobley sub-surface reflectance model
+    vary: false
+
+  B:
+    value: -0.37
+    unit: "-"
+    description: Empirical constant B in the Albert & Mobley sub-surface reflectance model
+    vary: false
+
+  n1:
+    value: 1
+    unit: "-"
+    description: Refractive index of the medium above the water surface (air)
+    vary: false
+
+  n2:
+    value: 1.33
+    unit: "-"
+    description: Refractive index of water
+    vary: false
+
+  kappa_0:
+    value: 1.0546
+    unit: "-"
+    description: Empirical constant for internal diffuse reflectance (Albert & Mobley 2003)
+    vary: false
+
+  fresh:
+    value: false
+    unit: "-"
+    description: True for fresh water, false for oceanic water (affects pure water backscattering)
+    vary: false
+
+  # ---------------------------------------------------------------------------
+  # Temperature
+  # ---------------------------------------------------------------------------
+
+  T_W:
+    value: 25
+    unit: degrees_C
+    description: Actual water temperature (used for temperature correction of pure water absorption)
+    vary: false
+    min: 0
+    max: 40
+
+  T_W_0:
+    value: 20
+    unit: degrees_C
+    description: Reference temperature for pure water absorption spectrum
+    vary: false
+
+  # ---------------------------------------------------------------------------
+  # Geometry
+  # ---------------------------------------------------------------------------
+
+  theta_sun:
+    value: 0.5235987755982988   # pi/6 = 30 deg
+    unit: rad
+    description: Solar zenith angle
+    vary: false
+    min: 0
+    max: 1.5707963267948966     # pi/2 = 90 deg
+
+  theta_view:
+    value: 0
+    unit: rad
+    description: Sensor viewing zenith angle
+    vary: false
+    min: 0
+    max: 1.5707963267948966
+
+  # ---------------------------------------------------------------------------
+  # Atmosphere
+  # ---------------------------------------------------------------------------
+
+  P:
+    value: 1013.25
+    unit: mbar
+    description: Atmospheric pressure at sea level
+    vary: false
+
+  AM:
+    value: 1
+    unit: "-"
+    description: Air mass type (1 = maritime, 5 = urban, 10 = continental)
+    vary: false
+
+  RH:
+    value: 60
+    unit: "%"
+    description: Relative humidity
+    vary: false
+
+  H_oz:
+    value: 0.381
+    unit: cm-atm
+    description: Ozone column thickness
+    vary: false
+
+  WV:
+    value: 2.5
+    unit: cm
+    description: Precipitable water vapor column
+    vary: false
+
+  alpha:
+    value: 1.317
+    unit: "-"
+    description: Angstrom turbidity coefficient (aerosol optical depth at 1000 nm)
+    vary: false
+
+  beta:
+    value: 0.2606
+    unit: "-"
+    description: Angstrom turbidity exponent (related to aerosol size distribution)
+    vary: false
+
+  # ---------------------------------------------------------------------------
+  # Surface / sun glint
+  # ---------------------------------------------------------------------------
+
+  g_dd:
+    value: 0.02
+    unit: "-"
+    description: Direct sun glint scaling coefficient
+    vary: true
+    min: -1
+    max: 10
+
+  g_dsr:
+    value: 0.3183098861837907   # 1/pi
+    unit: "-"
+    description: Rayleigh-scattered sky glint scaling coefficient
+    vary: true
+    min: 0
+    max: 10
+
+  g_dsa:
+    value: 0.3183098861837907   # 1/pi
+    unit: "-"
+    description: Aerosol-scattered sky glint scaling coefficient
+    vary: true
+    min: 0
+    max: 10
+
+  fd_d:
+    value: 1
+    unit: "-"
+    description: Direct irradiance fraction of downwelling irradiance
+    vary: false
+
+  fd_s:
+    value: 1
+    unit: "-"
+    description: Diffuse irradiance fraction of downwelling irradiance
+    vary: false
+
+  rho_L:
+    value: 0.02006
+    unit: "-"
+    description: Whitecap reflectance (Fresnel reflectance at nadir for flat water surface)
+    vary: false
+
+  # ---------------------------------------------------------------------------
+  # Instrument / noise correction
+  # ---------------------------------------------------------------------------
+
+  d_r:
+    value: 0.0
+    unit: "-"
+    description: Residual reflectance correction (e.g. stray light or dark current drift)
+    vary: false
+    min: 0.0
+    max: 0.1
+
+  offset:
+    value: 0
+    unit: "-"
+    description: Spectrally flat additive offset applied to the modelled reflectance
+    vary: false
+    min: -0.1
+    max: 0.1

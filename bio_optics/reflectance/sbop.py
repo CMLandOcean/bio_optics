@@ -40,6 +40,36 @@ def rrs_sh(C_Mie=0,
     [2] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2 Deriving bottom depths and water properties by optimization [10.1364/ao.38.003831]
     [3] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 
+    Args:
+        C_Mie: concentration of non-algal particles type II [mg L-1], default: 0
+        C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
+        zB: water depth [m], default: 2
+        f_0: fractional cover of bottom type 0, default: 0
+        f_1: fractional cover of bottom type 1, default: 1
+        f_2: fractional cover of bottom type 2, default: 0
+        f_3: fractional cover of bottom type 3, default: 0
+        f_4: fractional cover of bottom type 4, default: 0
+        f_5: fractional cover of bottom type 5, default: 0
+        B_0: bidirectional reflectance factor for bottom type 0, default: 1/pi
+        B_1: bidirectional reflectance factor for bottom type 1, default: 1/pi
+        B_2: bidirectional reflectance factor for bottom type 2, default: 1/pi
+        B_3: bidirectional reflectance factor for bottom type 3, default: 1/pi
+        B_4: bidirectional reflectance factor for bottom type 4, default: 1/pi
+        B_5: bidirectional reflectance factor for bottom type 5, default: 1/pi
+        lambda_0: reference wavelength for CDOM absorption [nm], default: 440
+        lambda_S: reference wavelength for particle backscattering [nm], default: 555
+        S: spectral slope of CDOM absorption [nm-1], default: 0.015
+        bb_Mie_spec: specific backscattering of non-algal particles type II [m2 g-1], default: 1
+        n: spectral slope exponent for Mie backscattering, default: -1
+        fresh: True for fresh water, False for ocean water, default: False
+        q: ratio of absorption to scattering for NAP, default: 0.75
+        g_0: empirical constant [sr-1], default: 0.089
+        g_1: empirical constant [sr-1], default: 0.125
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        a_w_res: optional precomputed pure water absorption [m-1]
+        bb_w_res: optional precomputed water backscattering [m-1]
+        R_b_i_res: optional precomputed bottom reflectance spectra
+
     Returns:
         rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
     """
@@ -68,10 +98,19 @@ def forward(params,
             bb_w_res=[],
             R_b_i_res=[]):
     """
-    Forward simulation returning water-leaving Rrs (above water, no surface term).
+    Forward simulation of water-leaving remote sensing reflectance after Li et al. (2017) [1].
+
+    [1] Li et al. (2017): Remote sensing estimation of colored dissolved organic matter (CDOM) in optically shallow waters [10.1016/j.isprsjprs.2017.03.015]
+
+    Args:
+        params: lmfit Parameters object specifying the model configuration
+        wavelengths: wavelengths [nm]
+        a_w_res: optional precomputed pure water absorption [m-1]
+        bb_w_res: optional precomputed water backscattering [m-1]
+        R_b_i_res: optional precomputed bottom reflectance spectra
 
     Returns:
-        Rrs_sim: simulated water-leaving remote sensing reflectance [sr-1]
+        Rrs_sim: simulated above-water remote sensing reflectance [sr-1]
     """
     Rrs_sim = air_water.below2above(
         rrs_sh(wavelengths=wavelengths,

@@ -14,11 +14,13 @@ def petus(Rrs, wavelengths, a=12450, b=666.1, c=0.48, lambda0=645):
     Args:
         Rrs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
-        a: Defaults to 12450.
-        b: Defaults to 666.1.
-        c: Defaults to 0.48.
-        lambda0: wavelength for TSM estimation. Defaults to 645.
-    Returns: spm [mg L-1]
+        a: quadratic coefficient, default: 12450
+        b: linear coefficient, default: 666.1
+        c: offset, default: 0.48
+        lambda0: wavelength for TSM estimation [nm], default: 645
+
+    Returns:
+        spm: total suspended matter concentration [mg L-1]
     """
     x = Rrs[find_closest(wavelengths, lambda0)[1]]
     return a*x**2 + b*x + c
@@ -119,8 +121,20 @@ def gaa(Rrs, wavelengths, lambda1=486, lambda2=551, lambda3=671, lambda4=745, la
     Args:
         Rrs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
+        lambda1: blue band wavelength [nm], default: 486
+        lambda2: green band wavelength [nm], default: 551
+        lambda3: red band wavelength [nm], default: 671
+        lambda4: NIR1 band wavelength [nm], default: 745
+        lambda5: NIR2 band wavelength [nm], default: 862
+        a1: power-law scaling coefficient, default: 20.43
+        a2: power-law exponent, default: 2.15
+        c0: weight for blue/green ratio term, default: 0.04
+        c1: weight for red term, default: 1.17
+        c2: weight for NIR1 term, default: 0.4
+        c3: weight for NIR2 term, default: 14.86
+
     Returns:
-        spm [mg L-1]
+        C_spm: suspended particulate matter concentration [mg L-1]
     """
     band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
@@ -147,26 +161,40 @@ def dsa(Rrs, wavelengths, lambda1=671, lambda2=551, a=1.25, b=1.11):
     Args:
         Rrs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
-        lambda1: Defaults to 671.
-        lambda2: Defaults to 551.
+        lambda1: red band wavelength [nm], default: 671
+        lambda2: green band wavelength [nm], default: 551
+        a: log-space offset, default: 1.25
+        b: log-space slope, default: 1.11
+
+    Returns:
+        spm: suspended particulate matter concentration [mg L-1]
     """
     X = Rrs[find_closest(wavelengths, lambda1)[1]] / Rrs[find_closest(wavelengths, lambda2)[1]]
     return 10**(a + b * np.log(X))
 
 
 def jiang(Rrs, wavelengths, lambda1=443, lambda2=490, lambda3=560, lambda4=620, lambda5=665, lambda6=754, lambda7=865):
-    """"
-    Total suspended solid (TSS) estimation as described in Jiang et al. (2021) [1]
-    
-    Jiang et al. (2021): Remotely estimating total suspended solids concentration in clear to extremely turbid waters using a novel semi-analytical method [10.1016/j.rse.2021.112386].
-    
-    !!! ---------------
-    Testing on simulated data indicates that there might be a typo in Eq. 12 in [1]. Type II concentrations were constantly overestimated.
-    We tested different values for the scalar in Eq. 12 and found that 0.039 instead of 0.39 improves results for Type II water.
-    Thus, we changed the value accordingly.
-    !!! ---------------
+    """
+    Total suspended solid (TSS) estimation as described in Jiang et al. (2021) [1].
 
-    :return: np.arrays of TSS and optical water types
+    [1] Jiang et al. (2021): Remotely estimating total suspended solids concentration in clear to extremely turbid waters using a novel semi-analytical method [10.1016/j.rse.2021.112386].
+
+    Note: Testing on simulated data suggests a typo in Eq. 12 of [1] — the scalar was changed from 0.39 to 0.039
+    to avoid systematic overestimation for Type II water.
+
+    Args:
+        Rrs: remote sensing reflectance [sr-1] spectrum or image (bands on first axis)
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: violet band wavelength [nm], default: 443
+        lambda2: blue band wavelength [nm], default: 490
+        lambda3: green band wavelength [nm], default: 560
+        lambda4: orange band wavelength [nm], default: 620
+        lambda5: red band wavelength [nm], default: 665
+        lambda6: NIR1 band wavelength [nm], default: 754
+        lambda7: NIR2 band wavelength [nm], default: 865
+
+    Returns:
+        tss: total suspended solid concentration [mg L-1]
     """
     # get wl and idx of relevant bands
     lambdas = [lambda1, lambda2, lambda3, lambda4, lambda5, lambda6, lambda7]

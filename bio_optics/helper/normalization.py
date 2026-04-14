@@ -5,19 +5,25 @@ def brightness_normalization(spectrum: np.array):
     """
     Brightness normalization for single spectra and images.
 
-    :param spectrum: np.array (first axis needs to be bands)
-    :return: brightness normalized image or spectrum as np.array
+    Args:
+        spectrum: spectral array with bands on the first axis
+
+    Returns:
+        brightness-normalised spectrum or image
     """
     return spectrum / np.linalg.norm(spectrum, axis=0)
-    
-    
-    
+
+
+
 def wavelength_normalization(spectrum: np.array, band: int):
     """
     Wavelength normalization for single spectra and images.
-    
-    :param spectrum: np.array (first axis needs to be bands)
-    :param band: band index of wavelength for normalization
-    :return: image or spectrum normalized at wavelength as np.array
+
+    Args:
+        spectrum: spectral array with bands on the first axis
+        band: band index of the wavelength to normalise by
+
+    Returns:
+        spectrum normalised at the specified wavelength band
     """
     return spectrum / spectrum[band]

@@ -54,31 +54,49 @@ def forward(parameters,
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        parameters (_type_): _description_
-        wavelengths (_type_): _description_
-        a_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
-        c_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
-        omega_d_lambda_0_res (_type_, optional): _description_. Defaults to None.
-        a_res (list, optional): _description_. Defaults to [].
-        a_d_res (list, optional): _description_. Defaults to [].
-        a_md_spec_res (list, optional): _description_. Defaults to [].
-        a_bd_spec_res (list, optional): _description_. Defaults to [].
-        a_w_res (list, optional): _description_. Defaults to [].
-        a_i_spec_res (list, optional): _description_. Defaults to [].
-        a_phy_res (list, optional): _description_. Defaults to [].
-        a_Y_N_res (list, optional): _description_. Defaults to [].
-        b_b_res (list, optional): _description_. Defaults to [].
-        b_bd_res (list, optional): _description_. Defaults to [].
-        b_bp_res (list, optional): _description_. Defaults to [].
-        b_bphy_res (list, optional): _description_. Defaults to [].
-        bb_w_res (list, optional): _description_. Defaults to [].
-        b_d_res (list, optional): _description_. Defaults to [].
-        b_i_spec_res (list, optional): _description_. Defaults to [].
-        c_d_res (list, optional): _description_. Defaults to [].
-        da_W_div_dT_res (list, optional): _description_. Defaults to [].
+        parameters: lmfit Parameters object specifying the model configuration
+        wavelengths: wavelengths [nm]
+        a_d_lambda_0_res: optional precomputed detrital absorption at the reference wavelength [m-1]
+        c_d_lambda_0_res: optional precomputed detrital attenuation at the reference wavelength [m-1]
+        omega_d_lambda_0_res: optional precomputed detrital single scattering albedo at the reference wavelength
+        a_res: optional precomputed total absorption coefficient [m-1]
+        a_md_res: optional precomputed mineral-detrital absorption [m-1]
+        a_bd_res: optional precomputed biodetrital absorption [m-1]
+        a_md_spec_res: optional precomputed specific mineral-detrital absorption spectra [m2 g-1]
+        a_bd_spec_res: optional precomputed specific biodetrital absorption spectra [m2 g-1]
+        a_w_res: optional precomputed pure water absorption [m-1]
+        a_i_spec_res: optional precomputed specific phytoplankton absorption spectra [m2 mg-1]
+        a_phy_res: optional precomputed total phytoplankton absorption [m-1]
+        a_Y_N_res: optional precomputed normalised CDOM absorption
+        bb_res: optional precomputed total backscattering coefficient [m-1]
+        bb_bd_res: optional precomputed biodetrital backscattering [m-1]
+        bb_md_res: optional precomputed mineral-detrital backscattering [m-1]
+        bb_p_res: optional precomputed particulate backscattering [m-1]
+        bb_phy_res: optional precomputed phytoplankton backscattering [m-1]
+        b_md_res: optional precomputed mineral-detrital scattering [m-1]
+        b_bd_res: optional precomputed biodetrital scattering [m-1]
+        bb_w_res: optional precomputed water backscattering [m-1]
+        bb_i_spec_res: optional precomputed specific backscattering spectra [m2 g-1]
+        c_md_res: optional precomputed mineral-detrital attenuation [m-1]
+        c_bd_res: optional precomputed biodetrital attenuation [m-1]
+        h_C_res: optional precomputed phytoplankton fluorescence spectrum
+        h_C_phycocyanin_res: optional precomputed phycocyanin fluorescence spectrum
+        h_C_phycoerythrin_res: optional precomputed phycoerythrin fluorescence spectrum
+        da_w_div_dT_res: optional precomputed temperature gradient of pure water absorption [m-1 K-1]
+        E0_res: optional precomputed extraterrestrial solar irradiance
+        a_oz_res: optional precomputed ozone absorption
+        a_ox_res: optional precomputed oxygen absorption
+        a_wv_res: optional precomputed water vapour absorption
+        Ed_d_res: optional precomputed direct downwelling irradiance
+        Ed_sa_res: optional precomputed aerosol-scattered downwelling irradiance
+        Ed_sr_res: optional precomputed Rayleigh-scattered downwelling irradiance
+        Ed_res: optional precomputed total downwelling irradiance
+        Ed_s_res: optional precomputed diffuse downwelling irradiance
+        n2_res: optional precomputed refractive index of water
+        Ls_Ed: optional precomputed ratio of sky radiance to downwelling irradiance
 
     Returns:
-        _type_: _description_
+        Rrs_sim: above-water remote sensing reflectance [sr-1]
     """    
     C_phy = np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"], parameters["C_6"], parameters["C_7"]])
 
