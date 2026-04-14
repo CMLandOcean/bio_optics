@@ -46,13 +46,17 @@ import warnings
 
 
 def find_closest(arr: np.array, val: int, threshold=10):  
-  """ 
+  """
   Find the closest value to a number in an array.
-  
-  :param arr:  an array or list of numbers
-  :param val:  the number  
-  :param threshold: threshold that needs to be breached to send a WARNING message. Defaults to 10.
-  :return:     the closest value and its index in arr
+
+  Args:
+      arr: array or list of numbers
+      val: target number to search for
+      threshold: distance threshold above which a WARNING is emitted, default: 10
+
+  Returns:
+      closest_val: the closest value found in arr
+      idx: index of the closest value in arr
   """
   arr = np.asarray(arr)
   distance = (np.abs(arr - val)).min()
@@ -67,10 +71,14 @@ def find_closest(arr: np.array, val: int, threshold=10):
 
 def band_mask(wavelengths, mask_regions = [[1300,1500],[1800,2000]]):
     """
-    Create a band mask for selected regions (default: water vapor regions between 1300-1500 nm an 1800-2000 nm.
-    
-    :param wavelengths: np.array of wavelengths
-    :param bad_regions: list of lists containing the boundaries of the mask regions, default: [[1300,1500],[1800,2000]]
+    Create a boolean band mask, marking bad regions (e.g. water vapour absorption bands) as False.
+
+    Args:
+        wavelengths: array of wavelengths [nm]
+        mask_regions: list of [start, end] pairs defining masked wavelength ranges, default: [[1300,1500],[1800,2000]]
+
+    Returns:
+        good_bands_mask: boolean array where True = valid band, False = masked band
     """
     good_bands_mask = np.ones(wavelengths.shape, dtype=bool)
     for region in mask_regions:
@@ -93,8 +101,8 @@ def estimate_y(Rrs, wavelengths, lambda1=444., lambda2=555., a=2.0, b=1.0, c=1.2
     [4] Li et al. (2017): Remote sensing estimation of colored dissolved organic matter (CDOM) in optically shallow waters [10.1016/j.isprsjprs.2017.03.015])]
 
     Args:
-        Rrs (_type_): Remote sensing reflectance [sr-1]
-        wavelengths (_type_): corresponding wavelengths [nm]
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
         lambda1 (float, optional): wavelength of first band [nm]. Defaults to 444.
         lambda2 (float, optional): wavelength of second band [nm]. Defaults to 555.
         a (float, optional): Defaults to 2.
@@ -120,8 +128,8 @@ def estimate_S_dg(Rrs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.002
     [4] Erickson et al. (2023): Bayesian approach to a generalized inherent optical property model [10.1364/oe.486581]
 
     Args:
-        Rrs (_type_): Remote sensing reflectance [sr-1]
-        wavelengths (_type_): corresponding wavelengths [nm]
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
         lambda1 (float, optional): wavelength of first band [nm]. Defaults to 443.
         lambda2 (float, optional): wavelength of second band [nm]. Defaults to 555.
         a (float, optional): Defaults to 0.015.
@@ -143,10 +151,10 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
     Residual computation for comparison of measured and simulated data.
 
     Args:
-        y_true (_type_): array of true values
-        y_pred (_type_): array of predicted or simulated values
-        method (int, optional): Defaults to 2.
-        weights (list, optional): element-wise weighting factors, 1 for each element if not provided. Defaults to [].
+        y_true: array of true (measured) values
+        y_pred: array of predicted or simulated values
+        method: residual method index (0=signed diff, 1=squared, 2=absolute, 3=relative, ...), default: 2
+        weights: element-wise weighting factors; ones if not provided, default: []
     Returns:
         residual
     """
@@ -209,9 +217,12 @@ def get_solar_zenith_angle(lat, lon, timestamp_utc):
     """
     Compute solar zenith angle from lat, lon and time (in UTC) using get_altitude() from the pysolar package.
     
-    :param lat: latitude in decimal degrees
-    :param lon: longitude in decimal degrees
-    :param timestamp_utc: UTC time as datetime object 
-    :return: solar zenith angle respective for time and location
+    Args:
+        lat: latitude [decimal degrees]
+        lon: longitude [decimal degrees]
+        timestamp_utc: UTC time as a datetime object
+
+    Returns:
+        sza: solar zenith angle [degrees]
     """
     return 90 - get_altitude(lat, lon, timestamp_utc)

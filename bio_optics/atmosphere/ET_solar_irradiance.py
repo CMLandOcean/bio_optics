@@ -43,11 +43,14 @@ from .. helper import resampling
 
 def E0(wavelengths=np.arange(400,800), E0_res=[]):
     """
-    ET solar irradiance resampled to sensor's spectral sampling rate.
-    
-    :param wavelengths: wavelengths to resample E_0 to, default: np.arange(400,800)
-    :param E_0_res: optional, preresampling E_0_res before inversion saves a lot of time. 
-    :return: extraterrestrial solar irrafiance [W/m2 nm]
+    Extraterrestrial solar irradiance resampled to the sensor's spectral sampling rate.
+
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        E0_res: optional precomputed extraterrestrial solar irradiance; if provided, skips resampling
+
+    Returns:
+        E0: extraterrestrial solar irradiance [W m-2 nm-1]
     """
     if len(E0_res)==0:
         E0 = resampling.resample_E0(wavelengths=wavelengths)

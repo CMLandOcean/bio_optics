@@ -46,9 +46,9 @@ def h_C(wavelengths=np.arange(400,800), fwhm=25, lambda_C=685):
     [1] Mobley (2024): https://www.oceanopticsbook.info/view/scattering/level-2/chlorophyll-fluorescence
 
     Args:
-        wavelengths (_type_, optional): Wavelengths [nm]. Defaults to np.arange(400,800).
-        fwhm (int, optional): full width at half maximum. Defaults to 25 [nm].
-        lambda_C (int, optional): Wavelength of maximum emission [nm]. Defaults to 685.
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fwhm: full width at half maximum [nm], default: 25
+        lambda_C: wavelength of maximum emission [nm], default: 685
 
     Returns:
         h_C: Gaussian emission function of chloropyhll fluorescence [nm-1]
@@ -64,12 +64,12 @@ def h_C_double(W=0.75, wavelengths=np.arange(400,800), fwhm1=25, fwhm2=50, lambd
     [1] Mobley (2024): https://www.oceanopticsbook.info/view/scattering/level-2/chlorophyll-fluorescence
 
     Args:
-        W (float, optional): Weight of the first Gaussian. Defaults to 0.75, which results in the second peak height to be 0.2 * the first one.
-        wavelengths (_type_, optional):  Wavelengths [nm]. Defaults to np.arange(400,800).
-        fwhm1 (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 25.
-        fwhm2 (int, optional): full width at half maximum of peak 2 [nm]. Defaults to 50.
-        lambda_C1 (int, optional): Wavelength of maximum emission of peak 1 [nm]. Defaults to 685.
-        lambda_C2 (int, optional): Wavelength of maximum emission of peak 2 [nm]. Defaults to 730.
+        W: weight of the first Gaussian (default 0.75 gives second peak height ~0.2x the first), default: 0.75
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fwhm1: full width at half maximum of peak 1 [nm], default: 25
+        fwhm2: full width at half maximum of peak 2 [nm], default: 50
+        lambda_C1: wavelength of maximum emission of peak 1 [nm], default: 685
+        lambda_C2: wavelength of maximum emission of peak 2 [nm], default: 730
 
     Returns:
         h_C_double: Gaussian emission function of chloropyhll fluorescence [nm-1]
@@ -100,12 +100,12 @@ def Rrs_fl(wavelengths=np.arange(400,800),
     Args:
         wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
         L_fl_lambda0: Fluorescence radiance at lambda0 [W m-2 nm-1 sr-1]. Defaults to 0.001.
-        W (float, optional): Weight of the first Gaussian. Defaults to 0.75, which results in the second peak height to be 0.2 * the first one.
-        wavelengths (_type_, optional):  Wavelengths [nm]. Defaults to np.arange(400,800).
-        fwhm1 (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 25.
-        fwhm2 (int, optional): full width at half maximum of peak 2 [nm]. Defaults to 50.
-        lambda_C1 (int, optional): Wavelength of maximum emission of peak 1 [nm]. Defaults to 685.
-        lambda_C2 (int, optional): Wavelength of maximum emission of peak 2 [nm]. Defaults to 730.
+        W: weight of the first Gaussian (default 0.75 gives second peak height ~0.2x the first), default: 0.75
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fwhm1: full width at half maximum of peak 1 [nm], default: 25
+        fwhm2: full width at half maximum of peak 2 [nm], default: 50
+        lambda_C1: wavelength of maximum emission of peak 1 [nm], default: 685
+        lambda_C2: wavelength of maximum emission of peak 2 [nm], default: 730
 
     Returns:
         Fluorescence radiance reflectance [sr-1]
@@ -123,15 +123,17 @@ def Rrs_fl(wavelengths=np.arange(400,800),
 
 def Rrs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=644, h_C_phycocyanin_res=[]):
     """
-    Fluorescence of phycocyanin (cyano red)
+    Fluorescence of phycocyanin (cyano red).
 
     Args:
-        wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
-        fwhm (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 20.
-        lambda_C (int, optional): Wavelength of maximum emission of peak [nm]. Defaults to 644.
+        L_fl_phycocyanin: phycocyanin fluorescence radiance at the emission peak [W m-2 nm-1 sr-1], default: 0.001
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fwhm: full width at half maximum [nm], default: 20
+        lambda_C: wavelength of maximum emission [nm], default: 644
+        h_C_phycocyanin_res: optional precomputed Gaussian emission function [nm-1]
 
     Returns:
-       Fluorescence radiance reflectance due to phycocyanin [sr-1]
+        Rrs_fl_phycocyanin: fluorescence radiance reflectance due to phycocyanin [sr-1]
     """
     if len(h_C_phycocyanin_res)==0:
         Rrs_fl_phycocyanin = L_fl_phycocyanin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
@@ -143,15 +145,17 @@ def Rrs_fl_phycocyanin(L_fl_phycocyanin=0.001, wavelengths=np.arange(400,800), f
 
 def Rrs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800), fwhm=20, lambda_C=573, h_C_phycoerythrin_res=[]):
     """
-    Fluorescence of phycoerythrin (cyano blue)
+    Fluorescence of phycoerythrin (cyano blue).
 
     Args:
-        wavelengths: wavelengths [nm]. Defaults to np.arange(400,800).
-        fwhm (int, optional): full width at half maximum of peak 1 [nm]. Defaults to 20.
-        lambda_C (int, optional): Wavelength of maximum emission of peak [nm]. Defaults to 573.
+        L_fl_phycoerythrin: phycoerythrin fluorescence radiance at the emission peak [W m-2 nm-1 sr-1], default: 0.001
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fwhm: full width at half maximum [nm], default: 20
+        lambda_C: wavelength of maximum emission [nm], default: 573
+        h_C_phycoerythrin_res: optional precomputed Gaussian emission function [nm-1]
 
     Returns:
-       Fluorescence radiance reflectance due to phycoerythrin [sr-1]
+        Rrs_fl_phycoerythrin: fluorescence radiance reflectance due to phycoerythrin [sr-1]
     """
     if len(h_C_phycoerythrin_res)==0:
         Rrs_fl_phycoerythrin = L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)

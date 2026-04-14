@@ -55,8 +55,11 @@ def resample_a_w(wavelengths = np.arange(400,800)):
 
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
-    :param wavelengths: wavelengths to resample the absorption coefficient of pure water to
-    :return: absorption coefficient of pure water absorption resampled to input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        a_w: absorption coefficient of pure water resampled to input wavelengths [m-1]
     """
     # read file
     a_w_db = pd.read_csv(os.path.join(data_dir, 'a_w.txt'), skiprows=14, sep='\t', usecols=[0,1])
@@ -77,8 +80,11 @@ def resample_da_w_div_dT(wavelengths = np.arange(400,800)):
                                  Revision 7, May 2013
     [2] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
 
-    :param wavelengths: wavelengths to resample the temperature gradient of pure water absorption to
-    :return: temperature gradient of pure water absorption resampled to input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        da_W_div_dT: temperature gradient of pure water absorption resampled to input wavelengths [m-1 degC-1]
     """
     # read file
     da_W_div_dT_db = pd.read_csv(os.path.join(data_dir, 'daWdT.txt'), skiprows=9, sep='\t')
@@ -102,8 +108,11 @@ def resample_a_i_spec(wavelengths = np.arange(400,800)):
 
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
 
-    :param wavelengths: wavelengths to resample the specific absorption coefficients to
-    :return: specific absorption coefficients of six phytoplankton types resampled to input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        a_i_spec: specific absorption coefficients of six phytoplankton types resampled to input wavelengths [m2 mg-1]
     """
     # read file
     a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec.txt'), skiprows=25, sep=",")
@@ -130,8 +139,11 @@ def resample_a_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352] 
     [2] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
 
-    :param wavelengths: wavelengths to resample the specific absorption coefficients to
-    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 720)
+
+    Returns:
+        a_i_spec: specific absorption coefficients of eight phytoplankton types resampled to input wavelengths [m2 mg-1]
     """
     # read file
     a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSAD.txt'), skiprows=11, sep=",")
@@ -157,8 +169,11 @@ def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
 
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352] 
 
-    :param wavelengths: wavelengths to resample the specific absorption coefficients to
-    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 720)
+
+    Returns:
+        b_i_spec: specific scattering coefficients of eight phytoplankton types resampled to input wavelengths [m2 mg-1]
     """
     # read file
     b_phyto_db = pd.read_csv(os.path.join(data_dir, 'b_phy_spec_EnSAD.txt'), skiprows=4, sep=",")
@@ -176,9 +191,12 @@ def resample_bb_w(wavelengths = np.arange(400,800),
 
     [1] Morel (1974): Optical properties of pure water and pure Sea water.
 
-    :param wavelengths: wavelengths to compute spectral backscattering coefficient of water for
-    :param fresh:  boolean to decide if backscattering coefficient is to be computed for fresh (True, default) or oceanic water (False) with a salinity of 35-38 per mille. Values are only valid of lambda_0==500 nm.
-    :return: spectral backscattering coefficient of water for input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        fresh: if True compute for fresh water; if False compute for oceanic water (salinity 35–38 ‰), default: True
+
+    Returns:
+        bb_w: spectral backscattering coefficient of water resampled to input wavelengths [m-1]
     """
     from ..water import backscattering
     bb_w = backscattering.morel(wavelengths=wavelengths, fresh=fresh)
@@ -193,8 +211,11 @@ def resample_b_phy_norm(wavelengths = np.arange(400,800)):
 
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
-    :param wavelengths: wavelengths to compute normalized backscattering coefficient of phytoplankton for
-    :return: normalized backscattering coefficient of phytoplankton for input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        b_phy_norm: normalised backscattering coefficient of phytoplankton resampled to input wavelengths [dimensionless]
     """
     # READ DATA FROM DATABASE
     b_phy_norm = pd.read_csv(os.path.join(data_dir, 'b_phy_norm.txt'), skiprows=6, sep="\t")
@@ -216,8 +237,11 @@ def resample_R_b_i(wavelengths=np.arange(400,800)):
     4. macrophyte
     5. seagrass (Zostera marina) 
 
-    :param wavelengths: wavelengths to resample benthic substrate albedo to
-    :return: irradiance reflectance or albedo of six benthic substrate types resampled to input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        R_b_i: albedo of six benthic substrate types resampled to input wavelengths, shape (n_wavelengths, 6)
     """
     # read file
     # R_bottom_db = pd.read_csv("C://Users//mkoenig3//WASI6//DATA/R_bottom.csv", sep=",")
@@ -239,8 +263,11 @@ def resample_a_oz(wavelengths = np.arange(400,800)):
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spec- tral irradiance in water. [10.1364/AO.51.001407]
 
-    :param wavelengths: wavelengths to compute ozone absorption coefficient for
-    :return: ozone absorption coefficient for input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        a_ozone_res: ozone absorption coefficient resampled to input wavelengths [cm-1]
     """
     # read file
     a_ozone_db = pd.read_csv(os.path.join(data_dir, 'a_ozone.txt'), sep="\t", skiprows=8)
@@ -259,8 +286,11 @@ def resample_a_wv(wavelengths = np.arange(400,800)):
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spec- tral irradiance in water. [10.1364/AO.51.001407]
 
-    :param wavelengths: wavelengths to compute water vapour absorption coefficient for
-    :return: water vapour absorption coefficient for input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        a_wv_res: water vapour absorption coefficient resampled to input wavelengths [cm-1]
     """
     # read file
     a_wv_db = pd.read_csv(os.path.join(data_dir, 'a_wv.txt'), sep="\t", skiprows=8)
@@ -279,8 +309,11 @@ def resample_a_ox(wavelengths = np.arange(400,800)):
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     [2] Gege (2012): Analytic model for the direct and diffuse components of downwelling spec- tral irradiance in water. [10.1364/AO.51.001407]
 
-    :param wavelengths: wavelengths to compute oxygen absorption coefficient for
-    :return: oxygen absorption coefficient for input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        a_ox_res: oxygen absorption coefficient resampled to input wavelengths [cm-1]
     """
     # read file
     a_ox_db = pd.read_csv(os.path.join(data_dir, 'a_oxygen.txt'), sep="\t", skiprows=8)
@@ -297,8 +330,11 @@ def resample_E0(wavelengths = np.arange(400,800)):
 
     [1] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
 
-    :param wavelengths: wavelengths to compute extraterrestrial solar irradiance for
-    :return: extraterrestrial solar irradiance for input wavelengths
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+
+    Returns:
+        E0_res: extraterrestrial solar irradiance resampled to input wavelengths [mW m-2 nm-1]
     """
     # read file
     E0_db = pd.read_csv(os.path.join(data_dir, 'E0_sun.txt'), sep=" ", skiprows=12)
@@ -375,13 +411,16 @@ def resample_srf(srf_wavelengths, srf_factors, input_wavelengths, input_spectrum
     Resample a spectrum to a sensor's band setting using it's spectral response function (SRF).
     Uses scipy.interpolate.interp1d.
     
-    :param srf_wavelengths: wavelengths of srf [nm]
-    :param srf_factors: spectral response factor per wavelength per band with shape (srf_wavelengths, n_output_bands)
-    :param input_wavelengths: wavelengths of input spectrum [nm]
-    :param input_spectrum: spectrum to be resampled with shape (n_bands) [1D], (n_bands, x) [2D] or (n_bands, x, y) [3D] 
-    :param kind: specifies kind of interpolation, parameter for interp1d, default: 'slinear'
-    :param fill_value: parameter for interp1d, default: 'extrapolate'
-    :return: resampled spectrum with new band setting
+    Args:
+        srf_wavelengths: wavelengths of the spectral response function [nm]
+        srf_factors: spectral response factors of shape (n_srf_wavelengths, n_output_bands)
+        input_wavelengths: wavelengths of the input spectrum [nm]
+        input_spectrum: spectrum to resample; shape (n_bands,) [1D], (n_bands, x) [2D], or (n_bands, x, y) [3D]
+        kind: interpolation method for interp1d, default: 'slinear'
+        fill_value: extrapolation behaviour for interp1d, default: 'extrapolate'
+
+    Returns:
+        resampled_spectrum: spectrum resampled to the sensor band setting
     """
     # prepare empty array to fill, array shape depends on input shape
     resampled_spectrum = np.zeros((srf_factors.shape[1],) + input_spectrum.shape[1:])*np.nan

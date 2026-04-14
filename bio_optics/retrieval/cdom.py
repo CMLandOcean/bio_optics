@@ -8,11 +8,14 @@ def hico(Rrs, wavelengths, lambda1=670, lambda2=490):
     
     [1] Keith et al. (2014): Remote sensing of selected water-quality indicators with the hyperspectral imager for the coastal ocean (HICO) sensor [10.1080/01431161.2014.894663]
     
-    :param Rrs: Rrs spectrum [sr-1] with first axis = bands
-    :param wavelengths: corresponding wavelengths [nm]
-    :param lambda_1: wavelength of first band [nm], default: 490 
-    :param lambda_2: wavelength of second band [nm], default: 670
-    :return: CDOM absorption at 412 nm [m-1]
+    Args:
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 670
+        lambda2: blue band wavelength [nm], default: 490
+
+    Returns:
+        CDOM absorption at 412 nm [m-1]
     """
     band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
@@ -26,12 +29,15 @@ def loisel(Rrs, wavelengths, lambda1=412, lambda2=555, sza=0):
     
     [1] Loisel et al. (2014): Assessment of the colored dissolved organic matter in coastal waters from ocean color remote sensing [10.1364/oe.22.013109]
 
-    :param Rrs: Rrs spectrum [sr-1] with first axis = bands
-    :param wavelengths: corresponding wavelengths [nm]
-    :param lambda1: first wavelength for ratio [nm]
-    :param lambda2: second wavelength for ration [nm]
-    :param sza: sun zenith angle [deg]
-    :return: CDOM absorption at 412 nm [m-1]
+    Args:
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: UV/violet band wavelength [nm] (numerator), default: 412
+        lambda2: green band wavelength [nm] (denominator), default: 555
+        sza: solar zenith angle [degrees]; must be 0, 30, or 60, default: 0
+
+    Returns:
+        a_CDOM412: CDOM absorption at 412 nm [m-1]
     """
     band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths, lambda2)[1]]
@@ -71,11 +77,12 @@ def mannino(Rrs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
     Args:
         Rrs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
-        lambda0: reference wavelength [nm] to compute a_cdom for. Defaults to 443. Alternatives are 355 and 412.
-        lambda1: Band 1 for band ratio
-        lambda2: Band 2 for band ratio
-    Returns: 
-        CDOM absorption [m-1] at a reference wavelength (lambda0) 
+        lambda0: reference wavelength [nm] to compute a_CDOM for, default: 443 (alternatives: 355, 412)
+        lambda1: band ratio numerator wavelength [nm], default: 490
+        lambda2: band ratio denominator wavelength [nm], default: 551
+
+    Returns:
+        a_CDOM: CDOM absorption at lambda0 [m-1]
     """
     if lambda0==443:
         a, b, c = -1852, 1854, 0.01105
@@ -101,10 +108,13 @@ def ficek(Rrs, wavelengths, a=3.65, b=-1.93, lambda1=570, lambda2=655):
     Args:
         Rrs: remote sensing reflectance [sr-1] spectrum
         wavelengths: corresponding wavelengths [nm]
-        lambda1: TBD
-        lambda2: TBD      
+        a: power-law scaling coefficient, default: 3.65
+        b: power-law exponent, default: -1.93
+        lambda1: green band wavelength [nm], default: 570
+        lambda2: red band wavelength [nm], default: 655
+
     Returns:
-        CDOM absorption [m-1] at 440 nm
+        a_CDOM: CDOM absorption at 440 nm [m-1]
     """
     band1 = Rrs[find_closest(wavelengths, lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths, lambda2)[1]]

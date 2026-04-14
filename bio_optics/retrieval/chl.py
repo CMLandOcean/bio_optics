@@ -30,11 +30,14 @@ def gitelson(R, wavelengths, a=117.42, b=23.09, lambda1=665, lambda2=715, lambda
     [1] Gitelson et al. (2008): A simple semi-analytical model for remote estimation of chlorophyll-a in turbid waters: Validation [10.1016/j.rse.2008.04.015]
 
     Args:
-        R (_type_): irradiance reflectance [-] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: sensitive to chl a but also other factors. Defaults to 665.
-        lambda2: close to lambda 1 but minimally sensitive to chl a abs. Defaults to 715.
-        lambda3: wavelength where abs approx by a_water, to account for variability in backscattering. Defaults to 748.
+        R: irradiance reflectance [-] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], sensitive to chl-a, default: 665
+        lambda2: NIR band wavelength [nm], minimally sensitive to chl-a absorption, default: 715
+        lambda3: NIR band wavelength [nm], mainly governed by backscattering, default: 750
+        a: linear scaling coefficient, default: 117.42
+        b: offset, default: 23.09
+
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
@@ -53,11 +56,14 @@ def hico(Rrs, wavelengths, a=17.477, b=6.152, lambda1 = 686, lambda2 = 703, lamb
     [2] Gitelson et al. (2008): A simple semi-analytical model for remote estimation of chlorophyll-a in turbid waters: Validation [10.1016/j.rse.2008.04.015]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 686.
-        lambda2: _description_. Defaults to 703.
-        lambda3: _description_. Defaults to 735.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], sensitive to chl-a, default: 686
+        lambda2: NIR band wavelength [nm], minimally sensitive to chl-a absorption, default: 703
+        lambda3: NIR band wavelength [nm], mainly governed by backscattering, default: 735
+        a: linear scaling coefficient, default: 17.477
+        b: offset, default: 6.152
+
     Returns:
         chlorophyll-a pigment concentration [ug L-1]
     """
@@ -77,12 +83,15 @@ def flh(Rrs, wavelengths, lambda1=665, lambda2=681, lambda3=705, k=1.005):
     [2] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters, p. 211., Eq. 7.39
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 680.
-        lambda2: _description_. Defaults to 708.
-        lambda3: _description_. Defaults to 753.
-        k (float, optional): _description_. Defaults to 1.005.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: lower baseline wavelength [nm], default: 665
+        lambda2: fluorescence peak wavelength [nm], default: 681
+        lambda3: upper baseline wavelength [nm], default: 705
+        k: baseline interpolation weight (overwritten internally from wavelengths), default: 1.005
+
+    Returns:
+        FLH: fluorescence line height [sr-1]
     """
     L1 = Rrs[find_closest(wavelengths, lambda1)[1]]
     L2 = Rrs[find_closest(wavelengths, lambda2)[1]]
@@ -102,13 +111,14 @@ def cyanobacterial_index(Rrs, wavelengths, lambda1=665, lambda2=681, lambda3=709
     [2] Wynne et al. (2008): Relating spectral shape to cyanobacterial blooms in the Laurentian Great Lakes [10.1080/01431160802007640]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 665.
-        lambda2: _description_. Defaults to 681.
-        lambda3: _description_. Defaults to 709.
-    Returns: 
-        Cyanobacterial index
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: lower baseline wavelength [nm], default: 665
+        lambda2: peak wavelength [nm] (phycocyanin absorption feature), default: 681
+        lambda3: upper baseline wavelength [nm], default: 709
+
+    Returns:
+        CI: cyanobacterial index [sr-1]
     """
     return (-1) * flh(Rrs=Rrs, wavelengths=wavelengths, lambda1=lambda1, lambda2=lambda2, lambda3=lambda3)   
 
@@ -120,13 +130,14 @@ def slh(Rrs, wavelengths, lambda1=654, lambda2=714, lambda3=754):
     [1] Kudela et al. (2015): Application of hyperspectral remote sensing to cyanobacterial blooms in inland waters [10.1016/j.rse.2015.01.025]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 654.
-        lambda2: _description_. Defaults to 714.
-        lambda3: _description_. Defaults to 754.
-    Returns: 
-        Scattering line height
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: lower baseline wavelength [nm], default: 654
+        lambda2: peak wavelength [nm] (phycocyanin reflectance peak), default: 714
+        lambda3: upper baseline wavelength [nm], default: 754
+
+    Returns:
+        SLH: scattering line height [sr-1]
     """
     Rrs1 = Rrs[find_closest(wavelengths, lambda1)[1]]
     Rrs2 = Rrs[find_closest(wavelengths, lambda2)[1]]
@@ -147,10 +158,16 @@ def ndci(Rrs, wavelengths, lambda1=665, lambda2=708, a0=14.039, a1=86.115, a2=19
     [1] Mishra & Mishra (2012): Normalized difference chlorophyll index: A novel model for remote estimation of chlorophyll-a concentration in turbid productive waters [10.1016/j.rse.2011.10.016]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 665.
-        lambda2: _description_. Defaults to 708.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 665
+        lambda2: NIR band wavelength [nm], default: 708
+        a0: polynomial offset, default: 14.039
+        a1: linear coefficient, default: 86.115
+        a2: quadratic coefficient, default: 194.325
+
+    Returns:
+        chl-a concentration [ug L-1]
     """
     band1 = Rrs[find_closest(wavelengths,lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths,lambda2)[1]]
@@ -219,8 +236,8 @@ def li(Rrs, wavelengths, lambda3=466.79, lambda2=536.90, lambda1=652.07, x=0.46,
     [2] Hu et al. (2012): Chlorophyll aalgorithms for oligotrophic oceans: A novel approach based on three-band reflectance difference [10.1029/2011JC007395]
     
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
         lambda1 (float, optional): Wavelength of red band [nm]. Defaults to 652.07.
         lambda2 (float, optional): Wavelength of green band [nm]. Defaults to 536.90.
         lambda3 (float, optional): Wavelength of blue band [nm]. Defaults to 466.79.
@@ -245,8 +262,8 @@ def guc2(Rrs, wavelengths, lambda1=663, lambda2=623, a=113.112, b=58.408, c=8.66
     [1] Menon & Adhikari (2018): Remote Sensing of Chlorophyll-A in Case II Waters: A Novel Approach With Improved Accuracy Over Widely Implemented Turbid Water Indices [10.1029/2018JC014052]
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
         lambda1: Wavelength of first band [nm]. Defaults to 663.
         lambda2: Wavelength of second band [nm]. Defaults to 623.
         a (float, optional): Defaults to 113.112.
@@ -276,15 +293,15 @@ def two_band(Rrs, wavelengths, lambda1=665.0, lambda2=708.0, a=61.324, b=-37.94)
     [2] Neil et al. (2020): Corrigendum to “A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types” [Remote Sens. Environ., 229: 159-178] [10.1016/j.rse.2020.111837]
 
     Args:
-        Rrs (_type_): _description_
-        wavelengths (_type_): _description_
-        lambda1 (optional): _description_. Defaults to 665.
-        lambda2 (optional): _description_. Defaults to 708.
-        a (float, optional): Defaults to 61.324.
-        b (float, optional): Defaults to -37.94.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 665
+        lambda2: NIR band wavelength [nm], default: 708
+        a: linear scaling coefficient, default: 61.324
+        b: offset, default: -37.94
 
     Returns:
-        _type_: _description_
+        chl-a concentration [ug L-1]
     """
     band1 = Rrs[find_closest(wavelengths,lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths,lambda2)[1]]    
@@ -304,16 +321,16 @@ def three_band(Rrs, wavelengths, lambda1=665, lambda2=708, lambda3=753, a=232.32
     [2] Neil et al. (2020): Corrigendum to “A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types” [Remote Sens. Environ., 229: 159-178] [10.1016/j.rse.2020.111837]
 
     Args:
-        Rrs (_type_): _description_
-        wavelengths (_type_): _description_
-        lambda1: _description_. Defaults to 665.
-        lambda2: _description_. Defaults to 708.
-        lambda3: _description_. Defaults to 753.
-        a (float, optional): _description_. Defaults to 232.329.
-        b (float, optional): _description_. Defaults to 23.174.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 665
+        lambda2: NIR1 band wavelength [nm], default: 708
+        lambda3: NIR2 band wavelength [nm] (mainly backscattering), default: 753
+        a: linear scaling coefficient, default: 232.329
+        b: offset, default: 23.174
 
     Returns:
-        _type_: _description_
+        chl-a concentration [ug L-1]
     """
     band1 = Rrs[find_closest(wavelengths,lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths,lambda2)[1]] 
@@ -330,16 +347,16 @@ def gurlin_two_band(Rrs, wavelengths, lambda1=665, lambda2=708, a=25.28, b=14.85
     [2] Neil et al. (2020): Corrigendum to “A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types” [Remote Sens. Environ., 229: 159-178] [10.1016/j.rse.2020.111837]
 
     Args:
-        Rrs (_type_): _description_
-        wavelengths (_type_): _description_
-        lambda1: _description_. Defaults to 665.
-        lambda2: _description_. Defaults to 708.
-        a (float, optional): _description_. Defaults to 25.28.
-        b (float, optional): _description_. Defaults to 14.85.
-        c (float, optional): _description_. Defaults to -15.18.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 665
+        lambda2: NIR band wavelength [nm], default: 708
+        a: quadratic coefficient, default: 25.28
+        b: linear coefficient, default: 14.85
+        c: offset, default: -15.18
 
     Returns:
-        _type_: _description_
+        chl-a concentration [ug L-1]
     """       
     band1 = Rrs[find_closest(wavelengths,lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths,lambda2)[1]] 
@@ -358,17 +375,17 @@ def gurlin_three_band(Rrs, wavelengths, lambda1=665, lambda2=708, lambda3=753, a
 
 
     Args:
-        Rrs (_type_): _description_
-        wavelengths (_type_): _description_
-        lambda1: _description_. Defaults to 665.
-        lambda2: _description_. Defaults to 708.
-        lambda3: _description_. Defaults to 753.
-        a (float, optional): _description_. Defaults to 315.50.
-        b (float, optional): _description_. Defaults to 215.95.
-        c (float, optional): _description_. Defaults to 25.66.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 665
+        lambda2: NIR1 band wavelength [nm], default: 708
+        lambda3: NIR2 band wavelength [nm], default: 753
+        a: quadratic coefficient, default: 315.50
+        b: linear coefficient, default: 215.95
+        c: offset, default: 25.66
 
     Returns:
-        _type_: _description_
+        chl-a concentration [ug L-1]
     """
             
     band1 = Rrs[find_closest(wavelengths,lambda1)[1]]
@@ -391,16 +408,16 @@ def analytical_two_band(Rrs, wavelengths, lambda1=665.0, lambda2=708.0, a=35.745
     [2] Neil et al. (2020): Corrigendum to “A global approach for chlorophyll-a retrieval across optically complex inland waters based on optical water types” [Remote Sens. Environ., 229: 159-178] [10.1016/j.rse.2020.111837]
 
     Args:
-        Rrs (_type_): _description_
-        wavelengths (_type_): _description_
-        lambda1 (float, optional): _description_. Defaults to 665.0.
-        lambda2 (float, optional): _description_. Defaults to 708.0.
-        a (float, optional): _description_. Defaults to 35.75.
-        b (float, optional): _description_. Defaults to 19.30.
-        c (float, optional): _description_. Defaults to 1.124.
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: red band wavelength [nm], default: 665.0
+        lambda2: NIR band wavelength [nm], default: 708.0
+        a: scaling coefficient, default: 35.745
+        b: offset coefficient, default: 19.295
+        c: power-law exponent, default: 1.124
 
     Returns:
-        _type_: _description_
+        chl-a concentration [ug L-1]
     """
     band1 = Rrs[find_closest(wavelengths,lambda1)[1]]
     band2 = Rrs[find_closest(wavelengths,lambda2)[1]]    
@@ -415,19 +432,20 @@ def oc4me(Rrs, wavelengths, lambda1=443, lambda2=489, lambda3=510, lambda4=560, 
     [1] Mishra et al. (2017): Bio-optical Modeling and Remote Sensing of Inland Waters.
 
     Args:
-        Rrs (_type_): remote sensing reflectance [sr-1] spectrum
-        wavelengths (_type_): corresponding wavelengths [nm]
-        lambda1: _description_. Defaults to 443.
-        lambda2: _description_. Defaults to 489.
-        lambda3: _description_. Defaults to 510.
-        lambda4: _description_. Defaults to 560.
-        a0: Defaults to 0.450.
-        a1: Defaults to -3.259.
-        a2: Defaults to 3.523.
-        a3: Defaults to -3.359.
-        a4: Defaults to 0.950.
-    Returns: 
-        Scattering line height
+        Rrs: remote sensing reflectance [sr-1] spectrum
+        wavelengths: corresponding wavelengths [nm]
+        lambda1: violet band wavelength [nm], default: 443
+        lambda2: blue band wavelength [nm], default: 489
+        lambda3: cyan band wavelength [nm], default: 510
+        lambda4: green band wavelength [nm] (denominator), default: 560
+        a0: polynomial offset, default: 0.450
+        a1: linear coefficient, default: -3.259
+        a2: quadratic coefficient, default: 3.523
+        a3: cubic coefficient, default: -3.359
+        a4: quartic coefficient, default: 0.950
+
+    Returns:
+        chl-a concentration [mg m-3]
     """
 
     Rrs1 = np.max(Rrs[[find_closest(wavelengths, lambda1)[1], find_closest(wavelengths, lambda2)[1], find_closest(wavelengths, lambda3)[1]]], axis=0)

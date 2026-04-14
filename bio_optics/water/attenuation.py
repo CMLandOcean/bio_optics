@@ -43,9 +43,14 @@ from . import absorption
 
 def omega_b(a, bb):
     """
-    Single scattering albedo
-    
-    # Math: \omega_b = \frac{b_b}{a + b_b}
+    Single scattering albedo of a water body [dimensionless].
+
+    Args:
+        a: total absorption coefficient [m-1]
+        bb: total backscattering coefficient [m-1]
+
+    Returns:
+        omega_b: single scattering albedo [dimensionless]
     """
     return bb / (a + bb)
 
@@ -65,18 +70,19 @@ def Kd(a,
         kappa_0=1.0546,
         ):
     """
-    Diffuse attenuation for downwelling irradiance as implemented in WASI [1].
-    
-    [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
-    [2] Albert, A., & Mobley, C. (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters [doi.org/10.1364/OE.11.002873]
-    
-    :param a: spectral absorption coefficient of a water body
-    :param b_b: spectral backscattering coefficient of a water body
-    :param cos_t_sun_p: cosine of sun zenith angle (expected to be adjusted for refraction angle using Snell's law) in air
-    :param kappa_0: coefficient depending on scattering phase function, default: 1.0546 [2]
-    :return: diffuse attenuation for downwelling irradiance
+    Diffuse attenuation coefficient for downwelling irradiance after Albert & Mobley (2003) as used in WASI [1, 2].
 
-    # Math: K_d(\lambda) = \kappa_0 \frac{a + b_b}{cos\theta_{sun}'}
+    [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+    [2] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters [doi.org/10.1364/OE.11.002873]
+
+    Args:
+        a: total absorption coefficient [m-1]
+        bb: total backscattering coefficient [m-1]
+        cos_t_sun_p: cosine of the refracted sun zenith angle inside water (after Snell's law), default: np.pi/6
+        kappa_0: coefficient depending on scattering phase function, default: 1.0546 [2]
+
+    Returns:
+        Kd: diffuse attenuation coefficient for downwelling irradiance [m-1]
     """
     Kd = (kappa_0 / cos_t_sun_p) * (a + bb)
     
@@ -99,7 +105,19 @@ def ku_w(a,
          cos_t_sun_p,
          cos_t_view_p):
     """
-    # Math: k_{uW} = \frac{a + b_b}{cos \theta_v'} \times (1 + \omega_b)^{3.5421} \times (1 - \frac{0.2786}{cos \theta_{sun}'})
+    Upwelling attenuation coefficient for the water column after Albert & Mobley (2003) [1].
+
+    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters [doi.org/10.1364/OE.11.002873]
+
+    Args:
+        a: total absorption coefficient [m-1]
+        bb: total backscattering coefficient [m-1]
+        omega_b: single scattering albedo [dimensionless]
+        cos_t_sun_p: cosine of the refracted sun zenith angle inside water (after Snell's law)
+        cos_t_view_p: cosine of the refracted view zenith angle inside water (after Snell's law)
+
+    Returns:
+        ku_w: upwelling attenuation coefficient for water column [m-1]
     """
     return (a + bb) / cos_t_view_p * (1 + omega_b)**3.5421 * (1 - 0.2786 / cos_t_sun_p)
 
@@ -131,7 +149,19 @@ def ku_b(a,
          cos_t_sun_p,
          cos_t_view_p):
     """
-    # Math: k_{uB} = \frac{a + b_b}{cos \theta_v'} \times (1 + \omega_b)^{2.2658} \times (1 + \frac{0.0577}{cos \theta_{sun}'})
+    Upwelling attenuation coefficient for the bottom after Albert & Mobley (2003) [1].
+
+    [1] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters [doi.org/10.1364/OE.11.002873]
+
+    Args:
+        a: total absorption coefficient [m-1]
+        bb: total backscattering coefficient [m-1]
+        omega_b: single scattering albedo [dimensionless]
+        cos_t_sun_p: cosine of the refracted sun zenith angle inside water (after Snell's law)
+        cos_t_view_p: cosine of the refracted view zenith angle inside water (after Snell's law)
+
+    Returns:
+        ku_b: upwelling attenuation coefficient for the bottom [m-1]
     """
     return (a + bb) / cos_t_view_p * (1 + omega_b)**2.2658 * (1 + 0.0577 / cos_t_sun_p)
 
@@ -169,7 +199,7 @@ def omega_d_lambda_0(x0=1.,
     Single scattering albedo of detritus at a reference wavelength.
 
     Args:
-        x0 (_type_, optional): Minuend. Defaults to 1..
+        x0: minuend in the power-law expression (x0 - x1^x2), default: 1.0
         x1 (int, optional): Base of the power-law function. Defaults to -10.
         x2 (float, optional): Exponent of the power-law function. Defaults to -1.3390 (± 0.0618).
 
@@ -205,23 +235,24 @@ def estimate_c_d_lambda_0(C_ism=1.,
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        lambda_0 (int, optional): _description_. Defaults to 550.
-        C_ism (_type_, optional): _description_. Defaults to 1..
-        C_phy (_type_, optional): _description_. Defaults to 1..
-        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
-        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
-        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
-        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
-        C_md (_type_, optional): _description_. Defaults to 12.1700e-3.
-        C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
-        lambda_0_md (_type_, optional): _description_. Defaults to 500..
-        lambda_0_bd (_type_, optional): _description_. Defaults to 500..
-        x0 (int, optional): _description_. Defaults to -1.
-        x1 (int, optional): _description_. Defaults to 10.
-        x2 (float, optional): _description_. Defaults to -1.3390.
-        omega_d_lambda_0_pre (_type_, optional): _description_. Defaults to None.
-        a_md_spec_res (list, optional): _description_. Defaults to [].
-        a_bd_spec_res (list, optional): _description_. Defaults to [].
+        C_ism: inorganic suspended matter concentration [g m-3], default: 1.0
+        C_phy: phytoplankton concentration [mg m-3], default: 1.0
+        A_md: specific absorption coefficient of mineral-detrital matter at lambda_0_md [m2 g-1], default: 13.4685e-3
+        A_bd: specific absorption coefficient of biodetrital matter at lambda_0_bd [m2 g-1], default: 0.3893e-3
+        S_md: spectral slope of mineral-detrital absorption [nm-1], default: 10.3845e-3
+        S_bd: spectral slope of biodetrital absorption [nm-1], default: 15.7621e-3
+        C_md: mineral-detrital matter concentration [g m-3], default: 12.1700e-3
+        C_bd: biodetrital matter concentration [g m-3], default: 0.9994e-3
+        lambda_0_c_d: reference wavelength for c_d [nm], default: 550.0
+        lambda_0_md: reference wavelength for mineral-detrital absorption [nm], default: 550.0
+        lambda_0_bd: reference wavelength for biodetrital absorption [nm], default: 550.0
+        x0: minuend in omega_d power-law, default: 1.0
+        x1: base of omega_d power-law, default: 10
+        x2: exponent of omega_d power-law, default: -1.3390
+        omega_d_lambda_0_res: optional precomputed single scattering albedo of detritus at reference wavelength
+        a_d_lambda_0_res: optional precomputed detrital absorption at the reference wavelength [m-1]
+        a_md_spec_res: optional precomputed specific mineral-detrital absorption spectra [m2 g-1]
+        a_bd_spec_res: optional precomputed specific biodetrital absorption spectra [m2 g-1]
 
     Returns:
         c_d_lambda_0: estimated attenuation coefficient of detritus at reference wavelength [m-1]
@@ -280,26 +311,27 @@ def c_d(wavelengths=np.arange(400,800),
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
-        C_ism (_type_, optional): _description_. Defaults to 1..
-        C_phy (_type_, optional): _description_. Defaults to 1..
-        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
-        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
-        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
-        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
-        C_md (_type_, optional): _description_. Defaults to 12.1700e-3.
-        C_bd (_type_, optional): _description_. Defaults to 0.9994e-3.
-        lambda_0 (_type_, optional): _description_. Defaults to 550..
-        lambda_0_md (_type_, optional): _description_. Defaults to 550..
-        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
-        gamma_d (float, optional): Exponential of power-law function [nm-1]. Defaults to 0.3835 (± 0.1277)
-        x0 (int, optional): _description_. Defaults to -1.
-        x1 (int, optional): _description_. Defaults to 10.
-        x2 (float, optional): _description_. Defaults to –1.3390 (± 0.0618).
-        c_d_lambda_0 (_type_, optional): _description_. Defaults to None.
-        omega_d_lambda_0_pre (_type_, optional): _description_. Defaults to None.
-        a_md_spec_res (list, optional): _description_. Defaults to [].
-        a_bd_spec_res (list, optional): _description_. Defaults to [].
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        C_ism: inorganic suspended matter concentration [g m-3], default: 1.0
+        C_phy: phytoplankton concentration [mg m-3], default: 1.0
+        A_md: specific absorption coefficient of mineral-detrital matter at lambda_0_md [m2 g-1], default: 13.4685e-3
+        A_bd: specific absorption coefficient of biodetrital matter at lambda_0_bd [m2 g-1], default: 0.3893e-3
+        S_md: spectral slope of mineral-detrital absorption [nm-1], default: 10.3845e-3
+        S_bd: spectral slope of biodetrital absorption [nm-1], default: 15.7621e-3
+        C_md: mineral-detrital matter concentration [g m-3], default: 12.1700e-3
+        C_bd: biodetrital matter concentration [g m-3], default: 0.9994e-3
+        lambda_0_c_d: reference wavelength for c_d [nm], default: 550.0
+        lambda_0_md: reference wavelength for mineral-detrital absorption [nm], default: 550.0
+        lambda_0_bd: reference wavelength for biodetrital absorption [nm], default: 550.0
+        gamma_d: exponent of the power-law spectral shape [dimensionless], default: 0.3835 (± 0.1277)
+        x0: minuend in omega_d power-law, default: 1
+        x1: base of omega_d power-law, default: 10
+        x2: exponent of omega_d power-law, default: -1.3390 (± 0.0618)
+        c_d_lambda_0_res: optional precomputed c_d at the reference wavelength [m-1]
+        omega_d_lambda_0_res: optional precomputed single scattering albedo of detritus at reference wavelength
+        a_d_lambda_0_res: optional precomputed detrital absorption at the reference wavelength [m-1]
+        a_md_spec_res: optional precomputed specific mineral-detrital absorption spectra [m2 g-1]
+        a_bd_spec_res: optional precomputed specific biodetrital absorption spectra [m2 g-1]
 
     Returns:
         c_d: spectral attenuation coefficient of detritus [m-1]

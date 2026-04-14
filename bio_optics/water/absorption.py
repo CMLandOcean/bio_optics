@@ -48,9 +48,12 @@ def a_w(wavelengths = np.arange(400,800), a_w_res=[]):
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
-    :wavelengths: wavelengths to resample a_w to [nm], default: np.arange(400,800)
-    :param a_w_res: optional, preresampling a_w before inversion saves a lot of time.
-    :return: spectral absorption coefficient of pure water [m-1]
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        a_w_res: optional precomputed pure water absorption; if provided, skips resampling
+
+    Returns:
+        a_w: spectral absorption coefficient of pure water [m-1]
     """
     if len(a_w_res)==0:
         a_w = resampling.resample_a_w(wavelengths=wavelengths)
@@ -65,12 +68,15 @@ def a_w_T(wavelengths = np.arange(400,800), T_W_0=20, T_W=20, a_w_res=[], da_W_d
     
     [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     
-    :wavelengths: wavelengths to compute a_w_T for [nm], default: np.arange(400,800)
-    :param T_W_0: Reference temperature [degrees C], default: 20
-    :param T_W: Actual water temperature [degrees C], default: 20
-    :param a_w_res: optional, preresampling a_w before inversion saves a lot of time.
-    :param da_W_div_dT_res: optional, preresampling da_W_div_dT before inversion saves a lot of time.
-    :return: spectral absorption coefficient of pure water corrected for actual temperature
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        T_W_0: reference temperature [degrees C], default: 20
+        T_W: actual water temperature [degrees C], default: 20
+        a_w_res: optional precomputed pure water absorption; if provided, skips resampling
+        da_W_div_dT_res: optional precomputed temperature gradient; if provided, skips resampling
+
+    Returns:
+        a_w_T: spectral absorption coefficient of pure water corrected for actual temperature [m-1]
     """
     a_w_T = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_w_div_dT(wavelengths=wavelengths, da_w_div_dT_res=da_W_div_dT_res)
     return a_w_T
@@ -82,9 +88,12 @@ def da_w_div_dT(wavelengths = np.arange(400,800), da_w_div_dT_res=[]):
     
     [1] Roettgers et al. (2013): Pure water spectral absorption, scattering, and real part of refractive index model.
     
-    :param wavelengths: wavelengths to resample da_W_div_dT to
-    :param da_W_div_dT_res: optional, preresampling da_W_div_dT before inversion saves a lot of time.
-    :return: temperature gradient of pure water absorption
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        da_w_div_dT_res: optional precomputed temperature gradient; if provided, skips resampling
+
+    Returns:
+        da_w_div_dT: temperature gradient of pure water absorption [m-1 degrees C-1]
     """
     if len(da_w_div_dT_res) == 0:
         da_w_div_dT = resampling.resample_da_w_div_dT(wavelengths=wavelengths)
@@ -105,15 +114,18 @@ def a_ph(C_0 = 0,
     """
     Spectral absorption coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_5).
     
-    :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
-    :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
-    :param C_2: concentration of phytoplankton type 2 [ug/L], default: 0
-    :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
-    :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
-    :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
-    :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
-    :param a_i_spec_res: optional, preresampling a_i_spec (absorption of phytoplankton types C_0..C_5) before inversion saves a lot of time.
-    :return: spectral absorption coefficient of phytoplankton
+    Args:
+        C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+        C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+        C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+        C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+        C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+        C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        a_i_spec_res: optional precomputed specific absorption spectra of phytoplankton types; if provided, skips resampling
+
+    Returns:
+        a_ph: spectral absorption coefficient of phytoplankton [m-1]
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5])
     
@@ -152,10 +164,13 @@ def a_Y_norm(wavelengths = np.arange(400,800),
     """
     Exponential approximation of normalized spectral absorption of CDOM.
     
-    :wavelengths: wavelengths to compute a_Y for [nm], default: np.arange(400,800)
-    :param S: spectral slope of CDOM absorption spectrum [m-1], default: 0.014
-    :param lambda_0: wavelength used for normalization [nm], default: 440
-    :return: normalized spectral absorption of CDOM
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.014
+        lambda_0: reference wavelength for normalization [nm], default: 440
+
+    Returns:
+        a_Y_norm: normalized spectral absorption of CDOM [dimensionless]
     """
     return np.exp(-S * (wavelengths - lambda_0))
 
@@ -171,16 +186,18 @@ def a_Y(C_Y = 0,
     [1] Mobley (2022): The Oceanic Optics Book [doi.org/10.25607/OBP-1710]
     [2] Grunert et al. (2018): Characterizing CDOM Spectral Variability Across Diverse Regions and Spectral Ranges [doi.org/10.1002/2017GB005756]).
    
-    :param C_Y: CDOM absorption coefficient at lambda_0 [m-1]
-    :wavelengths: wavelengths to compute a_Y for [nm], default: np.arange(400,800)
-    :param S: spectral slope of CDOM absorption spectrum [m-1], default: 0.014
-    :param lambda_0: wavelength used for normalization [nm], default: 440
-    :param K: Constant added to the exponential function [m-1], default: 0 
-              "What this constant represents is not clear. In some cases it is supposed to account for scattering by the dissolved component, 
-              however there is no reason to believe such scattering would be spectrally ﬂat (see Bricaud et al. 1981 for an in-depth discussion)" [1].
-              "K is a constant addressing background noise and potential instrument bias" [2]     
-    :param a_Y_N_res: optional, precomputing a_Y_norm before inversion saves a lot of time.   
-    :return: spectral absorption coefficient of CDOM or yellow substances
+    Args:
+        C_Y: CDOM absorption coefficient at lambda_0 [m-1]
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.014
+        lambda_0: reference wavelength for normalization [nm], default: 440
+        K: constant offset [m-1], default: 0; "What this constant represents is not clear. In some cases it is supposed to account for scattering by the dissolved
+           component, however there is no reason to believe such scattering would be spectrally flat (see Bricaud et al. 1981 for an in-depth discussion)" [1];
+           "K is a constant addressing background noise and potential instrument bias" [2]
+        a_Y_N_res: optional precomputed normalized CDOM absorption; if provided, skips computation
+
+    Returns:
+        a_Y: spectral absorption coefficient of CDOM or yellow substances [m-1]
 
     # Math: a_{CDOM}(\lambda) = C_Y * e^{-S (\lambda - \lambda_0)} + K
     """
@@ -234,10 +251,13 @@ def a_NAP_norm(wavelengths = np.arange(400,800),
     Can be approximated reasonably well in many cases with an exponential function.
     Normalized at the same wavelength (lambda_0) as CDOM.
     
-    :param wavelengths: wavelengths to compute a_NAP_norm for [nm], default: np.arange(400,800)
-    :param S_NAP: spectral slope of NAP absorption spectrum [m-1], default: 0.011
-    :param lambda_0: reference wavelength for normalization of NAP absorption spectrum (identical for CDOM) [nm], default: 440 nm
-    :return: normalized spectral absorption of NAP
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        S_NAP: spectral slope of NAP absorption spectrum [nm-1], default: 0.011
+        lambda_0: reference wavelength for normalization [nm], default: 440
+
+    Returns:
+        a_NAP_norm: normalized spectral absorption of NAP [dimensionless]
     """
     return np.exp(-S_NAP * (wavelengths - lambda_0))
 
@@ -252,14 +272,17 @@ def a_NAP(C_X = 0,
     Spectral absorption of non-algal particles (NAP), also known as detritus, tripton or bleached particles.
     Normalized at the same wavelength (lambda_0) as CDOM.
     
-    :param C_X: concentration of non-algal particles type I [mg/L], default: 0
-    :param C_Mie: concentration of non-algal particles type II [mg/L], default: 0
-    :wavelengths: wavelengths to compute a_NAP for [nm], default: np.arange(400,800)
-    :param lambda_0: reference wavelength for normalization of NAP absorption spectrum (identical for CDOM) [nm], default: 440 nm
-    :param a_NAP_spec_lambda_0: specific absorption coefficient of NAP at referece wavelength lambda_0 [m2 g-1], default: 0.041
-    :param S_NAP: spectral slope of NAP absorption spectrum, default [m-1]: 0.011
-    :param a_NAP_norm_res: optional, preresampling a_NAP_norm before inversion saves a lot of time.
-    :return: spectral absorption coefficient of non-algal particles (NAP)
+    Args:
+        C_X: concentration of non-algal particles type I [mg/L], default: 0
+        C_Mie: concentration of non-algal particles type II [mg/L], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        lambda_0: reference wavelength for normalization [nm], default: 440
+        a_NAP_spec_lambda_0: specific absorption coefficient of NAP at lambda_0 [m2 g-1], default: 0.041
+        S_NAP: spectral slope of NAP absorption spectrum [nm-1], default: 0.011
+        a_NAP_N_res: optional precomputed normalized NAP absorption; if provided, skips computation
+
+    Returns:
+        a_NAP: spectral absorption coefficient of non-algal particles [m-1]
 
     # Math: a_{NAP} = C_{NAP} * a_{NAP}^*(\lambda_0) * e^{ -S_{NAP} (\lambda - \lambda_0) }
     # Math: = (C_X + C_{Mie}) * a_{NAP}^*(\lambda_0) * e^{ -S_{NAP} (\lambda - \lambda_0) }
@@ -362,29 +385,32 @@ def a(C_0 = 0,
     """
     Spectral absorption coefficient of a natural water body.
     
-    :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
-    :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
-    :param C_2: concentration of phytoplankton type 2 [ug/L], default: 0
-    :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
-    :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
-    :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
-    :param C_Y: CDOM absorption coefficient at lambda_0 [m-1]
-    :param C_X: concentration of non-algal particles type I [mg/L], default: 0
-    :param C_Mie: concentration of non-algal particles type II [mg/L], default: 0
-    :wavelengths: wavelengths to compute a for [nm], default: np.arange(400,800)
-    :param S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.014
-    :param lambda_0: wavelength used for normalization of CDOM and NAP functions [nm], default: 440
-    :param K: constant added to the CDOM exponential function [m-1], default: 0
-    :param a_NAP_spec_lambda_0: specific absorption coefficient of NAP at referece wavelength lambda_0 [m2 g-1], default: 0.041
-    :param S_NAP: spectral slope of NAP absorption spectrum, default [nm-1]: 0.011
-    :param T_W: actual water temperature [degrees C], default: 20
-    :param T_W_0: reference temperature [degrees C], default: 20
-    :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
-    :param da_W_div_dT_res: optional, temperature gradient of pure water absorption resampled  to sensor's band settings. Will be computed within function if not provided.
-    :param a_i_spec_res: optional, specific absorption coefficients of phytoplankton types resampled to sensor's band settings. Will be computed within function if not provided.
-    :param a_Y_N_res: optional, normalized absorption coefficients of CDOM resampled to sensor's band settings. Will be computed within function if not provided.
-    :param a_NAP_N_res: optional, normalized absorption coefficients of NAP resampled to sensor's band settings. Will be computed within function if not provided.
-    :return: spectral absorption coefficient of a natural water body
+    Args:
+        C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+        C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+        C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+        C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+        C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+        C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+        C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
+        C_X: concentration of non-algal particles type I [mg/L], default: 0
+        C_Mie: concentration of non-algal particles type II [mg/L], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.014
+        lambda_0: reference wavelength for normalization of CDOM and NAP [nm], default: 440
+        K: constant offset of CDOM exponential function [m-1], default: 0
+        a_NAP_spec_lambda_0: specific absorption coefficient of NAP at lambda_0 [m2 g-1], default: 0.041
+        S_NAP: spectral slope of NAP absorption spectrum [nm-1], default: 0.011
+        T_W: actual water temperature [degrees C], default: 20
+        T_W_0: reference temperature [degrees C], default: 20
+        a_w_res: optional precomputed pure water absorption; if provided, skips resampling
+        da_w_div_dT_res: optional precomputed temperature gradient; if provided, skips resampling
+        a_i_spec_res: optional precomputed specific absorption spectra of phytoplankton types; if provided, skips resampling
+        a_Y_N_res: optional precomputed normalized CDOM absorption; if provided, skips computation
+        a_NAP_N_res: optional precomputed normalized NAP absorption; if provided, skips computation
+
+    Returns:
+        a: spectral absorption coefficient of a natural water body [m-1]
     """
     a_wc = a_ph(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, a_i_spec_res=a_i_spec_res) + \
            a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S, lambda_0=lambda_0, K=K, a_Y_N_res=a_Y_N_res) + \
@@ -459,10 +485,13 @@ def a_Phi(a_phy_440 = 0.01,
     [1] Lee (1994): Visible-Infrared Remote-Sensing Model and Applications for Ocean Waters. Dissertation.
     [2] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1 A semianalytical model [10.1364/ao.37.006329]
     
-    :param a_phy_440: Phytoplankton absorption coefficient at 440 nm, usually called P in Lee's work; default: 0.01.
-    :param wavelengths: wavelength range to compute a_phy for; default: 400 nm - 800 nm.
-    :param A_res: empirical factors A0 and A1 resampled to the band setting of the used sensor; saves a lot of time during inversion.
-    :return: phytoplankton pigment absorption coefficient for the provided wavelengths and a given chlorophyll a concentration.
+    Args:
+        a_phy_440: phytoplankton absorption coefficient at 440 nm (called P in Lee's work) [m-1], default: 0.01
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        A_res: optional precomputed empirical factors A0 and A1; if provided, skips resampling
+
+    Returns:
+        a_phy: phytoplankton pigment absorption coefficient [m-1]
     """    
     if len(A_res)==0:
         A0, A1 = resampling.resample_A(wavelengths=wavelengths)
@@ -482,11 +511,15 @@ def a_Y_pow(C_Y = 0,
     Spectral absorption of CDOM or yellow substances according to Twardowski et al. 2004 [doi.org/10.1016/j.marchem.2004.02.008].
     "Another model that has been found to work even better than the exponential model is a power-law model" (Mobley, OceanOpticsBook 2022).
         
-    :param C_Y: CDOM absorption coefficient [1/m]
-    :param wavelengths: wavelengths to compute 
-    :param S: spectral slope, default: 6.92 
-    :param lambda_0: wavelength used for normalization in nm, default: 412 nm
-    :return: spectral absorption coefficient of CDOM or yellow substances
+    Args:
+        C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        S: spectral slope [dimensionless], default: 6.92
+        lambda_0: reference wavelength for normalization [nm], default: 412
+        K: constant offset [m-1], default: 0
+
+    Returns:
+        a_Y: spectral absorption coefficient of CDOM or yellow substances [m-1]
     """
     
     a_Y = C_Y * (wavelengths / lambda_0)**(-S) + K
@@ -505,13 +538,19 @@ def a_Y_gauss(wavelengths=np.arange(400,800), C_Y=0, phi1=1, mu1=0, sigma1=10, p
     [1] Gege, P. (2000): Gaussian model for yellow substance absorption spectra. Proc. Ocean Optics XV conference, October 16-20, 2000, Monaco.
     [2] Göritz, A. (2018): From laboratory spectroscopy to remote sensing : Methods for the retrieval of water constituents in optically complex waters. Dissertation.
     
-    :param phi1: height of the first Gaussian peak, default: 1 
-    :param mu1: center position of the first peak, default: 0 (= standard exponential model)
-    :param sigma1: width of the first peak, default: 10
-    :param phi2: height of the second Gaussian peak, default: 1 
-    :param mu2: center position of the second peak, default: 0 (= standard exponential model)
-    :param sigma2: width of the second peak, default: 10
-    :return: spectral absorption coefficient of CDOM or yellow substances
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        C_Y: CDOM absorption scaling factor [m-1], default: 0
+        phi1: height of the first Gaussian peak [m-1], default: 1
+        mu1: center wavelength of the first peak [nm], default: 0
+        sigma1: width of the first peak [nm], default: 10
+        phi2: height of the second Gaussian peak [m-1], default: 1
+        mu2: center wavelength of the second peak [nm], default: 0
+        sigma2: width of the second peak [nm], default: 10
+        K: constant offset [m-1], default: 0
+
+    Returns:
+        a_Y: spectral absorption coefficient of CDOM or yellow substances [m-1]
     """
     return C_Y * \
            phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
@@ -532,22 +571,21 @@ def a_Y_exp_gauss(C_Y=0, wavelengths=np.arange(400,800), S=0.014, lambda_0=440, 
     [3] Gege, P. (2000): Gaussian model for yellow substance absorption spectra. Proc. Ocean Optics XV conference, October 16-20, 2000, Monaco.
     [4] Göritz, A. (2018): From laboratory spectroscopy to remote sensing : Methods for the retrieval of water constituents in optically complex waters. Dissertation.
     
-    :param C_Y: CDOM absorption coefficient at lambda_0 [1/m]
-    :param wavelengths: wavelengths to compute 
-    :param S: spectral slope, default: 0.014 [1/nm]
-    :param lambda_0: wavelength used for normalization in nm, default: 440 nm
-    :param K: Constant added to the exponential function. "What this constant represents is not clear. In some cases it is supposed to account 
-              for scattering by the dissolved component, however there is no reason to believe such scattering would be spectrally ﬂat (see Bricaud et al. 1981
-              for an in-depth discussion)" (Mobley [OceanOpticsBook], 2022).
-              "K is a constant addressing background noise and potential instrument bias (1/m)" (Grunert et al. 2018 [doi.org/10.1002/2017GB005756]).
-              , default: 0
-    :param phi1: height of the first Gaussian peak, default: 1 
-    :param mu1: center position of the first peak, default: 0 (= standard exponential model)
-    :param sigma1: width of the first peak, default: 10
-    :param phi2: height of the second Gaussian peak, default: 1 
-    :param mu2: center position of the second peak, default: 0 (= standard exponential model)
-    :param sigma2: width of the second peak, default: 10
-    :return: spectral absorption coefficient of CDOM or yellow substances
+    Args:
+        C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        S: spectral slope [nm-1], default: 0.014
+        lambda_0: reference wavelength for normalization [nm], default: 440
+        K: constant offset [m-1], default: 0
+        phi1: height of the first Gaussian peak [m-1], default: 1
+        mu1: center wavelength of the first peak [nm], default: 0
+        sigma1: width of the first peak [nm], default: 10
+        phi2: height of the second Gaussian peak [m-1], default: 1
+        mu2: center wavelength of the second peak [nm], default: 0
+        sigma2: width of the second peak [nm], default: 10
+
+    Returns:
+        a_Y: spectral absorption coefficient of CDOM or yellow substances [m-1]
     """
     return a_Y(C_Y=C_Y, wavelengths=wavelengths, S=S, lambda_0=lambda_0, K=K) + \
            phi1 * np.exp(-np.power(wavelengths - mu1, 2.) / (2 * np.power(sigma1, 2.))) + \
@@ -571,11 +609,14 @@ def a_xd_spec(wavelengths=np.arange(400,800),
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
-        A_xd (int, optional): _description_. Defaults to 0.
-        S_xd (int, optional): _description_. Defaults to 0.
-        C_xd (int, optional): Constant. Defaults to 0.
-        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        A_xd: amplitude coefficient [m2/g], default: 0
+        S_xd: spectral slope [nm-1], default: 0
+        C_xd: constant offset [m2/g], default: 0
+        lambda_0: reference wavelength [nm], default: 550
+
+    Returns:
+        a_xd_spec: generic specific absorption coefficient [m2/g]
     """
     a_xd_spec = A_xd * np.exp(-S_xd * (wavelengths - lambda_0)) + C_xd
     return a_xd_spec
@@ -592,14 +633,14 @@ def a_md_spec(wavelengths=np.arange(400,800),
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
-        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
-        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
-        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
-        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        A_md: amplitude coefficient [m2/g], default: 13.4685e-3
+        S_md: spectral slope [nm-1], default: 10.3845e-3
+        C_md: constant offset [m2/g], default: 12.1700e-3
+        lambda_0: reference wavelength [nm], default: 550
 
     Returns:
-        a_md_spec: Mass-specific absorption coefficient of minerogenic detritus [m2/g]
+        a_md_spec: mass-specific absorption coefficient of minerogenic detritus [m2/g]
     """
     a_md_spec = a_xd_spec(wavelengths=wavelengths, A_xd=A_md, S_xd=S_md, C_xd=C_md, lambda_0=lambda_0) 
     return a_md_spec
@@ -616,11 +657,11 @@ def a_bd_spec(wavelengths=np.arange(400,800),
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
-        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
-        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
-        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
-        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        A_bd: amplitude coefficient [m2/mg], default: 0.3893e-3
+        S_bd: spectral slope [nm-1], default: 15.7621e-3
+        C_bd: constant offset [m2/mg], default: 0.9994e-3
+        lambda_0: reference wavelength [nm], default: 550
 
     Returns:
         a_bd_spec: Chl-specific absorption coefficient of biogenic detritus [m2/mg]
@@ -648,22 +689,22 @@ def a_d(wavelengths=np.arange(400,800),
     [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
 
     Args:
-        wavelengths (_type_): _description_. Defaults to np.arange(400,800).
-        C_ism (_type_, optional): Concentration of inorganic suspended matter. Defaults to 1..
-        C_phy (_type_, optional): Concentration of chlorophyll a. Defaults to 1..
-        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
-        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
-        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
-        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
-        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
-        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
-        lambda_0_md (_type_, optional): _description_. Defaults to 550..
-        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
-        a_md_spec_res (list, optional): _description_. Defaults to [].
-        a_bd_spec_res (list, optional): _description_. Defaults to [].
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        C_ism: concentration of inorganic suspended matter [g/m3], default: 1.0
+        C_phy: concentration of chlorophyll a [ug/L], default: 1.0
+        A_md: amplitude coefficient for minerogenic detritus [m2/g], default: 13.4685e-3
+        A_bd: amplitude coefficient for biogenic detritus [m2/mg], default: 0.3893e-3
+        S_md: spectral slope of minerogenic detritus [nm-1], default: 10.3845e-3
+        S_bd: spectral slope of biogenic detritus [nm-1], default: 15.7621e-3
+        C_md: constant offset for minerogenic detritus [m2/g], default: 12.1700e-3
+        C_bd: constant offset for biogenic detritus [m2/mg], default: 0.9994e-3
+        lambda_0_md: reference wavelength for minerogenic detritus [nm], default: 550
+        lambda_0_bd: reference wavelength for biogenic detritus [nm], default: 550
+        a_md_spec_res: optional precomputed minerogenic detritus specific absorption; if provided, skips computation
+        a_bd_spec_res: optional precomputed biogenic detritus specific absorption; if provided, skips computation
 
     Returns:
-        a_d: Absorption coefficient of detritus [m-1].
+        a_d: absorption coefficient of detritus [m-1]
     """
     a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md) if len(a_md_spec_res)==0 else a_md_spec_res
     a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)  if len(a_bd_spec_res)==0 else a_bd_spec_res
@@ -686,20 +727,23 @@ def a_phy(C_0 = 0,
     """
     Spectral scattering coefficient of phytoplankton for a mixture of up to 6 phytoplankton classes (C_0..C_7).
     
-    :param C_0: concentration of phytoplankton type 0 [ug/L], default: 0
-    :param C_1: concentration of phytoplankton type 1 [ug/L], default: 0
-    :param C_2: concentration of phytoplankton type 2 [ug/L], default: 0
-    :param C_3: concentration of phytoplankton type 3 [ug/L], default: 0
-    :param C_4: concentration of phytoplankton type 4 [ug/L], default: 0
-    :param C_5: concentration of phytoplankton type 5 [ug/L], default: 0
-    :param C_6: concentration of phytoplankton type 6 [ug/L], default: 0
-    :param C_7: concentration of phytoplankton type 7 [ug/L], default: 0
-    :wavelengths: wavelengths to compute a_ph for [nm], default: np.arange(400,800)
-    :param b_i_spec_res: optional, preresampling b_i_spec (scattering coefficient of phytoplankton types C_0..C_7) before inversion saves a lot of time.
-    :return: spectral scattering coefficient of phytoplankton mixture
+    Args:
+        C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+        C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+        C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+        C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+        C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+        C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+        C_6: concentration of phytoplankton type 6 [ug/L], default: 0
+        C_7: concentration of phytoplankton type 7 [ug/L], default: 0
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        a_i_spec_res: optional precomputed specific absorption spectra of phytoplankton types (EnSAD); if provided, skips resampling
+
+    Returns:
+        a_phy: spectral absorption coefficient of phytoplankton mixture [m-1]
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
-   
+
     if len(a_i_spec_res)==0:
         a_i_spec = resampling.resample_a_i_spec_EnSAD(wavelengths=wavelengths)
     else:
@@ -786,7 +830,53 @@ def a_total(wavelengths=np.arange(400,800),
             a_Y_N_res=[],
             a_w_res=[],
             da_W_div_dT_res=[]):
-    
+    """
+    Total spectral absorption coefficient of a natural water body following Bi et al. (2023) [1].
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        C_0: concentration of phytoplankton type 0 [ug/L], default: 0
+        C_1: concentration of phytoplankton type 1 [ug/L], default: 0
+        C_2: concentration of phytoplankton type 2 [ug/L], default: 0
+        C_3: concentration of phytoplankton type 3 [ug/L], default: 0
+        C_4: concentration of phytoplankton type 4 [ug/L], default: 0
+        C_5: concentration of phytoplankton type 5 [ug/L], default: 0
+        C_6: concentration of phytoplankton type 6 [ug/L], default: 0
+        C_7: concentration of phytoplankton type 7 [ug/L], default: 0
+        C_Y: CDOM absorption coefficient at lambda_0_cdom [m-1], default: 0
+        C_ism: concentration of inorganic suspended matter [g/m3], default: 0
+        A_md: amplitude coefficient for minerogenic detritus specific absorption [m2/g], default: 13.4685e-3
+        A_bd: amplitude coefficient for biogenic detritus specific absorption [m2/mg], default: 0.3893e-3
+        S_md: spectral slope of minerogenic detritus [nm-1], default: 10.3845e-3
+        S_bd: spectral slope of biogenic detritus [nm-1], default: 15.7621e-3
+        S_cdom: spectral slope of CDOM absorption [nm-1], default: 0.014
+        C_md: constant offset for minerogenic detritus specific absorption [m2/g], default: 12.1700e-3
+        C_bd: constant offset for biogenic detritus specific absorption [m2/mg], default: 0.9994e-3
+        K: constant offset of CDOM exponential function [m-1], default: 0
+        lambda_0_cdom: reference wavelength for CDOM normalization [nm], default: 440
+        lambda_0_md: reference wavelength for minerogenic detritus [nm], default: 550
+        lambda_0_bd: reference wavelength for biogenic detritus [nm], default: 550
+        lambda_0_phy: reference wavelength for phytoplankton packaging correction [nm], default: 676
+        A: scale factor for phytoplankton packaging correction, default: 0.0237
+        E0: power exponent for C_phy <= 1, default: 1.0
+        E1: power exponent for C_phy > 1, default: 0.8987
+        interpolate: if True, interpolate a_ph at lambda_0_phy; if False, use nearest band, default: True
+        T_W: actual water temperature [degrees C], default: 20
+        T_W_0: reference temperature [degrees C], default: 20
+        a_d_res: optional precomputed detritus absorption; if provided, skips computation
+        a_md_spec_res: optional precomputed minerogenic detritus specific absorption; if provided, skips computation
+        a_bd_spec_res: optional precomputed biogenic detritus specific absorption; if provided, skips computation
+        a_i_spec_res: optional precomputed specific absorption spectra of phytoplankton types; if provided, skips resampling
+        a_phy_res: optional precomputed phytoplankton absorption; if provided, skips computation
+        a_Y_N_res: optional precomputed normalized CDOM absorption; if provided, skips computation
+        a_w_res: optional precomputed pure water absorption; if provided, skips resampling
+        da_W_div_dT_res: optional precomputed temperature gradient; if provided, skips resampling
+
+    Returns:
+        a: total spectral absorption coefficient of a natural water body [m-1]
+    """
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
     if len(a_d_res)==0:

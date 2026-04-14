@@ -44,9 +44,12 @@ def ndi(band1, band2):
     """
     Normalized Difference Index (NDI)
 
-    :param band1: first band
-    :param band2: second band
-    :return: NDI
+    Args:
+        band1: first band value
+        band2: second band value
+
+    Returns:
+        NDI: normalized difference index [dimensionless]
     """
     return (band1 - band2) / (band1 + band2)
 
