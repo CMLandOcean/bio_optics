@@ -80,7 +80,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
             lambda_0 = 440,
             lambda_S = 400,
             S = 0.015,
-            b_bMie_spec = 1,        # must be 1 so C_Mie can represent X
+            bb_Mie_spec = 1,        # must be 1 so C_Mie can represent X
             n = -1,                 # should be estimated using utils.estimate_y()*(-1), varies between 0 and -2.5 [1]
             fresh = False,
             n1 = 1,
@@ -99,8 +99,8 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
     In Eq. 19 [2] b_bp' is defined as: 
         b_bp' = X * (400/wavelengths)**Y
     Where X combines the particle- backscattering coefficient, viewing-angle information, as well as sea state into one variable [2]. 
-    Almost the same formulation is used in Albert and Mobley (2003) [3] for b_bMie, thus b_bp' can be exchanged with b_bMie(lambda_S=400, n=-Y, b_bMie_spec=1). 
-    When b_bMie_spec = 1, C_Mie represents X. The exponent Y needs to be multiplied by -1 because the wavelength ratio is the opposite in [3].
+    Almost the same formulation is used in Albert and Mobley (2003) [3] for b_bMie, thus b_bp' can be exchanged with b_bMie(lambda_S=400, n=-Y, bb_Mie_spec=1). 
+    When bb_Mie_spec = 1, C_Mie represents X. The exponent Y needs to be multiplied by -1 because the wavelength ratio is the opposite in [3].
 
     Instead of representing bottom albedo as a spectrum normalized at 560 nm and scaled with fit parameter B, we use the implementation of [3] to model bottom albedo as a mixture of
     up to 6 bottom types.
@@ -110,7 +110,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
     [3] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
 
     Args:
-        C_Mie: concentration of non-algal particles type II [mg L-1] from [3], represents particulate backscattering coefficient (plus viewing angle and sea state) at lambda_S=400 nm (X) from Eq. 19 [2] when b_bMie_spec==1, default: 0
+        C_Mie: concentration of non-algal particles type II [mg L-1] from [3], represents particulate backscattering coefficient (plus viewing angle and sea state) at lambda_S=400 nm (X) from Eq. 19 [2] when bb_Mie_spec==1, default: 0
         C_Y: CDOM absorption coefficient at lambda_0 [m-1], default: 0
         a_phy_440: phytoplankton absorption coefficient at 440 nm, default: 0
         zB: water depth [m], default: 2
@@ -129,7 +129,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
         lambda_0: reference wavelength for CDOM and NAP absorption [nm], default: 440 nm
         lambda_S: reference wavelength for scatteromg of particles type II [nm] , default: 400 nm
         S: spectral slope of CDOM absorption spectrum [nm-1], default: 0.015
-        b_bMie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] from [3] but used here to compute b_bp' and must be 1, default: 1
+        bb_Mie_spec: specific backscattering coefficient of non-algal particles type II [m2 g-1] from [3] but used here to compute b_bp' and must be 1, default: 1
         n: Angström exponent of particle type II backscattering usually called y or Y in Lee's work, should be estimated using utils.estimate_y()*(-1), default: -1
         fresh: boolean to decide if to compute bb_w for fresh or oceanic water, default: False
         n1: refractive index of origin medium, default: 1 for air
@@ -147,7 +147,7 @@ def rrs_sh(C_Mie = 0,              # represents X from Eq. 19 [2]
         rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
     """
     bs = backscattering.bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
-         backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=b_bMie_spec, lambda_S=lambda_S, n=n)
+         backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n)
     
     ab = absorption.a_w(wavelengths=wavelengths, a_w_res=a_w_res) + \
          absorption.a_Y(wavelengths=wavelengths, C_Y=C_Y, S=S, lambda_0=lambda_0) + \
@@ -204,7 +204,7 @@ def forward(params,
                                     lambda_0 = params['lambda_0'],
                                     lambda_S = params['lambda_S'],
                                     S = params['S'],
-                                    b_bMie_spec = params['b_bMie_spec'],
+                                    bb_Mie_spec = params['bb_Mie_spec'],
                                     n = params['n'],
                                     fresh = params['fresh'],
                                     n1 = params['n1'],

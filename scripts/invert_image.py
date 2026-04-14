@@ -14,7 +14,7 @@ from bio_optics.inversion import lmfit_engine as model
 from bio_optics.coupled_models import albert_mobley_3C
 from bio_optics.atmosphere import downwelling_irradiance
 
-import json
+import yaml
 import lmfit
 
 ######################################################################
@@ -23,36 +23,25 @@ import lmfit
 
 def read_params(filepath):
     """
-    Reads the params.json file and translates it into an lmfit.Parameters() object.
+    Reads a params.yaml config file and returns an lmfit.Parameters object.
 
     Args:
-        filepath: path to the params.json file
+        filepath: path to the params.yaml config file
 
     Returns:
         params: lmfit.Parameters() object
     """
-    # Read the JSON file
-    with open(filepath, 'r') as file:
-        data = json.load(file)
+    with open(filepath, 'r') as f:
+        data = yaml.safe_load(f)
 
-    # Create an lmfit.Parameters object
     params = lmfit.Parameters()
 
-    # Loop through each parameter in the JSON data and add it to the parameters object
-    for param_data in data['params']:
-        name = param_data['name']
-        value = param_data['value']
-        vary = param_data['vary']
-        
-        # Check if the min and max keys are present in the parameter data
-        if 'min' in param_data and 'max' in param_data:
-            min_val = param_data['min']
-            max_val = param_data['max']
-            
-            # Add the parameter with min, max, and vary information
-            params.add(name, value=value, min=min_val, max=max_val, vary=vary)
+    for name, p in data['params'].items():
+        value = p['value']
+        vary = p['vary']
+        if 'min' in p and 'max' in p:
+            params.add(name, value=value, min=p['min'], max=p['max'], vary=vary)
         else:
-            # Add the parameter without min, max, and vary information
             params.add(name, value=value, vary=vary)
 
     return params
@@ -124,7 +113,7 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Invert Reflectance [-] image')
     parser.add_argument('-input_file',help="Image file to invert for")
-    parser.add_argument('-params_file',help="JSON file containing the fit parameters")
+    parser.add_argument('-params_file',help="YAML config file containing the fit parameters")
     parser.add_argument('-min_wavelength',default=420,type=int,help="Minimum wavelength for inversion, default: 420")
     parser.add_argument('-max_wavelength',default=850,type=int,help="Maximum wavelength for inversion, default: 850")
     parser.add_argument('-method',default='least_squares',type=str,help="Minimization method, default: least_squares")
@@ -139,7 +128,7 @@ def main():
     if not os.path.exists(args.input_file):
         raise RuntimeError(f"Could not find file {args.input_file}")
     
-    # Test if params.json exists
+    # Test if config file exists
     if not os.path.exists(args.params_file):
         raise RuntimeError(f"Could not find file {args.params_file}")
     
@@ -150,7 +139,7 @@ def main():
         os.makedirs(output_dir)
 
     # Copy params file to output folder
-    shutil.copyfile(os.path.abspath(args.params_file), ('/').join([output_dir, 'params.json']))
+    shutil.copyfile(os.path.abspath(args.params_file), ('/').join([output_dir, os.path.basename(args.params_file)]))
 
     ######################################################################
     ########## PREPARATION ###############################################
