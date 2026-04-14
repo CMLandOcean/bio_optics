@@ -1,7 +1,7 @@
 """
 Coupled HEREON model: water-leaving Rrs + RSOA surface reflectance model.
 """
-from ..reflectance import hereon
+from ..reflectance import bi
 from ..surface import reflectance as srf
 
 
@@ -33,7 +33,7 @@ def forward(parameters,
             a_d_lambda_0_res=None,
             c_d_lambda_0_res=None):
     """
-    Forward simulation: water-leaving Rrs (hereon.forward) + RSOA power-law surface model.
+    Forward simulation: water-leaving Rrs (bi.forward) + RSOA power-law surface model.
 
     Args:
         parameters: lmfit Parameters object specifying the model configuration (must include h0, h1, lambda0 for RSOA)
@@ -67,7 +67,7 @@ def forward(parameters,
     Returns:
         Rrs_sim: above-water remote sensing reflectance [sr-1]
     """
-    Rrs_water = hereon.forward(parameters=parameters,
+    Rrs_water = bi.forward(parameters=parameters,
                                 wavelengths=wavelengths,
                                 a_res=a_res,
                                 a_md_res=a_md_res,

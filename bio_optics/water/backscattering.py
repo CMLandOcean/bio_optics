@@ -447,7 +447,7 @@ def dbb_div_dC_phy(wavelengths: np.array = np.arange(400,800),
 ################
 
 
-def bb_phy_hereon(C_0 = 0,
+def bb_phy_bi(C_0 = 0,
                   C_1 = 0,
                   C_2 = 0,
                   C_3 = 0,
@@ -672,7 +672,7 @@ def bb_total(wavelengths = np.arange(400,800),
                                       a_bd_spec_res=a_bd_spec_res)
           b_d_res = scattering.b(a_d_res, c_d_res)
         bb_d_res = bb_d(b_d_res, bb_ratio_d=bb_ratio_d)
-      bb_p_res = bb_phy_hereon(C_0=C_0, 
+      bb_p_res = bb_phy_bi(C_0=C_0,
                                C_1=C_1, 
                                C_2=C_2, 
                                C_3=C_3, 

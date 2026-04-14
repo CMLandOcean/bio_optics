@@ -217,7 +217,7 @@ def forward(parameters,
         bb_md_res = backscattering.bb_d(b_d=b_md_res, bb_ratio_d=parameters["b_ratio_md"])
 
     if len(bb_phy_res)==0:
-        bb_phy_res = backscattering.bb_phy_hereon(wavelengths=wavelengths,
+        bb_phy_res = backscattering.bb_phy_bi(wavelengths=wavelengths,
                                                   C_0=parameters["C_0"], 
                                                   C_1=parameters["C_1"], 
                                                   C_2=parameters["C_2"], 
