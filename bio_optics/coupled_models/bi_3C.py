@@ -2,7 +2,7 @@
 Coupled HEREON model: water-leaving Rrs + surface reflectance (Rrs_surf).
 """
 import numpy as np
-from ..reflectance import hereon
+from ..reflectance import bi
 from ..surface import reflectance as srf, air_water
 from ..atmosphere import sky_radiance, downwelling_irradiance
 from ..helper import resampling
@@ -46,7 +46,7 @@ def forward(parameters,
             a_d_lambda_0_res=None,
             c_d_lambda_0_res=None):
     """
-    Forward simulation: water-leaving Rrs (hereon.forward) + surface reflectance (surface_reflectance.forward).
+    Forward simulation: water-leaving Rrs (bi.forward) + surface reflectance (surface_reflectance.forward).
 
     Args:
         parameters: lmfit Parameters object specifying the model configuration
@@ -103,7 +103,7 @@ def forward(parameters,
     if len(Ls_Ed) == 0:
         Ls_Ed = np.zeros_like(wavelengths)
 
-    Rrs_water = hereon.forward(parameters=parameters,
+    Rrs_water = bi.forward(parameters=parameters,
                                 wavelengths=wavelengths,
                                 a_res=a_res,
                                 a_md_res=a_md_res,
@@ -174,5 +174,5 @@ def forward(parameters,
     if np.any(Rrs_surface < 0):
         Rrs_surface = Rrs_surface + 1
 
-    # offset was already added in hereon.forward(); subtract it so we add it only once
+    # offset was already added in bi.forward(); subtract it so we add it only once
     return Rrs_water - parameters["offset"] + Rrs_surface + parameters["offset"]
