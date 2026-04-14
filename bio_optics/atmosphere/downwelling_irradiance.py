@@ -183,9 +183,9 @@ def Ed_s(Ed_sr, Ed_sa):
     return Ed_sr + Ed_sa
 
 def Ed(Ed_d,
-        E_ds,
-        f_dd=1,
-        f_ds=1
+        Ed_s,
+        fd_d=1,
+        fd_s=1
         ):
     """
     Downwelling irradiance is split into a direct and a diffuse component [1]: 
@@ -197,4 +197,4 @@ def Ed(Ed_d,
      [1] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
     """
 
-    return f_dd * Ed_d + f_ds * E_ds
+    return fd_d * Ed_d + fd_s * Ed_s

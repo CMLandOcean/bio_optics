@@ -36,8 +36,8 @@
 # [7] König et al. (2023): WaterQuality python package (Version 1.2.0) [Software]. Available from https://github.com/CMLandOcean/WaterQuality. [10.5281/zenodo.7967294]
 
 
-def L_s(f_dd, g_dd,  Ed_d,
-        f_ds, g_dsr, Ed_sr,
+def L_s(fd_d, g_dd,  Ed_d,
+        fd_s, g_dsr, Ed_sr,
         g_dsa, Ed_sa):
     """
     Sky radiance in W/m2 nm sr [1]
@@ -52,7 +52,7 @@ def L_s(f_dd, g_dd,  Ed_d,
     :return: sky radiance in W/m2 nm sr
     
     """
-    L_s = f_dd * (g_dd  * Ed_d) + f_ds * (g_dsr * Ed_sr + g_dsa * Ed_sa)
+    L_s = fd_d * (g_dd  * Ed_d) + fd_s * (g_dsr * Ed_sr + g_dsa * Ed_sa)
     
     return L_s
 

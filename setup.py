@@ -5,10 +5,10 @@ with open('README.md', 'r') as f:
 
 setup(
     name='bio_optics',
-    version='0.0.1',
+    version='0.0.2',
     description='Bio-optical modelling for spectroscopy applications.',
     author='Marcel König',
-    author_email='mkoenig3@asu.edu',
+    author_email='marcel.koenig@brockmann-consult.de',
     url = 'https://github.com/CMLandOcean/bio_optics',
     keywords=['water', 'optics', 'bio-optical modelling', 'spectroscopy'],
     long_description=long_description,
