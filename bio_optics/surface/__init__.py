@@ -1,3 +1,3 @@
-__all__ = ["surface","air_water"]
+__all__ = ["reflectance", "air_water", "glint_estimation"]
 
-from . import surface, air_water
+from . import reflectance, air_water, glint_estimation

@@ -41,7 +41,6 @@ import numpy as np
 import pandas as pd
 from spectral import BandResampler
 from scipy.interpolate import interp1d
-from .. water import backscattering
 
 
 # get absolute path to data folder
@@ -181,8 +180,8 @@ def resample_bb_w(wavelengths = np.arange(400,800),
     :param fresh:  boolean to decide if backscattering coefficient is to be computed for fresh (True, default) or oceanic water (False) with a salinity of 35-38 per mille. Values are only valid of lambda_0==500 nm.
     :return: spectral backscattering coefficient of water for input wavelengths
     """
+    from ..water import backscattering
     bb_w = backscattering.morel(wavelengths=wavelengths, fresh=fresh)
-    
     return bb_w
 
 

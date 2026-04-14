@@ -1,8 +1,9 @@
-__all__ = ["absorption", 
-           "adjacency_effect",
-           "downwelling_irradiance", 
-           "ET_solar_irradiance", 
+__all__ = ["absorption",
+           "adjacency",
+           "downwelling_irradiance",
+           "ET_solar_irradiance",
+           "scattering",
            "sky_radiance",
            "transmittance"]
 
-from . import absorption, adjacency_effect, downwelling_irradiance, ET_solar_irradiance, sky_radiance, transmittance
+from . import absorption, adjacency, downwelling_irradiance, ET_solar_irradiance, scattering, sky_radiance, transmittance

@@ -1,0 +1,106 @@
+import numpy as np
+from ..water import absorption, backscattering, bottom_reflectance
+from . import hope
+from ..surface import air_water
+from ..helper import resampling, utils
+
+
+def rrs_sh(C_Mie=0,
+           C_Y=0,
+           zB=2,
+           f_0=0,
+           f_1=1,
+           f_2=0,
+           f_3=0,
+           f_4=0,
+           f_5=0,
+           B_0=1/np.pi,
+           B_1=1/np.pi,
+           B_2=1/np.pi,
+           B_3=1/np.pi,
+           B_4=1/np.pi,
+           B_5=1/np.pi,
+           lambda_0=440,
+           lambda_S=555,
+           S=0.015,
+           bb_Mie_spec=1,
+           n=-1,
+           fresh=False,
+           q=0.75,
+           g_0=0.089,
+           g_1=0.125,
+           wavelengths=np.arange(400, 800),
+           a_w_res=[],
+           bb_w_res=[],
+           R_b_i_res=[]):
+    """
+    Shallow water bio-optical properties (SBOP) model after Li et al. (2017) [1].
+
+    [1] Li et al. (2017): Remote sensing estimation of colored dissolved organic matter (CDOM) in optically shallow waters [10.1016/j.isprsjprs.2017.03.015]
+    [2] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2 Deriving bottom depths and water properties by optimization [10.1364/ao.38.003831]
+    [3] Albert & Mobley (2003): An analytical model for subsurface irradiance and remote sensing reflectance in deep and shallow case-2 waters. [10.1364/OE.11.002873]
+
+    Returns:
+        rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
+    """
+    bs = backscattering.bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
+         backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n)
+
+    ab = absorption.a_w(wavelengths=wavelengths, a_w_res=a_w_res) + \
+         absorption.a_Y(wavelengths=wavelengths, C_Y=C_Y, S=S, lambda_0=lambda_0) + \
+         q * backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n)
+
+    kappa = ab + bs
+    u = bs / kappa
+
+    rrs_sh = hope.rrs_dp(u, g_0=g_0, g_1=g_1) * (1 - np.exp(-hope.D_u_C(u, f1=1, f2=2.4) * kappa * zB)) + \
+             bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5,
+                                      B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5,
+                                      wavelengths=wavelengths, R_b_i_res=R_b_i_res) * \
+             np.exp(-hope.D_u_B(u, f1=1, f2=5.5) * kappa * zB)
+
+    return rrs_sh
+
+
+def forward(params,
+            wavelengths,
+            a_w_res=[],
+            bb_w_res=[],
+            R_b_i_res=[]):
+    """
+    Forward simulation returning water-leaving Rrs (above water, no surface term).
+
+    Returns:
+        Rrs_sim: simulated water-leaving remote sensing reflectance [sr-1]
+    """
+    Rrs_sim = air_water.below2above(
+        rrs_sh(wavelengths=wavelengths,
+               C_Mie=params['C_Mie'],
+               C_Y=params['C_Y'],
+               zB=params['zB'],
+               f_0=params['f_0'],
+               f_1=params['f_1'],
+               f_2=params['f_2'],
+               f_3=params['f_3'],
+               f_4=params['f_4'],
+               f_5=params['f_5'],
+               B_0=params['B_0'],
+               B_1=params['B_1'],
+               B_2=params['B_2'],
+               B_3=params['B_3'],
+               B_4=params['B_4'],
+               B_5=params['B_5'],
+               lambda_0=params['lambda_0'],
+               lambda_S=params['lambda_S'],
+               S=params['S'],
+               bb_Mie_spec=params['bb_Mie_spec'],
+               n=params['n'],
+               fresh=params['fresh'],
+               q=params['q'],
+               g_0=params['g_0'],
+               g_1=params['g_1'],
+               a_w_res=a_w_res,
+               bb_w_res=bb_w_res,
+               R_b_i_res=R_b_i_res) + params['offset'])
+
+    return Rrs_sim

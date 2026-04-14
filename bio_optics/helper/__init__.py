@@ -1,7 +1,6 @@
 __all__ = ["distance",
            "indices",
            "normalization",
-           "opshal",
            "outlier",
            "owt",
            "plotting",
@@ -10,4 +9,4 @@ __all__ = ["distance",
            "utils"
            ]
 
-from . import distance, indices, normalization, opshal, outlier, owt, plotting, resampling, spectral_mixture, utils     
+from . import distance, indices, normalization, outlier, owt, plotting, resampling, spectral_mixture, utils
