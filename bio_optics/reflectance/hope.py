@@ -11,12 +11,12 @@ def D_u_C(u, f1=1.03, f2=2.4):
     [1] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2 Deriving bottom depths and water properties by optimization [10.1364/ao.38.003831]
 
     Args:
-        u (_type_): _description_
-        f1 (float, optional): Factor 1. Defaults to 1.03.
-        f2 (float, optional): Factor 2. Defaults to 2.4.
+        u: single scattering albedo bb / (a + bb) [dimensionless]
+        f1 (float, optional): empirical constant, default: 1.03
+        f2 (float, optional): empirical constant, default: 2.4
 
     Returns:
-        D_u_C: Path elongation factor for water body.
+        D_u_C: path elongation factor for photons scattered in the water body [dimensionless]
     """
     D_u_C = f1 * (1 + f2 * u)**0.5
 
@@ -30,12 +30,12 @@ def D_u_B(u, f1=1.04, f2=5.4):
     [1] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2 Deriving bottom depths and water properties by optimization [10.1364/ao.38.003831]
 
     Args:
-        u (_type_): _description_
-        f1 (float, optional): Factor 1. Defaults to 1.04.
-        f2 (float, optional): Factor 2. Defaults to 5.4.
+        u: single scattering albedo bb / (a + bb) [dimensionless]
+        f1 (float, optional): empirical constant, default: 1.04
+        f2 (float, optional): empirical constant, default: 5.4
 
     Returns:
-        D_u_B: Path enlongation factor for benthos
+        D_u_B: path elongation factor for photons scattered from the bottom [dimensionless]
     """
     D_u_B = f1 * (1 + f2 * u)**0.5
 
@@ -49,12 +49,12 @@ def rrs_dp(u, g_0=0.084, g_1=0.170):
     [1] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2 Deriving bottom depths and water properties by optimization [10.1364/ao.38.003831]
 
     Args:
-        u (_type_): b_b / (a + b_b)
-        g_0 (float, optional): Defaults to 0.084 [sr-1].
-        g_1 (float, optional): Defaults to 0.17 [sr-1].
+        u: single scattering albedo bb / (a + bb) [dimensionless]
+        g_0 (float, optional): empirical constant [sr-1], default: 0.084
+        g_1 (float, optional): empirical constant [sr-1], default: 0.17
 
     Returns:
-        Rrs_dp: Subsurface radiance reflectance [sr-1] for optically deep water
+        rrs_dp: subsurface radiance reflectance of optically deep water [sr-1]
     """
     rrs_dp = (g_0 + g_1 * u) * u
 
@@ -172,13 +172,16 @@ def forward(params,
     """
     Forward simulation of a shallow water remote sensing reflectance spectrum based on the provided parameterization.
     
-    :param params: lmfit Parameters object containing all Parameter objects that are required to specify the model
-    :param wavelengths: wavelengths of Rrs bands [nm]
-    :param a_w_res: optional, absorption of pure water resampled to sensor's band settings. Will be computed within function if not provided.
-    :param A_res: optional, parameters for the empirical a_Phi(lambda) simulation resampled to sensor's band settings. Will be computed within function if not provided.
-    :param bb_w_res: optional, precomputing bb_w bb_w saves a lot of time . Will be computed within function if not provided.
-    :param R_i_b_res: optional, preresampling R_i_b saves a lot of time. Will be computed within function if not provided.
-    :return: Rrs: simulated remote sensing reflectance spectrum [sr-1]
+    Args:
+        params: lmfit Parameters object specifying the model configuration
+        wavelengths: wavelengths [nm]
+        a_w_res: optional precomputed pure water absorption [m-1]
+        A_res: optional precomputed empirical phytoplankton absorption parameters
+        bb_w_res: optional precomputed water backscattering coefficient [m-1]
+        R_i_b_res: optional precomputed bottom reflectance spectra
+
+    Returns:
+        Rrs_sim: simulated above-water remote sensing reflectance [sr-1]
     """
     Rrs_sim = air_water.below2above(
                             rrs_sh(wavelengths = wavelengths,
