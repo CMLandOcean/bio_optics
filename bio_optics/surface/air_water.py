@@ -100,18 +100,42 @@ def snell(theta_inc, n1=1, n2=1.33):
     return np.arcsin(n1 / n2 * np.sin(theta_inc))
 
 
-def fresnel(theta_inc, n1=1, n2=1.33):
+def fresnel(theta_inc, n1=1, n2=1.33, method="cos"):
     """
     Fresnel reflectance for unpolarized incoming light for a horizontally flat air-water interface.
+
+    Two equivalent formulations are available via `method`:
+
+    ``"cos"`` (default) — cosine form, numerically stable at normal incidence
+    (theta_inc = 0) where the sin/tan form produces 0/0::
+
+        rs = ((n1 cos θ_i − n2 cos θ_t) / (n1 cos θ_i + n2 cos θ_t))²
+        rp = ((n2 cos θ_i − n1 cos θ_t) / (n2 cos θ_i + n1 cos θ_t))²
+
+    ``"sin_tan"`` — classical textbook form, identical to the cos form for
+    theta_inc > 0 but returns nan at theta_inc = 0::
+
+        rs = (sin(θ_i − θ_t) / sin(θ_i + θ_t))²
+        rp = (tan(θ_i − θ_t) / tan(θ_i + θ_t))²
 
     Args:
         theta_inc: incident angle [radians]
         n1: refractive index of origin medium, default: 1 for air
         n2: refractive index of destination medium, default: 1.33 for water
+        method: ``"cos"`` (default) or ``"sin_tan"``
 
     Returns:
         rho_F: Fresnel reflectance for unpolarized incoming light [dimensionless]
     """
-    theta_inc_w = snell(theta_inc, n1, n2)
-
-    return (((np.sin(theta_inc - theta_inc_w)**2) / (np.sin(theta_inc + theta_inc_w)**2)) + ((np.tan(theta_inc - theta_inc_w)**2) / (np.tan(theta_inc + theta_inc_w)**2))) / 2
+    theta_w = snell(theta_inc, n1, n2)
+    if method == "cos":
+        cos_i = np.cos(theta_inc)
+        cos_w = np.cos(theta_w)
+        rs = ((n1 * cos_i - n2 * cos_w) / (n1 * cos_i + n2 * cos_w)) ** 2
+        rp = ((n2 * cos_i - n1 * cos_w) / (n2 * cos_i + n1 * cos_w)) ** 2
+    elif method == "sin_tan":
+        rs = (np.sin(theta_inc - theta_w) / np.sin(theta_inc + theta_w)) ** 2
+        rp = (np.tan(theta_inc - theta_w) / np.tan(theta_inc + theta_w)) ** 2
+    else:
+        raise ValueError(f"method must be 'cos' or 'sin_tan', got {method!r}")
+    return (rs + rp) / 2
