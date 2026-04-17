@@ -302,30 +302,44 @@ def posterior_sigma_physical(S_hat: jnp.ndarray,
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _build_S_eps_inv(noise, n_obs: int) -> jnp.ndarray:
+def _build_S_eps_inv(noise, n_obs: int, weights=None) -> jnp.ndarray:
     """
-    Build the inverse noise covariance matrix from various input forms.
+    Build the inverse noise covariance matrix from various input forms,
+    optionally scaled by per-band weights.
 
     Args:
-        noise: measurement uncertainty in one of three forms —
-               * scalar float: uniform noise std across all bands →
-                 diagonal S_eps with constant variance
-               * 1-D array of length n_obs: per-band noise std →
-                 diagonal S_eps
-               * 2-D array of shape (n_obs, n_obs): full noise covariance
-                 matrix, **already inverted** — returned as-is
-        n_obs: number of observation bands
+        noise:   measurement uncertainty in one of three forms —
+                 * scalar float: uniform noise std across all bands →
+                   diagonal S_eps with constant variance
+                 * 1-D array of length n_obs: per-band noise std →
+                   diagonal S_eps
+                 * 2-D array of shape (n_obs, n_obs): full noise covariance
+                   matrix, **already inverted** — returned as-is (weights
+                   are ignored in this case; apply them manually beforehand)
+        n_obs:   number of observation bands
+        weights: optional per-band weight array, shape (n_obs,).  Each weight
+                 w[k] multiplies the effective precision of band k:
+                 S_eps_inv[k,k] = w[k]² / noise[k]².  A weight of 1.0 leaves
+                 the band unchanged; 2.0 doubles its influence on the retrieval;
+                 values near 0.0 effectively mask the band.  None (default)
+                 applies uniform weight 1.0 to all bands.
 
     Returns:
         S_eps_inv: inverse noise covariance, shape (n_obs, n_obs)
     """
     noise = jnp.asarray(noise, dtype=jnp.float64)
     if noise.ndim == 0:
-        return jnp.eye(n_obs) / noise ** 2
+        S_eps_inv = jnp.eye(n_obs) / noise ** 2
     elif noise.ndim == 1:
-        return jnp.diag(1.0 / noise ** 2)
+        S_eps_inv = jnp.diag(1.0 / noise ** 2)
     else:
-        return noise  # caller supplied pre-inverted full matrix
+        return noise  # pre-inverted full matrix — weights not applied
+
+    if weights is not None:
+        w = jnp.asarray(weights, dtype=jnp.float64)
+        S_eps_inv = S_eps_inv * jnp.outer(w, w)
+
+    return S_eps_inv
 
 
 def _build_f_vec_fit(f_vec: Callable,
@@ -386,7 +400,8 @@ def solve(f_vec: Callable,
           x_a: jnp.ndarray,
           S_a_inv: jnp.ndarray,
           n_iter: int = 10,
-          lm_damping: float = 0.0) -> OEResult:
+          lm_damping: float = 0.0,
+          weights=None) -> OEResult:
     """
     Gauss-Newton Optimal Estimation solver (Rodgers 2000, Ch. 5).
 
@@ -440,13 +455,22 @@ def solve(f_vec: Callable,
                     (H_damp = H + lm_damping * diag(H)).  Default 0 (pure
                     Gauss-Newton).  Use 0.1 if the solver diverges or produces
                     NaN pixels; log-transforms often make this unnecessary.
+        weights:    optional per-band weight array, shape (n_obs,).  Scales
+                    the effective precision of each spectral band:
+                    S_eps_inv[k,k] *= w[k]².  Use to emphasise diagnostic
+                    spectral features (e.g. the phycocyanin band at 625 nm)
+                    or to down-weight / mask unreliable bands.  A weight of
+                    1.0 is neutral; 2.0 doubles the band's influence; ~0.0
+                    effectively ignores the band.  Default None (all weights
+                    = 1.0).  See also ``build_inversion()`` which stores
+                    weights in ``InversionSetup`` for batch use.
 
     Returns:
         OEResult namedtuple with fields x_hat, S_hat, A, dfs, chi2, J, y_hat.
         All arrays are in retrieval space; see OEResult docstring.
     """
     n_obs = y_obs.shape[0]
-    S_eps_inv = _build_S_eps_inv(noise, n_obs)
+    S_eps_inv = _build_S_eps_inv(noise, n_obs, weights)
 
     x = x0
     for _ in range(n_iter):
@@ -513,19 +537,24 @@ class InversionSetup(NamedTuple):
                    log-transformed parameters, 0.0 for linear parameters.
                    Pass to to_physical() and posterior_sigma_physical() when
                    interpreting results.
+        weights:   optional per-band weight array, shape (n_obs,), or None.
+                   Stored here so invert_pixels() can pass it to solve()
+                   without the caller having to supply it separately.
     """
     f_fit:     Callable
     fit_names: List[str]
     x_a:       jnp.ndarray
     S_a_inv:   jnp.ndarray
     log_mask:  jnp.ndarray
+    weights:   Optional[jnp.ndarray]
 
 
 def build_inversion(params,
                     f_vec: Callable,
                     sigma_a: dict,
                     fixed_params: dict = None,
-                    log_params: list = None) -> InversionSetup:
+                    log_params: list = None,
+                    weights=None) -> InversionSetup:
     """
     Build a projected forward function and prior arrays ready for invert_pixels().
 
@@ -584,13 +613,17 @@ def build_inversion(params,
         log_params:   optional list of parameter names to retrieve in
                       log-space.  Those parameters must be strictly positive
                       (x_a > 0).  The transform is applied transparently
-                      inside f_fit; sigma_a is still given in physical units.
-                      Default None (all parameters retrieved in physical space,
-                      identical to the pre-log-transform behaviour).
+                      inside f_fit; sigma_a for those params should be a
+                      relative (fractional) uncertainty (see module docstring).
+                      Default None (all parameters retrieved in physical space).
+        weights:      optional per-band weight array, shape (n_obs,).  Stored
+                      in the returned InversionSetup and forwarded to solve()
+                      by invert_pixels().  See solve() for semantics.
+                      Default None (uniform weights).
 
     Returns:
         InversionSetup namedtuple with fields:
-            f_fit, fit_names, x_a, S_a_inv, log_mask.
+            f_fit, fit_names, x_a, S_a_inv, log_mask, weights.
         All array fields are in retrieval space; see InversionSetup docstring.
 
     Raises:
@@ -644,12 +677,15 @@ def build_inversion(params,
     # Projected forward function: accepts retrieval-space x_fit, returns Rrs
     f_fit = _build_f_vec_fit(f_vec, all_names, fit_idx, fixed_vals, log_mask)
 
+    weights_arr = jnp.asarray(weights, dtype=jnp.float64) if weights is not None else None
+
     return InversionSetup(
         f_fit=f_fit,
         fit_names=fit_names,
         x_a=x_a,
         S_a_inv=S_a_inv,
         log_mask=log_mask,
+        weights=weights_arr,
     )
 
 
@@ -664,6 +700,7 @@ def invert(params,
            sigma_a: dict,
            fixed_params: dict = None,
            log_params: list = None,
+           weights=None,
            n_iter: int = 10,
            lm_damping: float = 0.0):
     """
@@ -704,6 +741,8 @@ def invert(params,
         log_params:   optional list of free parameter names to retrieve in
                       log-space (lognormal prior).  Parameters must have
                       positive prior means.  Default None (all linear/Gaussian).
+        weights:      optional per-band weight array, shape (n_obs,).  See
+                      solve() for semantics.  Default None (uniform weights).
         n_iter:       Gauss-Newton iterations, passed to solve(), default 10.
         lm_damping:   LM damping factor, passed to solve(), default 0.
 
@@ -729,7 +768,8 @@ def invert(params,
     """
     setup = build_inversion(params, f_vec, sigma_a,
                             fixed_params=fixed_params,
-                            log_params=log_params)
+                            log_params=log_params,
+                            weights=weights)
 
     y_obs  = jnp.array(np.asarray(Rrs), dtype=jnp.float64)
     result = solve(setup.f_fit, y_obs, noise,
@@ -737,7 +777,8 @@ def invert(params,
                    x_a=setup.x_a,
                    S_a_inv=setup.S_a_inv,
                    n_iter=n_iter,
-                   lm_damping=lm_damping)
+                   lm_damping=lm_damping,
+                   weights=setup.weights)
 
     return result, setup.fit_names, setup.log_mask
 
@@ -753,7 +794,8 @@ def invert_pixels(f_vec: Callable,
                   S_a_inv: jnp.ndarray,
                   x0: jnp.ndarray = None,
                   n_iter: int = 10,
-                  lm_damping: float = 0.0) -> OEResult:
+                  lm_damping: float = 0.0,
+                  weights=None) -> OEResult:
     """
     Batch OE inversion over a stack of pixels via jax.vmap.
 
@@ -823,6 +865,10 @@ def invert_pixels(f_vec: Callable,
         n_iter:     Gauss-Newton iterations (static Python int), default 10.
         lm_damping: LM damping factor (see solve()), default 0.  With
                     log-transformed parameters this is often unnecessary.
+        weights:    optional per-band weight array, shape (n_obs,).  Applied
+                    identically to every pixel.  When using build_inversion(),
+                    pass ``setup.weights`` here so the weights are consistent
+                    with the inversion setup.  Default None (uniform weights).
 
     Returns:
         OEResult where every field has an extra leading pixel dimension:
@@ -857,7 +903,7 @@ def invert_pixels(f_vec: Callable,
                     if x0_arr.ndim == 1 else x0_arr)
 
     _solve_one = lambda y, x, xa, Sa: solve(f_vec, y, noise, x, xa, Sa,
-                                            n_iter, lm_damping)
+                                            n_iter, lm_damping, weights)
     return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0))(
         Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch
     )
