@@ -105,15 +105,21 @@ from .oe_engine import InversionSetup
 # ---------------------------------------------------------------------------
 # Module-level JIT-compiled invert_pixels
 # ---------------------------------------------------------------------------
-# f_fit is marked static (static_argnums=0) so JAX retraces only when the
-# forward function changes, not for every tile.  n_iter and lm_damping are
-# plain Python int/float values that are also specialised at trace time
-# (different values produce different cached programs).
+# f_fit      — static (static_argnums=0): JAX retraces only when the forward
+#              function changes, not for every tile.
+# n_iter     — static (static_argnames): used in range(n_iter), which is a
+#              Python for-loop unrolled at trace time; must be a concrete int.
+# lm_damping — static (static_argnames): used in `if lm_damping > 0.0`, a
+#              Python branch that must be resolved at trace time.
 # ---------------------------------------------------------------------------
 
 import jax as _jax
 
-_invert_pixels_jit = _jax.jit(oe_engine.invert_pixels, static_argnums=(0,))
+_invert_pixels_jit = _jax.jit(
+    oe_engine.invert_pixels,
+    static_argnums=(0,),
+    static_argnames=('n_iter', 'lm_damping'),
+)
 
 
 # ---------------------------------------------------------------------------
