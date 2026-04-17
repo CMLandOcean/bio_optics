@@ -13,15 +13,19 @@ References:
 
 Prior specification
 -------------------
-All priors are specified in **physical units** (mg/m³, m, …) via the
-``sigma_a`` dict.  For parameters that are retrieved in log-space (see
-``log_params`` below), the engine converts automatically using the delta
-method:
+``sigma_a`` is always specified in **retrieval space**:
 
-    σ_log ≈ σ_physical / x_a        (valid when σ / x_a ≲ 1)
+- For **linear parameters** (not in ``log_params``): retrieval space = physical
+  space, so ``sigma_a`` is a physical standard deviation (mg/m³, m, …).
+- For **log-transformed parameters** (listed in ``log_params``): retrieval space
+  is log-space, so ``sigma_a`` is a **relative (fractional) uncertainty**
+  (dimensionless).  A value of 0.5 means ±50% relative uncertainty; ln(2) ≈ 0.69
+  corresponds to a factor-of-two uncertainty either way.
 
-This keeps the API consistent: a user always supplies physical standard
-deviations regardless of whether a parameter is log-transformed.
+This is mathematically exact (no approximation) and consistent: ``sigma_a``
+always describes the prior width in the space that the solver actually operates
+in.  Use ``sigma_to_relative()`` to convert physical standard deviations to
+relative ones when ``log_params`` is non-empty.
 
 Log-transform support
 ---------------------
@@ -71,8 +75,13 @@ Typical two-step usage (with log-transform)::
     x_phys2 = oe_engine.to_physical(result2.x_hat, lm2)
 
     # --- batch inversion (image) -------------------------------------------
+    # sigma_a for log-params is relative (fractional) uncertainty:
+    #   use sigma_to_relative() to convert from physical units if needed
+    sigma_a_tight_rel = oe_engine.sigma_to_relative(
+        sigma_a_tight, params_w, log_params=['C_0', 'C_Y', 'C_Mie', 'zB']
+    )
     setup = oe_engine.build_inversion(
-        params_w, f_vec_w, sigma_a_tight,
+        params_w, f_vec_w, sigma_a_tight_rel,
         log_params=['C_0', 'C_Y', 'C_Mie', 'zB'],
     )
     results = jax.jit(oe_engine.invert_pixels)(
@@ -175,6 +184,76 @@ def to_physical(x_retrieval: jnp.ndarray,
         # element-wise: x_phys[i] = exp(x_hat[i]) if log_mask[i] else x_hat[i]
     """
     return jnp.where(log_mask > 0.5, jnp.exp(x_retrieval), x_retrieval)
+
+
+def sigma_to_relative(sigma_a: dict,
+                      params,
+                      log_params: list = None) -> dict:
+    """
+    Convert physical-unit sigma_a values to relative (retrieval-space) sigma.
+
+    For parameters listed in ``log_params``, the physical standard deviation
+    is divided by the prior mean (``params[name].value``) to give the
+    fractional uncertainty used in log-space:
+
+        σ_relative = σ_physical / x_a
+
+    For linear parameters (not in ``log_params``) the value is passed through
+    unchanged because retrieval space equals physical space for those params.
+
+    This is a convenience function for users who think in physical units.
+    The result can be passed directly as ``sigma_a`` to ``build_inversion()``
+    or ``invert()``.
+
+    Args:
+        sigma_a:    dict {param_name: sigma} with physical standard deviations
+                    for all parameters (log-transformed and linear alike).
+        params:     lmfit Parameters object (or plain dict {name: value})
+                    providing the prior means (x_a) used in the conversion.
+                    Only the values of log-transformed parameters are accessed.
+        log_params: list of parameter names that will be log-transformed.
+                    Default None (no conversion, returns sigma_a unchanged).
+
+    Returns:
+        dict with the same keys as sigma_a.  Values for parameters in
+        log_params are divided by their prior mean; all other values are
+        unchanged.
+
+    Raises:
+        ValueError: if a log-param has a non-positive prior mean.
+
+    Example::
+
+        # Think in physical units:
+        sigma_a_phys = {'C_0': 1.0, 'C_Y': 0.1, 'C_Mie': 0.5, 'zB': 2.5}
+        # x_a from params: C_0=2.0, C_Y=0.2, C_Mie=1.0, zB=5.0
+        sigma_a = oe_engine.sigma_to_relative(
+            sigma_a_phys, params, log_params=['C_0', 'C_Y', 'C_Mie', 'zB']
+        )
+        # → {'C_0': 0.5, 'C_Y': 0.5, 'C_Mie': 0.5, 'zB': 0.5}
+        #   (all 50% relative uncertainty — coincidence in this example)
+
+        setup = oe_engine.build_inversion(
+            params, f_vec, sigma_a, log_params=['C_0', 'C_Y', 'C_Mie', 'zB']
+        )
+    """
+    log_set = set(log_params or [])
+    result = {}
+    for name, sig in sigma_a.items():
+        if name in log_set:
+            try:
+                x_a = float(params[name].value)
+            except AttributeError:
+                x_a = float(params[name])
+            if x_a <= 0:
+                raise ValueError(
+                    f"sigma_to_relative: log-param '{name}' has non-positive "
+                    f"prior mean ({x_a}). Log-transform requires x_a > 0."
+                )
+            result[name] = sig / x_a
+        else:
+            result[name] = sig
+    return result
 
 
 def posterior_sigma_physical(S_hat: jnp.ndarray,
@@ -427,7 +506,8 @@ class InversionSetup(NamedTuple):
                    For linear params: physical prior mean.
         S_a_inv:   diagonal inverse prior covariance in retrieval space,
                    shape (n_fit, n_fit).
-                   For log-params: 1 / σ_log² where σ_log ≈ σ_physical / x_a.
+                   For log-params: 1 / σ_rel² where σ_rel is the fractional
+                   uncertainty supplied via sigma_a (e.g. 0.5 = ±50%).
                    For linear params: 1 / σ_physical².
         log_mask:  binary mask, shape (n_fit,).  Entry is 1.0 for
                    log-transformed parameters, 0.0 for linear parameters.
@@ -456,20 +536,17 @@ def build_inversion(params,
 
     Prior specification
     ~~~~~~~~~~~~~~~~~~~
-    ``sigma_a`` is always specified in **physical units** (the same units as
-    the parameters themselves).  For log-transformed parameters (those listed
-    in ``log_params``), the conversion to log-space is done automatically
-    using the delta method:
+    ``sigma_a`` is always in **retrieval space**:
 
-        σ_log ≈ σ_physical / x_a
+    - For **linear parameters**: retrieval space = physical space, so
+      ``sigma_a[name]`` is a physical standard deviation (mg/m³, m, …).
+    - For **log-transformed parameters** (in ``log_params``): retrieval space
+      is log-space, so ``sigma_a[name]`` is a **relative (fractional)
+      uncertainty** (dimensionless).  For example, 0.5 = ±50% relative
+      uncertainty; ln(2) ≈ 0.69 = factor-of-two uncertainty.
 
-    This means that the width of the prior in log-space equals the **relative
-    uncertainty** in physical space (e.g., σ_physical = 1.0, x_a = 2.0 gives
-    σ_log = 0.5, i.e., ±50% relative uncertainty).
-
-    The prior mean in log-space is set to ln(params[name].value), so
-    ``params[name].value`` should be a reasonable starting guess in physical
-    units for both linear and log-transformed parameters.
+    Use ``sigma_to_relative()`` to convert physical standard deviations to
+    relative ones before calling this function.
 
     Typical usage::
 
@@ -550,10 +627,10 @@ def build_inversion(params,
                     f"log_params parameter '{n}' has non-positive prior mean "
                     f"({val}).  Log-transform requires strictly positive values."
                 )
-            # Convert to log-space: x_a_log = ln(x_a_phys)
-            #                       σ_log   ≈ σ_phys / x_a_phys  (delta method)
+            # x_a in log-space = ln(physical prior mean)
+            # sigma_a is already in retrieval space (relative / fractional)
             x_a_list.append(np.log(val))
-            sigma_ret_list.append(sig / val)
+            sigma_ret_list.append(sig)
             log_mask_list.append(1.0)
         else:
             x_a_list.append(val)
@@ -604,8 +681,9 @@ def invert(params,
     Prior specification
     ~~~~~~~~~~~~~~~~~~~
     See build_inversion() for details on how sigma_a and log_params interact.
-    sigma_a is always in **physical units**; the delta-method conversion to
-    log-space is applied automatically for parameters listed in log_params.
+    sigma_a is always in **retrieval space**: physical units for linear params,
+    relative (fractional) uncertainty for log-transformed params.  Use
+    ``sigma_to_relative()`` to convert from physical units when needed.
 
     Args:
         params:       lmfit Parameters object (or compatible dict with .value
