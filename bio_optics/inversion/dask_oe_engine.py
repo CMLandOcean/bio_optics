@@ -384,3 +384,81 @@ def invert_image(
         out['y_hat'] = y_hat_all
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# xarray conversion helper
+# ---------------------------------------------------------------------------
+
+def to_dataset(results: Dict[str, object],
+               spatial_dims=('y', 'x'),
+               wavelengths=None,
+               coords: dict = None):
+    """
+    Convert an ``invert_image()`` result dict to an ``xarray.Dataset``.
+
+    Parameters with a ``param`` axis (``x_hat``, ``sigma``, ``A_diag``) become
+    ``DataArray``s with a ``param`` coordinate populated from ``fit_names``.
+    ``chi2`` becomes a scalar-per-pixel ``DataArray``.  If ``y_hat`` is present
+    it gets a ``wavelength`` coordinate when ``wavelengths`` is provided.
+
+    Args:
+        results:       dict returned by ``invert_image()``.
+        spatial_dims:  names of the spatial dimensions.  Use ``('y', 'x')``
+                       for image input (default) or ``('pixel',)`` for
+                       flat (n_pixels, …) input.
+        wavelengths:   optional 1-D array of wavelengths [nm], length n_obs.
+                       Used to label the ``wavelength`` axis of ``y_hat``.
+                       If None and ``y_hat`` is present, the axis is labelled
+                       ``'band'`` with integer indices.
+        coords:        optional dict of additional coordinates to attach to
+                       every variable, e.g.
+                       ``{'y': y_arr, 'x': x_arr}`` for georeferenced data
+                       or ``{'time': t}`` for time-series outputs.
+
+    Returns:
+        xr.Dataset with variables:
+
+        ``x_hat``    — dims (*spatial_dims, 'param'), retrieved physical values
+        ``sigma``    — dims (*spatial_dims, 'param'), posterior σ in physical space
+        ``A_diag``   — dims (*spatial_dims, 'param'), averaging kernel diagonal
+        ``chi2``     — dims (*spatial_dims,),          goodness of fit
+        ``y_hat``    — dims (*spatial_dims, 'wavelength') if present
+
+    Example::
+
+        ds = dask_oe_engine.to_dataset(
+            results,
+            wavelengths=wavelengths,
+            coords={'y': y_coords, 'x': x_coords},
+        )
+        ds['x_hat'].sel(param='C_0').plot()
+        ds['chi2'].plot()
+    """
+    import xarray as xr
+
+    fit_names = results['fit_names']
+    base_coords = dict(coords or {})
+    param_coords = {**base_coords, 'param': fit_names}
+
+    def _make_da(arr, dims, da_coords):
+        return xr.DataArray(arr, dims=dims, coords=da_coords)
+
+    ds_vars = {
+        'x_hat':  _make_da(results['x_hat'],  (*spatial_dims, 'param'), param_coords),
+        'sigma':  _make_da(results['sigma'],   (*spatial_dims, 'param'), param_coords),
+        'A_diag': _make_da(results['A_diag'],  (*spatial_dims, 'param'), param_coords),
+        'chi2':   _make_da(results['chi2'],    spatial_dims,             base_coords),
+    }
+
+    if 'y_hat' in results:
+        if wavelengths is not None:
+            wl_dim = 'wavelength'
+            wl_coords = {**base_coords, 'wavelength': np.asarray(wavelengths)}
+        else:
+            wl_dim = 'band'
+            n_obs = results['y_hat'].shape[-1]
+            wl_coords = {**base_coords, 'band': np.arange(n_obs)}
+        ds_vars['y_hat'] = _make_da(results['y_hat'], (*spatial_dims, wl_dim), wl_coords)
+
+    return xr.Dataset(ds_vars)
