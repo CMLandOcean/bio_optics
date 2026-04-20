@@ -62,7 +62,9 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 import optimistix as optx
-from typing import Callable, Optional
+import dask
+import dask.array as da
+from typing import Callable, Dict, Optional
 
 from bio_optics.inversion.oe_engine import (
     OEResult,
@@ -192,9 +194,13 @@ def solve_optx(f_vec: Callable,
                               max_steps=max_steps, throw=False)
     x_hat = sol.value
 
-    # --- posterior diagnostics at solution (identical to oe_engine.solve) ---
+    # --- posterior diagnostics at solution -----------------------------------
+    # jacfwd (forward mode) costs n_fit × forward_pass vs jacrev's n_obs ×.
+    # For our problems n_fit << n_obs (e.g. 6 params vs 224 EnMAP bands),
+    # so jacfwd is the right choice here. optimistix also uses forward mode
+    # internally for its Jacobian computations.
     y_hat     = f(x_hat)
-    J         = jax.jacobian(f)(x_hat)                          # (n_obs, n_fit)
+    J         = jax.jacfwd(f)(x_hat)                            # (n_obs, n_fit)
     S_eps_inv = _build_S_eps_inv(noise, n_obs, weights)
     H         = J.T @ S_eps_inv @ J + S_a_inv
     S_hat     = jnp.linalg.inv(H)
@@ -293,3 +299,247 @@ def invert_pixels_optx(f_vec: Callable,
         return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0))(
             Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch
         )
+
+
+# ---------------------------------------------------------------------------
+# Module-level JIT cache — compiled once per process, reused across tiles.
+# max_steps / rtol / atol / use_lm are static: they affect the while_loop
+# structure and must be concrete at compile time.
+# ---------------------------------------------------------------------------
+
+_invert_pixels_optx_jit = jax.jit(
+    invert_pixels_optx,
+    static_argnums=(0,),
+    static_argnames=('max_steps', 'rtol', 'atol', 'use_lm'),
+)
+
+
+# ---------------------------------------------------------------------------
+# Tile-level function — one Dask task per tile
+# ---------------------------------------------------------------------------
+
+def invert_tile_optx(
+    Rrs_tile: np.ndarray,
+    f_fit,
+    x_a: np.ndarray,
+    S_a_inv: np.ndarray,
+    log_mask: np.ndarray,
+    noise,
+    weights: Optional[np.ndarray] = None,
+    max_steps: int = 100,
+    rtol: float = 1e-6,
+    atol: float = 1e-6,
+    use_lm: bool = False,
+    store_y_hat: bool = False,
+    aux_tile=None,
+):
+    """
+    Run optimistix OE inversion on a single pixel tile.
+
+    Drop-in replacement for ``dask_oe_engine.invert_tile()`` using
+    ``invert_pixels_optx()`` (jacfwd + lax.while_loop) instead of the
+    unrolled Gauss-Newton loop.  JAX's JIT cache is process-local:
+    the first tile call compiles; subsequent tiles reuse the XLA program.
+
+    Args:
+        Rrs_tile:  observed spectra, shape (n_pixels, n_obs).
+        f_fit:     projected forward function from ``InversionSetup.f_fit``.
+        x_a:       prior mean, shape (n_fit,) or (n_pixels, n_fit).
+        S_a_inv:   inverse prior covariance, shape (n_fit, n_fit) or
+                   (n_pixels, n_fit, n_fit).
+        log_mask:  binary log-transform mask, shape (n_fit,).
+        noise:     scalar or 1-D noise std.
+        weights:   optional per-band weights, shape (n_obs,).
+        max_steps: solver iteration cap, default 100.
+        rtol:      relative convergence tolerance, default 1e-6.
+        atol:      absolute convergence tolerance, default 1e-6.
+        use_lm:    False (default) = GaussNewton; True = LevenbergMarquardt.
+        store_y_hat: if True include simulated spectra in output.
+        aux_tile:  optional per-pixel auxiliary pytree.
+
+    Returns:
+        Tuple of NumPy arrays (x_hat_phys, sigma_phys, A_diag, chi2)
+        and optionally y_hat when store_y_hat=True.
+    """
+    Rrs_jax      = jnp.asarray(Rrs_tile, dtype=jnp.float64)
+    x_a_jax      = jnp.asarray(x_a,      dtype=jnp.float64)
+    S_a_inv_jax  = jnp.asarray(S_a_inv,  dtype=jnp.float64)
+    log_mask_jax = jnp.asarray(log_mask, dtype=jnp.float64)
+    weights_jax  = jnp.asarray(weights,  dtype=jnp.float64) if weights is not None else None
+
+    if aux_tile is not None:
+        if isinstance(aux_tile, dict):
+            aux_jax = {k: jnp.asarray(v, dtype=jnp.float64) for k, v in aux_tile.items()}
+        else:
+            aux_jax = jnp.asarray(aux_tile, dtype=jnp.float64)
+    else:
+        aux_jax = None
+
+    results = _invert_pixels_optx_jit(
+        f_fit, Rrs_jax, noise, x_a_jax, S_a_inv_jax,
+        max_steps=max_steps, rtol=rtol, atol=atol,
+        use_lm=use_lm, weights=weights_jax,
+        aux_pixels=aux_jax,
+    )
+
+    x_hat_phys = to_physical(results.x_hat, log_mask_jax)
+    sigma_phys = posterior_sigma_physical(results.S_hat, x_hat_phys, log_mask_jax)
+    A_diag     = jnp.diagonal(results.A, axis1=-2, axis2=-1)
+
+    out = (
+        np.array(x_hat_phys),
+        np.array(sigma_phys),
+        np.array(A_diag),
+        np.array(results.chi2),
+    )
+    if store_y_hat:
+        out = out + (np.array(results.y_hat),)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Image-level convenience function
+# ---------------------------------------------------------------------------
+
+def invert_image_optx(
+    Rrs,
+    setup: InversionSetup,
+    noise,
+    max_steps: int = 100,
+    rtol: float = 1e-6,
+    atol: float = 1e-6,
+    use_lm: bool = False,
+    tile_size: int = 65536,
+    store_y_hat: bool = False,
+    scheduler: str = 'synchronous',
+    x_a_image: Optional[np.ndarray] = None,
+    S_a_inv_image: Optional[np.ndarray] = None,
+    aux_image=None,
+) -> Dict[str, object]:
+    """
+    Tile-parallel OE inversion using optimistix + Dask.
+
+    Best-of-all-worlds back-end combining:
+
+    * **Dask tiling** — cache-friendly tile sizes keep working sets in L3;
+      supports distributed schedulers for multi-node use.
+    * **lax.while_loop** — the solver loop is not unrolled; XLA compiles the
+      loop body once regardless of ``max_steps``.  Compilation is dramatically
+      faster than ``dask_oe_engine`` for large problems (e.g. EnMAP).
+    * **jacfwd** — forward-mode Jacobian costs ``n_fit`` forward passes instead
+      of ``n_obs``; for hyperspectral data (n_obs=224, n_fit=6) this is ~37×
+      cheaper than the reverse-mode default in ``oe_engine``.
+    * **Convergence stopping** — easy pixels exit the loop early.
+
+    The result dict is identical to ``dask_oe_engine.invert_image()`` and
+    compatible with ``dask_oe_engine.to_dataset()``.
+
+    Args:
+        Rrs:          observed reflectance, shape (n_rows, n_cols, n_obs) or
+                      (n_pixels, n_obs).
+        setup:        ``InversionSetup`` from ``oe_engine.build_inversion()``.
+        noise:        scalar or 1-D noise std.
+        max_steps:    solver iteration cap per pixel, default 100.
+        rtol:         relative convergence tolerance, default 1e-6.
+        atol:         absolute convergence tolerance, default 1e-6.
+        use_lm:       False (default) = GaussNewton; True = LevenbergMarquardt.
+        tile_size:    pixels per Dask task, default 65536.
+        store_y_hat:  if True include simulated spectra in output.
+        scheduler:    Dask scheduler — ``'synchronous'``, ``'threads'``, or
+                      ``'distributed'``.
+        x_a_image:    optional per-pixel prior mean, shape (n_rows, n_cols, n_fit)
+                      or (n_pixels, n_fit).  Log-params must already be in log-space.
+        S_a_inv_image: optional per-pixel inverse prior covariance.
+        aux_image:    optional per-pixel auxiliary pytree (dict or array).
+
+    Returns:
+        dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``,
+        ``fit_names``, and optionally ``y_hat``.  Arrays have the same
+        leading spatial shape as ``Rrs``.
+    """
+    Rrs_arr = np.asarray(Rrs)
+
+    # Detect spatial shape and flatten to (n_pixels, n_obs)
+    if Rrs_arr.ndim == 3:
+        spatial_shape = Rrs_arr.shape[:2]
+        n_obs         = Rrs_arr.shape[2]
+    else:
+        spatial_shape = None
+        n_obs         = Rrs_arr.shape[1]
+
+    n_pixels = int(np.prod(Rrs_arr.shape[:-1]))
+    n_fit    = len(setup.fit_names)
+    Rrs_flat = Rrs_arr.reshape(n_pixels, n_obs)
+
+    x_a_np      = np.array(setup.x_a)
+    S_a_inv_np  = np.array(setup.S_a_inv)
+    log_mask_np = np.array(setup.log_mask)
+    weights_np  = np.array(setup.weights) if setup.weights is not None else None
+
+    n_spatial = len(spatial_shape) if spatial_shape is not None else 0
+
+    x_a_flat     = np.asarray(x_a_image).reshape(n_pixels, n_fit)         if x_a_image     is not None else None
+    S_a_inv_flat = np.asarray(S_a_inv_image).reshape(n_pixels, n_fit, n_fit) if S_a_inv_image is not None else None
+
+    def _flatten_leaf(a):
+        a = np.asarray(a)
+        return a.reshape(n_pixels, *a.shape[n_spatial:])
+
+    aux_flat = None
+    if aux_image is not None:
+        if isinstance(aux_image, dict):
+            aux_flat = {k: _flatten_leaf(v) for k, v in aux_image.items()}
+        else:
+            aux_flat = _flatten_leaf(aux_image)
+
+    delayed_tasks = []
+    for start in range(0, n_pixels, tile_size):
+        end  = min(start + tile_size, n_pixels)
+        tile = Rrs_flat[start:end]
+
+        tile_x_a     = x_a_flat[start:end]      if x_a_flat     is not None else x_a_np
+        tile_S_a_inv = S_a_inv_flat[start:end]   if S_a_inv_flat is not None else S_a_inv_np
+
+        if aux_flat is not None:
+            tile_aux = ({k: v[start:end] for k, v in aux_flat.items()}
+                        if isinstance(aux_flat, dict) else aux_flat[start:end])
+        else:
+            tile_aux = None
+
+        task = dask.delayed(invert_tile_optx)(
+            tile, setup.f_fit,
+            tile_x_a, tile_S_a_inv, log_mask_np,
+            noise, weights_np,
+            max_steps, rtol, atol, use_lm,
+            store_y_hat, tile_aux,
+        )
+        delayed_tasks.append(task)
+
+    tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
+
+    x_hat_all  = np.concatenate([r[0] for r in tile_results], axis=0)
+    sigma_all  = np.concatenate([r[1] for r in tile_results], axis=0)
+    A_diag_all = np.concatenate([r[2] for r in tile_results], axis=0)
+    chi2_all   = np.concatenate([r[3] for r in tile_results], axis=0)
+
+    if spatial_shape is not None:
+        x_hat_all  = x_hat_all.reshape(*spatial_shape, n_fit)
+        sigma_all  = sigma_all.reshape(*spatial_shape, n_fit)
+        A_diag_all = A_diag_all.reshape(*spatial_shape, n_fit)
+        chi2_all   = chi2_all.reshape(*spatial_shape)
+
+    out: Dict[str, object] = {
+        'x_hat':     x_hat_all,
+        'sigma':     sigma_all,
+        'A_diag':    A_diag_all,
+        'chi2':      chi2_all,
+        'fit_names': setup.fit_names,
+    }
+
+    if store_y_hat:
+        y_hat_all = np.concatenate([r[4] for r in tile_results], axis=0)
+        if spatial_shape is not None:
+            y_hat_all = y_hat_all.reshape(*spatial_shape, n_obs)
+        out['y_hat'] = y_hat_all
+
+    return out
