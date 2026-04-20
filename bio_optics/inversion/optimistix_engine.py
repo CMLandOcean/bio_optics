@@ -62,6 +62,7 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 import optimistix as optx
+import lineax as lx
 import dask
 import dask.array as da
 from typing import Callable, Dict, Optional
@@ -186,9 +187,10 @@ def solve_optx(f_vec: Callable,
         r_prior = sa_sqrt_inv  * (x - x_a)                     # (n_fit,)
         return jnp.concatenate([r_data, r_prior])               # (n_obs + n_fit,)
 
-    solver = (optx.LevenbergMarquardt(rtol=rtol, atol=atol)
+    _lin = lx.AutoLinearSolver(well_posed=False)
+    solver = (optx.LevenbergMarquardt(rtol=rtol, atol=atol, linear_solver=_lin)
               if use_lm else
-              optx.GaussNewton(rtol=rtol, atol=atol))
+              optx.GaussNewton(rtol=rtol, atol=atol, linear_solver=_lin))
 
     sol = optx.least_squares(residual_fn, solver, x0,
                               max_steps=max_steps, throw=False)
