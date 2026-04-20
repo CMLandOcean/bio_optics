@@ -1,0 +1,73 @@
+name: bio_optics
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+
+  # --- core scientific -------------------------------------------------------
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - xarray
+  - zarr
+  - netcdf4
+  - h5py
+  - dask
+  - distributed
+
+  # --- JAX (CPU; for GPU replace jaxlib with jaxlib=*=*cuda* or use pip) -----
+  - jax=0.4.35        # equinox 0.13.0 not compatible with JAX 0.7.x; pip workaround breaks conda-lock
+  - jaxlib=0.4.35
+  - equinox
+  - optimistix
+
+  # --- geospatial (pip builds are unreliable on Windows) ---------------------
+  - gdal
+  - rasterio
+  - rioxarray
+  - geopandas
+  - pyproj
+  - cartopy
+  - shapely
+  - pyresample
+
+  # --- visualization ---------------------------------------------------------
+  - cmocean
+  - seaborn
+  - plotly
+  - folium
+
+  # --- image / ML ------------------------------------------------------------
+  - scikit-image
+  - scikit-learn
+  - numba
+
+  # --- Jupyter ---------------------------------------------------------------
+  - ipykernel
+  - ipython
+  - ipywidgets
+
+  # --- cloud / IO ------------------------------------------------------------
+  - s3fs
+  - fsspec
+  - pyarrow
+
+  # --- Brockmann / xcube -----------------------------------------------------
+  - xcube
+  - xcube-sh
+
+  # --- misc ------------------------------------------------------------------
+  - pyyaml
+  - tqdm
+  - psutil
+  - pip
+
+  - pip:
+      - xarray-enmap       # requires python=3.11
+      # equinox installed via conda above
+      - lmfit
+      - pysolar
+      - spectral
+      - bio_optics         # this repo (editable install: use `pip install -e .` instead)
