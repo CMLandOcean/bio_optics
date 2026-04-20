@@ -458,18 +458,23 @@ def invert_image_optx(
         leading spatial shape as ``Rrs``.
     """
     Rrs_arr = np.asarray(Rrs)
+    spatial_shape = None
 
-    # Detect spatial shape and flatten to (n_pixels, n_obs)
     if Rrs_arr.ndim == 3:
-        spatial_shape = Rrs_arr.shape[:2]
-        n_obs         = Rrs_arr.shape[2]
+        n_rows, n_cols, n_obs = Rrs_arr.shape
+        spatial_shape = (n_rows, n_cols)
+        Rrs_flat = Rrs_arr.reshape(-1, n_obs)
+    elif Rrs_arr.ndim == 2:
+        Rrs_flat = Rrs_arr
+        n_obs    = Rrs_flat.shape[1]
     else:
-        spatial_shape = None
-        n_obs         = Rrs_arr.shape[1]
+        raise ValueError(
+            f"Rrs must be 2-D (n_pixels, n_obs) or 3-D (n_rows, n_cols, n_obs), "
+            f"got shape {Rrs_arr.shape}"
+        )
 
-    n_pixels = int(np.prod(Rrs_arr.shape[:-1]))
+    n_pixels = Rrs_flat.shape[0]
     n_fit    = len(setup.fit_names)
-    Rrs_flat = Rrs_arr.reshape(n_pixels, n_obs)
 
     x_a_np      = np.array(setup.x_a)
     S_a_inv_np  = np.array(setup.S_a_inv)
