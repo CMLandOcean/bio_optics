@@ -137,6 +137,7 @@ def invert_tile(
     n_iter: int = 10,
     lm_damping: float = 0.0,
     store_y_hat: bool = False,
+    aux_tile=None,
 ):
     """
     Run Gauss-Newton OE inversion on a single pixel tile.
@@ -154,10 +155,23 @@ def invert_tile(
         Rrs_tile:     observed spectra for this tile, shape (n_pixels, n_obs).
         f_fit:        projected forward function from ``InversionSetup.f_fit``.
                       Dask serialises this closure with cloudpickle.
-        x_a:          prior mean in retrieval space, shape (n_fit,).
-                      Pass ``np.array(setup.x_a)``.
-        S_a_inv:      inverse prior covariance, shape (n_fit, n_fit).
-                      Pass ``np.array(setup.S_a_inv)``.
+        x_a:          prior mean in retrieval space.  Two accepted shapes:
+
+                      * ``(n_fit,)`` — same prior mean for every pixel in the tile.
+                        Pass ``np.array(setup.x_a)`` for the default uniform prior.
+                      * ``(n_pixels_tile, n_fit)`` — per-pixel prior mean for the
+                        tile.  Slice from a full-image ``x_a_image`` array before
+                        passing here.  For log-params, values should already be in
+                        log-space (i.e. ``ln(depth_map)`` for a depth prior).
+
+        S_a_inv:      inverse prior covariance in retrieval space.  Two accepted
+                      shapes:
+
+                      * ``(n_fit, n_fit)`` — same prior uncertainty for every pixel.
+                        Pass ``np.array(setup.S_a_inv)`` for the default uniform case.
+                      * ``(n_pixels_tile, n_fit, n_fit)`` — per-pixel inverse prior
+                        covariance.  Use this to tighten the prior where an auxiliary
+                        map (e.g. bathymetry survey) is more reliable.
         log_mask:     binary log-transform mask, shape (n_fit,).
                       Pass ``np.array(setup.log_mask)``.
         noise:        measurement uncertainty — scalar std, 1-D per-band std
@@ -169,6 +183,17 @@ def invert_tile(
         lm_damping:   LM damping factor, default 0.
         store_y_hat:  if True include the simulated spectra in the output.
                       Default False (saves memory and return bandwidth).
+        aux_tile:     optional per-pixel auxiliary data for this tile.  Any
+                      pytree (dict or array) whose leaves have a leading
+                      dimension of n_pixels_tile.  Passed to
+                      ``invert_pixels(aux_pixels=...)`` and forwarded to
+                      ``f_fit(x, aux)`` per pixel.  Typical use: per-pixel
+                      bottom reflectance override::
+
+                          aux_tile = {'R_b_i': R_b_i_tile}   # (n_tile, n_obs, 6)
+
+                      Slice from a full-image array in ``invert_image()``
+                      rather than building manually here.  Default None.
 
     Returns:
         Tuple of NumPy arrays:
@@ -187,9 +212,19 @@ def invert_tile(
     log_mask_jax = jnp.asarray(log_mask,  dtype=jnp.float64)
     weights_jax  = jnp.asarray(weights,   dtype=jnp.float64) if weights is not None else None
 
+    # Convert aux_tile leaves to JAX float64 arrays (handles dict or plain array)
+    if aux_tile is not None:
+        if isinstance(aux_tile, dict):
+            aux_jax = {k: jnp.asarray(v, dtype=jnp.float64) for k, v in aux_tile.items()}
+        else:
+            aux_jax = jnp.asarray(aux_tile, dtype=jnp.float64)
+    else:
+        aux_jax = None
+
     results = _invert_pixels_jit(
         f_fit, Rrs_jax, noise, x_a_jax, S_a_inv_jax,
         n_iter=n_iter, lm_damping=lm_damping, weights=weights_jax,
+        aux_pixels=aux_jax,
     )
 
     x_hat_phys = oe_engine.to_physical(results.x_hat, log_mask_jax)
@@ -220,6 +255,9 @@ def invert_image(
     tile_size: int = 65536,
     store_y_hat: bool = False,
     scheduler: str = 'synchronous',
+    x_a_image: Optional[np.ndarray] = None,
+    S_a_inv_image: Optional[np.ndarray] = None,
+    aux_image=None,
 ) -> Dict[str, object]:
     """
     Tile-parallel OE inversion for a full EO image using Dask.
@@ -264,6 +302,44 @@ def invert_image(
                       ``'threads'`` — overlaps tiles using Python threads
                       (JAX releases the GIL for XLA ops).
                       ``'distributed'`` — requires a running Dask cluster.
+        x_a_image:    optional per-pixel prior mean array in **retrieval space**.
+                      Accepted shapes:
+
+                      * ``(n_pixels, n_fit)`` — when Rrs is already flat 2-D.
+                      * ``(n_rows, n_cols, n_fit)`` — when Rrs is 3-D image.
+
+                      Each pixel row overrides ``setup.x_a`` for that pixel.
+                      For log-transformed parameters (e.g. ``zB``, ``C_0``)
+                      the values must already be in log-space:
+                      ``x_a_image[..., zB_idx] = np.log(depth_map)``.
+                      If None (default), ``setup.x_a`` is broadcast uniformly.
+        S_a_inv_image: optional per-pixel inverse prior covariance in retrieval
+                      space.  Accepted shapes:
+
+                      * ``(n_pixels, n_fit, n_fit)`` or
+                      * ``(n_rows, n_cols, n_fit, n_fit)``
+
+                      Use this when your auxiliary map has spatially varying
+                      confidence (e.g. tighter zB constraint in well-surveyed
+                      shallow areas).  If None (default), ``setup.S_a_inv`` is
+                      broadcast uniformly.
+        aux_image:    optional per-pixel auxiliary data passed to the forward
+                      model as ``f_fit(x, aux)``.  Can be a dict of arrays or
+                      a single array; every leaf must share the same leading
+                      spatial shape as Rrs.  Examples:
+
+                      * Per-pixel bottom reflectance (dict)::
+
+                            R_b_i_image = ...   # (n_rows, n_cols, n_obs, 6)
+                            aux_image = {'R_b_i': R_b_i_image}
+
+                      * Any other precomputed spectral quantity can be overridden
+                        the same way (e.g. ``'a_w'``, ``'bb_w'``).
+
+                      Requires the forward function to accept a second argument
+                      ``aux``, as returned by
+                      ``albert_mobley_jax.make_forward_vec()``.
+                      If None (default) ``f_fit(x)`` is called without aux.
 
     Returns:
         dict with the following keys:
@@ -313,6 +389,44 @@ def invert_image(
         store = zarr.open('retrieval.zarr', mode='w')
         for key in ('x_hat', 'sigma', 'A_diag', 'chi2'):
             store[key] = results[key]
+
+    **Using spatial prior maps** (e.g. bathymetry for zB, CDOM climatology)::
+
+        fit_names = setup.fit_names
+        zB_idx    = fit_names.index('zB')
+        C_Y_idx   = fit_names.index('C_Y')
+
+        # Build per-pixel x_a in retrieval space (log-space for log-params)
+        x_a_image = np.tile(np.array(setup.x_a), (n_rows, n_cols, 1))
+        x_a_image[..., zB_idx] = np.log(bathymetry_map)      # log(depth [m])
+        x_a_image[..., C_Y_idx] = np.log(cdom_climatology)   # log(CDOM [1/m])
+
+        # Optionally tighten S_a for depth where the bathymetry is reliable
+        S_a_inv_image = np.tile(np.array(setup.S_a_inv), (n_rows, n_cols, 1, 1))
+        trusted_mask = (bathymetry_map < 5)   # shallow pixels — survey reliable
+        S_a_inv_image[trusted_mask, zB_idx, zB_idx] *= 4   # 2× tighter σ
+
+        results = dask_oe_engine.invert_image(
+            Rrs_image, setup, noise=0.001, n_iter=10,
+            x_a_image=x_a_image,
+            S_a_inv_image=S_a_inv_image,
+        )
+
+    **Using per-pixel bottom reflectance** (replaces per-tile manual loop)::
+
+        pre = albert_mobley_jax.precompute(wavelengths)
+        f_vec = albert_mobley_jax.make_forward_vec(all_names, pre)
+        setup = oe_engine.build_inversion(params, f_vec, sigma_a, log_params=log_params)
+
+        # Build R_b_i image: start from scene default, override first bottom type
+        R_b_i_base   = np.array(pre['R_b_i'])                      # (n_obs, 6)
+        R_b_i_image  = np.tile(R_b_i_base, (n_rows, n_cols, 1, 1)) # (n_rows, n_cols, n_obs, 6)
+        R_b_i_image[..., 0] = albedo_image                          # per-pixel measured albedo
+
+        results = dask_oe_engine.invert_image(
+            Rrs_image, setup, noise=0.001, n_iter=10,
+            aux_image={'R_b_i': R_b_i_image},
+        )
     """
     Rrs_arr = np.asarray(Rrs)
     spatial_shape = None
@@ -339,23 +453,60 @@ def invert_image(
     log_mask_np = np.array(setup.log_mask)
     weights_np  = np.array(setup.weights) if setup.weights is not None else None
 
+    # Number of leading spatial dims (2 for image, 0 for flat pixel stack)
+    n_spatial = len(spatial_shape) if spatial_shape is not None else 0
+
+    # Flatten optional per-pixel prior maps to (n_pixels, ...) if provided
+    x_a_flat      = None
+    S_a_inv_flat  = None
+    if x_a_image is not None:
+        x_a_flat = np.asarray(x_a_image).reshape(n_pixels, n_fit)
+    if S_a_inv_image is not None:
+        S_a_inv_flat = np.asarray(S_a_inv_image).reshape(n_pixels, n_fit, n_fit)
+
+    # Flatten optional per-pixel auxiliary data; keep dict structure intact
+    def _flatten_leaf(a):
+        a = np.asarray(a)
+        return a.reshape(n_pixels, *a.shape[n_spatial:])
+
+    aux_flat = None
+    if aux_image is not None:
+        if isinstance(aux_image, dict):
+            aux_flat = {k: _flatten_leaf(v) for k, v in aux_image.items()}
+        else:
+            aux_flat = _flatten_leaf(aux_image)
+
     # --- build one Dask delayed task per tile --------------------------------
     delayed_tasks = []
     for start in range(0, n_pixels, tile_size):
         end  = min(start + tile_size, n_pixels)
         tile = Rrs_flat[start:end]   # NumPy slice — no copy
 
+        # Per-tile prior: slice from image map if provided, else use uniform
+        tile_x_a     = x_a_flat[start:end]     if x_a_flat     is not None else x_a_np
+        tile_S_a_inv = S_a_inv_flat[start:end]  if S_a_inv_flat is not None else S_a_inv_np
+
+        # Per-tile aux: slice from flattened aux image if provided
+        if aux_flat is not None:
+            if isinstance(aux_flat, dict):
+                tile_aux = {k: v[start:end] for k, v in aux_flat.items()}
+            else:
+                tile_aux = aux_flat[start:end]
+        else:
+            tile_aux = None
+
         task = dask.delayed(invert_tile)(
             tile,
             setup.f_fit,
-            x_a_np,
-            S_a_inv_np,
+            tile_x_a,
+            tile_S_a_inv,
             log_mask_np,
             noise,
             weights_np,
             n_iter,
             lm_damping,
             store_y_hat,
+            tile_aux,
         )
         delayed_tasks.append(task)
 

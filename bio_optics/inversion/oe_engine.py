@@ -298,6 +298,63 @@ def posterior_sigma_physical(S_hat: jnp.ndarray,
     return sigma_phys
 
 
+def bottom_fractions(x_hat: jnp.ndarray,
+                     fit_names: list) -> Optional[jnp.ndarray]:
+    """
+    Convert ``f_mix_*`` logit parameters in x_hat to bottom type fractions.
+
+    When the softmax bottom-mixing parameterisation is used (i.e. ``f_mix_0``,
+    and optionally ``f_mix_1``, ``f_mix_2``, … are in ``fit_names``), the
+    retrieved values are unconstrained logits in retrieval space.  This helper
+    applies the inverse softmax to recover the physically interpretable fractions
+    that sum to 1.
+
+    The reference type (last entry) has a fixed logit of 0.  For example, with
+    ``f_mix_0`` only (two bottom types):
+
+    .. code-block:: python
+
+        fractions = bottom_fractions(x_hat, fit_names)
+        # fractions[..., 0]  =  sigmoid(f_mix_0)   ← fraction of type 0
+        # fractions[..., 1]  =  1 − sigmoid(f_mix_0) ← fraction of type 1 (reference)
+
+    Args:
+        x_hat:      retrieved state vector in retrieval space, shape (..., n_fit).
+                    For batch results use the array returned by
+                    ``invert_pixels()`` or ``invert_image()``.
+        fit_names:  ordered list of free parameter names, length n_fit.
+                    Typically ``setup.fit_names``.
+
+    Returns:
+        fractions:  array of shape (..., n_types) containing the bottom type
+                    fractions in [0, 1] that sum to 1.
+                    ``n_types = n_free_logits + 1`` (free params + reference).
+                    Returns ``None`` if no ``f_mix_*`` parameters are present
+                    in ``fit_names``.
+
+    Example::
+
+        # After image inversion
+        fracs = oe_engine.bottom_fractions(results['x_hat'], setup.fit_names)
+        if fracs is not None:
+            f_seagrass = fracs[..., 0]   # fraction of first bottom type
+            f_sand     = fracs[..., 1]   # fraction of reference type
+    """
+    mix_indices = [i for i, n in enumerate(fit_names) if n.startswith('f_mix_')]
+    if not mix_indices:
+        return None
+
+    # Extract free logits and append 0 for the fixed reference type
+    logits_free = x_hat[..., mix_indices]                                 # (..., n_free)
+    ref = jnp.zeros(logits_free.shape[:-1] + (1,))
+    logits = jnp.concatenate([logits_free, ref], axis=-1)                 # (..., n_types)
+
+    # Numerically stable softmax
+    logits = logits - jnp.max(logits, axis=-1, keepdims=True)
+    weights = jnp.exp(logits)
+    return weights / jnp.sum(weights, axis=-1, keepdims=True)
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -368,23 +425,26 @@ def _build_f_vec_fit(f_vec: Callable,
                      all-zero mask means no log-transforms are applied.
 
     Returns:
-        f_fit: callable f_fit(x_fit) -> y, where x_fit has shape (n_fit,).
+        f_fit: callable f_fit(x_fit, aux=None) -> y, where x_fit has shape (n_fit,).
                When log_mask is non-None, x_fit is expected in retrieval space
                (log-space for flagged parameters).
+               When aux is not None it is forwarded to f_vec as the second
+               argument: f_vec(x_all, aux).  This enables per-pixel auxiliary
+               data (e.g. bottom reflectance) to be passed through invert_pixels().
     """
     fit_indices_arr = jnp.array(fit_indices, dtype=jnp.int32)
 
     if log_mask is None or not jnp.any(log_mask > 0.5):
         # Fast path: no log-transforms, insert directly
-        def f_fit(x_fit):
+        def f_fit(x_fit, aux=None):
             x_all = fixed_vals.at[fit_indices_arr].set(x_fit)
-            return f_vec(x_all)
+            return f_vec(x_all) if aux is None else f_vec(x_all, aux)
     else:
         # General path: exp() for log-params, identity for linear params
-        def f_fit(x_fit):
+        def f_fit(x_fit, aux=None):
             x_phys = jnp.where(log_mask > 0.5, jnp.exp(x_fit), x_fit)
             x_all  = fixed_vals.at[fit_indices_arr].set(x_phys)
-            return f_vec(x_all)
+            return f_vec(x_all) if aux is None else f_vec(x_all, aux)
 
     return f_fit
 
@@ -401,7 +461,8 @@ def solve(f_vec: Callable,
           S_a_inv: jnp.ndarray,
           n_iter: int = 10,
           lm_damping: float = 0.0,
-          weights=None) -> OEResult:
+          weights=None,
+          aux=None) -> OEResult:
     """
     Gauss-Newton Optimal Estimation solver (Rodgers 2000, Ch. 5).
 
@@ -464,18 +525,30 @@ def solve(f_vec: Callable,
                     effectively ignores the band.  Default None (all weights
                     = 1.0).  See also ``build_inversion()`` which stores
                     weights in ``InversionSetup`` for batch use.
+        aux:        optional per-pixel auxiliary data passed as the second
+                    argument to f_vec.  When provided, calls ``f_vec(x, aux)``
+                    instead of ``f_vec(x)``.  Typically a dict that overrides
+                    entries in the forward model's precomputed spectral tables
+                    (e.g. ``{'R_b_i': R_b_i_pixel}`` for per-pixel bottom
+                    reflectance when using ``albert_mobley_jax.make_forward_vec``).
+                    Populated automatically by ``invert_pixels()`` when
+                    ``aux_pixels`` is supplied; most callers do not set this
+                    directly.  Default None.
 
     Returns:
         OEResult namedtuple with fields x_hat, S_hat, A, dfs, chi2, J, y_hat.
         All arrays are in retrieval space; see OEResult docstring.
     """
+    # Bind aux into the forward call if provided (per-pixel auxiliary data)
+    f = (lambda x: f_vec(x, aux)) if aux is not None else f_vec
+
     n_obs = y_obs.shape[0]
     S_eps_inv = _build_S_eps_inv(noise, n_obs, weights)
 
     x = x0
     for _ in range(n_iter):
-        y_i = f_vec(x)
-        J   = jax.jacobian(f_vec)(x)                          # (n_obs, n_fit)
+        y_i = f(x)
+        J   = jax.jacobian(f)(x)                              # (n_obs, n_fit)
 
         H = J.T @ S_eps_inv @ J + S_a_inv
         if lm_damping > 0.0:
@@ -486,8 +559,8 @@ def solve(f_vec: Callable,
         x  = x + dx
 
     # Diagnostics at solution
-    y_hat = f_vec(x)
-    J     = jax.jacobian(f_vec)(x)
+    y_hat = f(x)
+    J     = jax.jacobian(f)(x)
     H     = J.T @ S_eps_inv @ J + S_a_inv
     if lm_damping > 0.0:
         H = H + lm_damping * jnp.diag(jnp.diag(H))
@@ -517,12 +590,14 @@ class InversionSetup(NamedTuple):
     ``posterior_sigma_physical()`` to interpret results in physical units.
 
     Attributes:
-        f_fit:     projected forward model f(x_fit) -> y, where x_fit contains
-                   only the free parameters (shape n_fit) in retrieval space.
-                   Log-transformed parameters are exponentiated inside the
-                   closure before the underlying physical forward model is
-                   called.  Safe to pass directly to invert_pixels() or to
-                   jax.jit / jax.vmap.
+        f_fit:     projected forward model f(x_fit, aux=None) -> y, where
+                   x_fit contains only the free parameters (shape n_fit) in
+                   retrieval space.  Log-transformed parameters are exponentiated
+                   inside the closure before the underlying physical forward
+                   model is called.  When aux is not None it is forwarded to
+                   the underlying f_vec as a second argument, enabling per-pixel
+                   auxiliary data (e.g. bottom reflectance) via invert_pixels().
+                   Safe to pass directly to invert_pixels() or jax.jit / jax.vmap.
         fit_names: list of free parameter names, length n_fit.  Maps columns of
                    x_hat / rows & cols of S_hat to parameter names.
         x_a:       prior mean in retrieval space, shape (n_fit,).
@@ -795,7 +870,8 @@ def invert_pixels(f_vec: Callable,
                   x0: jnp.ndarray = None,
                   n_iter: int = 10,
                   lm_damping: float = 0.0,
-                  weights=None) -> OEResult:
+                  weights=None,
+                  aux_pixels=None) -> OEResult:
     """
     Batch OE inversion over a stack of pixels via jax.vmap.
 
@@ -869,6 +945,22 @@ def invert_pixels(f_vec: Callable,
                     identically to every pixel.  When using build_inversion(),
                     pass ``setup.weights`` here so the weights are consistent
                     with the inversion setup.  Default None (uniform weights).
+        aux_pixels: optional per-pixel auxiliary data, vmapped alongside
+                    Rrs_pixels.  Can be any JAX pytree (dict, array, …) whose
+                    leaves all have a leading pixel dimension of size n_pixels.
+                    Each pixel slice is passed as the ``aux`` argument to
+                    ``solve()``, which forwards it to ``f_vec(x, aux)``.
+                    Typical use: per-pixel bottom reflectance with
+                    ``albert_mobley_jax.make_forward_vec``::
+
+                        R_b_i_pixels = ...   # shape (n_pixels, n_obs, 6)
+                        results = invert_pixels(
+                            setup.f_fit, Rrs_pixels, noise, setup.x_a,
+                            setup.S_a_inv, aux_pixels={'R_b_i': R_b_i_pixels},
+                        )
+
+                    Any precomputed key can be overridden this way.
+                    Default None (no per-pixel auxiliary data).
 
     Returns:
         OEResult where every field has an extra leading pixel dimension:
@@ -902,8 +994,15 @@ def invert_pixels(f_vec: Callable,
         x0_batch = (jnp.broadcast_to(x0_arr, (n_pixels, n_params))
                     if x0_arr.ndim == 1 else x0_arr)
 
-    _solve_one = lambda y, x, xa, Sa: solve(f_vec, y, noise, x, xa, Sa,
-                                            n_iter, lm_damping, weights)
-    return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0))(
-        Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch
-    )
+    if aux_pixels is not None:
+        _solve_one = lambda y, x, xa, Sa, a: solve(f_vec, y, noise, x, xa, Sa,
+                                                    n_iter, lm_damping, weights, aux=a)
+        return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0, 0))(
+            Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch, aux_pixels
+        )
+    else:
+        _solve_one = lambda y, x, xa, Sa: solve(f_vec, y, noise, x, xa, Sa,
+                                                 n_iter, lm_damping, weights)
+        return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0))(
+            Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch
+        )

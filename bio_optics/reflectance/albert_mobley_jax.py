@@ -166,8 +166,29 @@ def _forward_core(p, pre):
     )
 
     # Bottom reflectance
-    f_i = jnp.array([p["f_0"], p["f_1"], p["f_2"], p["f_3"], p["f_4"], p["f_5"]])
+    # Two paths — chosen statically at JAX trace time based on which parameters
+    # are present in p (determined by param_names passed to make_forward_vec):
+    #
+    # Default path:  f_0...f_5 are used directly.  The caller is responsible
+    #   for ensuring they sum to 1 and are non-negative.
+    #
+    # Softmax path:  if any f_mix_* logit parameters are present, the fractions
+    #   are derived via softmax over (f_mix_0, f_mix_1, ..., 0), where the last
+    #   entry (0) is the fixed-logit reference type.  This guarantees sum-to-one
+    #   and non-negativity for any retrieved logit values.  Add f_mix_0 (and
+    #   optionally f_mix_1, f_mix_2, …) to fit_config with log=False to opt in.
     B_i = jnp.array([p["B_0"], p["B_1"], p["B_2"], p["B_3"], p["B_4"], p["B_5"]])
+    f_mix_keys = sorted(k for k in p if k.startswith('f_mix_'))  # static at trace time
+    if f_mix_keys:
+        n_free  = len(f_mix_keys)   # number of free logit params (static)
+        n_types = n_free + 1        # +1 for the reference type (logit = 0)
+        logits  = jnp.stack([p[k] for k in f_mix_keys] + [jnp.array(0.0)])
+        logits  = logits - jnp.max(logits)          # numerically stable softmax
+        weights = jnp.exp(logits)
+        f_active = weights / jnp.sum(weights)       # shape (n_types,) — sums to 1
+        f_i = jnp.zeros(6).at[:n_types].set(f_active)
+    else:
+        f_i = jnp.array([p["f_0"], p["f_1"], p["f_2"], p["f_3"], p["f_4"], p["f_5"]])
     Rrs_b = bottom_reflectance_jax.Rrs_b(f_i, B_i, pre["R_b_i"])
 
     # Attenuation
@@ -205,10 +226,21 @@ def forward(params, precomputed):
 
 def make_forward_vec(param_names, precomputed):
     """
-    Return a function f(params_vec) -> Rrs suitable for jax.jit, jax.jacobian, and jax.vmap.
+    Return a function f(params_vec, aux=None) -> Rrs suitable for jax.jit, jax.jacobian,
+    and jax.vmap.
 
     The returned function takes a 1-D JAX array of parameter values (in the order given by
     param_names) and returns the simulated above-water reflectance spectrum.
+
+    The optional ``aux`` argument is a dict that overrides entries in ``precomputed`` on a
+    per-call basis.  This enables per-pixel variation of any precomputed spectral quantity
+    without rebuilding the forward function.  Common uses:
+
+    * Per-pixel bottom reflectance:  ``aux = {'R_b_i': R_b_i_pixel}``  where
+      ``R_b_i_pixel`` has shape ``(n_wavelengths, 6)``.
+    * Per-pixel water temperature:   ``aux = {'a_w': a_w_pixel, 'da_w_div_dT': ...}``
+
+    When ``aux`` is None (default) the function behaves identically to before.
 
     Example usage::
 
@@ -216,7 +248,7 @@ def make_forward_vec(param_names, precomputed):
         names = ["C_0", "C_Y", "C_X", "C_Mie", "zB", "f_0", ...]
         f_vec = make_forward_vec(names, pre)
 
-        # JIT-compiled single-pixel forward
+        # JIT-compiled single-pixel forward (no aux)
         Rrs = jax.jit(f_vec)(params_vec)
 
         # Jacobian w.r.t. all fitted parameters
@@ -225,14 +257,22 @@ def make_forward_vec(param_names, precomputed):
         # Vectorized over many pixels
         Rrs_batch = jax.vmap(f_vec)(params_matrix)   # params_matrix shape (n_pixels, n_params)
 
+        # Per-pixel bottom reflectance via aux
+        R_b_pixels = ...   # shape (n_pixels, n_wavelengths, 6)
+        Rrs_batch = jax.vmap(lambda x, a: f_vec(x, a))(params_matrix,
+                                                        {'R_b_i': R_b_pixels})
+
     Args:
         param_names: ordered list of parameter name strings matching the columns of params_vec
         precomputed: dict of JAX arrays returned by precompute()
 
     Returns:
-        f: callable f(params_vec) -> Rrs where params_vec has shape (len(param_names),)
+        f: callable f(params_vec, aux=None) -> Rrs where params_vec has shape (len(param_names),).
+           When aux is a dict it is merged with precomputed (aux takes precedence), allowing
+           per-call override of any spectral lookup table.
     """
-    def f(params_vec):
+    def f(params_vec, aux=None):
         p = dict(zip(param_names, params_vec))
-        return _forward_core(p, precomputed)
+        pre = precomputed if aux is None else {**precomputed, **aux}
+        return _forward_core(p, pre)
     return f
