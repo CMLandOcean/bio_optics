@@ -363,17 +363,46 @@ def invert_tile_optx(
         Tuple of NumPy arrays (x_hat_phys, sigma_phys, A_diag, chi2)
         and optionally y_hat when store_y_hat=True.
     """
-    Rrs_jax      = jnp.asarray(Rrs_tile, dtype=jnp.float64)
-    x_a_jax      = jnp.asarray(x_a,      dtype=jnp.float64)
-    S_a_inv_jax  = jnp.asarray(S_a_inv,  dtype=jnp.float64)
-    log_mask_jax = jnp.asarray(log_mask, dtype=jnp.float64)
-    weights_jax  = jnp.asarray(weights,  dtype=jnp.float64) if weights is not None else None
+    # Extract only finite pixels — JAX cannot handle NaN/inf inputs.
+    # Invalid pixels (NaN bands, masked land) are skipped entirely and
+    # written as NaN in the output arrays.
+    valid_mask  = np.isfinite(Rrs_tile).all(axis=-1)   # (n_tile,)
+    n_tile      = Rrs_tile.shape[0]
+    n_fit       = np.asarray(x_a).shape[-1]
+    n_obs_tile  = Rrs_tile.shape[-1]
+    has_invalid = not valid_mask.all()
+
+    if has_invalid and not valid_mask.any():
+        # entire tile is invalid — return NaN arrays immediately
+        nan_fit = np.full((n_tile, n_fit), np.nan)
+        nan_chi = np.full(n_tile, np.nan)
+        out = (nan_fit, nan_fit.copy(), nan_fit.copy(), nan_chi)
+        if store_y_hat:
+            out = out + (np.full((n_tile, n_obs_tile), np.nan),)
+        return out
+
+    Rrs_valid = Rrs_tile[valid_mask] if has_invalid else Rrs_tile
+
+    x_a_np     = np.asarray(x_a)
+    S_a_inv_np = np.asarray(S_a_inv)
+    x_a_valid     = x_a_np[valid_mask]     if (has_invalid and x_a_np.ndim == 2)     else x_a_np
+    S_a_inv_valid = S_a_inv_np[valid_mask] if (has_invalid and S_a_inv_np.ndim == 3) else S_a_inv_np
+
+    Rrs_jax      = jnp.asarray(Rrs_valid,     dtype=jnp.float64)
+    x_a_jax      = jnp.asarray(x_a_valid,     dtype=jnp.float64)
+    S_a_inv_jax  = jnp.asarray(S_a_inv_valid, dtype=jnp.float64)
+    log_mask_jax = jnp.asarray(log_mask,       dtype=jnp.float64)
+    weights_jax  = jnp.asarray(weights, dtype=jnp.float64) if weights is not None else None
 
     if aux_tile is not None:
         if isinstance(aux_tile, dict):
-            aux_jax = {k: jnp.asarray(v, dtype=jnp.float64) for k, v in aux_tile.items()}
+            aux_jax = {k: jnp.asarray(v[valid_mask] if (has_invalid and np.asarray(v).ndim > 1) else v,
+                                       dtype=jnp.float64)
+                       for k, v in aux_tile.items()}
         else:
-            aux_jax = jnp.asarray(aux_tile, dtype=jnp.float64)
+            v = np.asarray(aux_tile)
+            aux_jax = jnp.asarray(v[valid_mask] if (has_invalid and v.ndim > 1) else v,
+                                   dtype=jnp.float64)
     else:
         aux_jax = None
 
@@ -388,14 +417,29 @@ def invert_tile_optx(
     sigma_phys = posterior_sigma_physical(results.S_hat, x_hat_phys, log_mask_jax)
     A_diag     = jnp.diagonal(results.A, axis1=-2, axis2=-1)
 
-    out = (
-        np.array(x_hat_phys),
-        np.array(sigma_phys),
-        np.array(A_diag),
-        np.array(results.chi2),
-    )
+    if has_invalid:
+        x_hat_np  = np.full((n_tile, n_fit), np.nan)
+        sigma_np  = np.full((n_tile, n_fit), np.nan)
+        A_diag_np = np.full((n_tile, n_fit), np.nan)
+        chi2_np   = np.full(n_tile, np.nan)
+        x_hat_np[valid_mask]  = np.array(x_hat_phys)
+        sigma_np[valid_mask]  = np.array(sigma_phys)
+        A_diag_np[valid_mask] = np.array(A_diag)
+        chi2_np[valid_mask]   = np.array(results.chi2)
+    else:
+        x_hat_np  = np.array(x_hat_phys)
+        sigma_np  = np.array(sigma_phys)
+        A_diag_np = np.array(A_diag)
+        chi2_np   = np.array(results.chi2)
+
+    out = (x_hat_np, sigma_np, A_diag_np, chi2_np)
     if store_y_hat:
-        out = out + (np.array(results.y_hat),)
+        if has_invalid:
+            y_hat_np = np.full((n_tile, n_obs_tile), np.nan)
+            y_hat_np[valid_mask] = np.array(results.y_hat)
+        else:
+            y_hat_np = np.array(results.y_hat)
+        out = out + (y_hat_np,)
     return out
 
 
