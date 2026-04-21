@@ -164,9 +164,13 @@ def backinterp_pca_knn(
 
     Uncertainty propagation
     -----------------------
-    σ²_pixel = Σ wᵢ² · σ²_spᵢ  +  Σ wᵢ · (x_hat_spᵢ − x_hat_pixel)²
+    σ²_pixel = Σ wᵢ · σ²_spᵢ  +  Σ wᵢ · (x_hat_spᵢ − x_hat_pixel)²
 
-    First term propagates the formal OE posterior through the IDW weights.
+    First term is the IDW-weighted average of the superpixel posterior variances.
+    Using wᵢ (not wᵢ²) is appropriate here because SLIC neighbours are selected
+    for spectral similarity and are therefore correlated — the independent-sample
+    formula (wᵢ²) would spuriously reduce sigma by ~1/sqrt(k), making propagated
+    sigma ~2× lower than per-pixel sigma in smooth regions.
     Second term captures the spread among the k neighbours (interpolation
     uncertainty); zero when all k neighbours agree.
 
@@ -231,9 +235,8 @@ def backinterp_pca_knn(
 
     # --- sigma: propagated through IDW + interpolation spread ----------------
     sigma_nb  = sp_sigma[indices]                          # (n_pixels, k_eff, n_fit)
-    w2_3      = (weights ** 2)[:, :, np.newaxis]
 
-    var_post   = (w2_3 * sigma_nb ** 2).sum(axis=1)        # formal propagation
+    var_post   = (w3 * sigma_nb ** 2).sum(axis=1)           # IDW-weighted avg of posterior variances
     diff2      = (x_hat_nb - x_hat_out[:, np.newaxis, :]) ** 2
     var_interp = (w3 * diff2).sum(axis=1)                  # interpolation spread
 
