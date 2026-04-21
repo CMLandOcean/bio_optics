@@ -243,6 +243,51 @@ def invert_tile(
 
 
 # ---------------------------------------------------------------------------
+# JIT warm-up helper
+# ---------------------------------------------------------------------------
+
+def warmup_jit(
+    setup: InversionSetup,
+    noise,
+    n_iter: int = 10,
+    lm_damping: float = 0.0,
+) -> None:
+    """Pre-compile the JAX XLA program for this InversionSetup.
+
+    Runs one dummy pixel through ``invert_tile`` to trigger XLA compilation
+    before the real inversion.  Call this after ``build_inversion()`` and
+    before ``invert_image()`` to avoid paying the (potentially multi-minute)
+    compilation cost during the timed inversion run.
+
+    The compilation is keyed on ``(f_fit, n_iter, lm_damping, input_dtype)``,
+    so pass the same values you will use in ``invert_image()``.
+
+    Args:
+        setup:      ``InversionSetup`` from ``oe_engine.build_inversion()``.
+        noise:      same ``noise`` argument you will pass to ``invert_image()``.
+        n_iter:     same ``n_iter`` you will pass to ``invert_image()``.
+        lm_damping: same ``lm_damping`` you will pass to ``invert_image()``.
+    """
+    import jax.numpy as jnp
+    # Evaluate the forward model once to get n_obs (also warms up f_fit tracing)
+    _y   = setup.f_fit(jnp.asarray(setup.x_a, dtype=jnp.float64))
+    n_obs = int(_y.shape[0])
+    # One all-zero pixel — enough to trigger XLA compilation
+    _rrs = np.zeros((1, n_obs), dtype=np.float64)
+    invert_tile(
+        _rrs,
+        setup.f_fit,
+        np.array(setup.x_a),
+        np.array(setup.S_a_inv),
+        np.array(setup.log_mask),
+        noise,
+        np.array(setup.weights) if setup.weights is not None else None,
+        n_iter=n_iter,
+        lm_damping=lm_damping,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Image-level convenience function
 # ---------------------------------------------------------------------------
 
