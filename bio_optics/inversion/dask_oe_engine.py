@@ -251,29 +251,33 @@ def warmup_jit(
     noise,
     n_iter: int = 10,
     lm_damping: float = 0.0,
+    tile_size: int = 65536,
 ) -> None:
     """Pre-compile the JAX XLA program for this InversionSetup.
 
-    Runs one dummy pixel through ``invert_tile`` to trigger XLA compilation
-    before the real inversion.  Call this after ``build_inversion()`` and
-    before ``invert_image()`` to avoid paying the (potentially multi-minute)
-    compilation cost during the timed inversion run.
+    Runs a dummy tile of ``tile_size`` pixels through ``invert_tile`` to
+    trigger XLA compilation before the real inversion.  Call this after
+    ``build_inversion()`` and before ``invert_image()`` to avoid paying the
+    (potentially multi-minute) compilation cost during the timed run.
 
-    The compilation is keyed on ``(f_fit, n_iter, lm_damping, input_dtype)``,
-    so pass the same values you will use in ``invert_image()``.
+    JAX recompiles whenever the *shape* of the pixel batch changes, so
+    ``tile_size`` must match the value you will pass to ``invert_image()``.
+    A mismatch (e.g. warmup with 1 pixel, inversion with 65536) means the
+    compiled program is discarded on the first real tile.
 
     Args:
         setup:      ``InversionSetup`` from ``oe_engine.build_inversion()``.
         noise:      same ``noise`` argument you will pass to ``invert_image()``.
         n_iter:     same ``n_iter`` you will pass to ``invert_image()``.
         lm_damping: same ``lm_damping`` you will pass to ``invert_image()``.
+        tile_size:  same ``tile_size`` you will pass to ``invert_image()``.
     """
     import jax.numpy as jnp
     # Evaluate the forward model once to get n_obs (also warms up f_fit tracing)
-    _y   = setup.f_fit(jnp.asarray(setup.x_a, dtype=jnp.float64))
+    _y    = setup.f_fit(jnp.asarray(setup.x_a, dtype=jnp.float64))
     n_obs = int(_y.shape[0])
-    # One all-zero pixel — enough to trigger XLA compilation
-    _rrs = np.zeros((1, n_obs), dtype=np.float64)
+    # Dummy tile matching the real tile shape — compilation is keyed on this shape
+    _rrs = np.zeros((tile_size, n_obs), dtype=np.float64)
     invert_tile(
         _rrs,
         setup.f_fit,
