@@ -5,7 +5,7 @@ Pipeline
 --------
 1. segment_image           — SLIC segmentation of the Rrs image
 2. aggregate_superpixels   — per-segment mean spectrum + pixel counts
-3. invert_superpixels      — OE inversion on mean spectra
+3. invert_superpixels      — inversion on mean spectra (OE or LSQ)
 4. backinterp_pca_knn      — back-interpolate to full resolution via PCA+kNN IDW
 5. invert_image_superpixel — end-to-end wrapper (same dict format as dask_oe_engine)
 
@@ -18,6 +18,15 @@ The mean spectrum of a segment with N pixels has noise σ/√N, so inverting it
 with the original pixel noise σ yields chi2_raw << 1 for large segments.
 The calibrated chi2 is:  chi2_calibrated = chi2_raw × sp_counts
 Both are included in the output.
+
+invert_fn note
+--------------
+By default `invert_superpixels` calls `dask_oe_engine.invert_image` (full OE
+with prior).  Pass `invert_fn=invert_image_lsq` from
+`notebooks/10_glint_correction_lsq.ipynb` (or any function with the same
+signature: `fn(spectra, setup, noise, **kwargs) → dict`) to run pure
+weighted least-squares instead.  When the invert_fn returns no `sigma` or
+`A_diag` keys those fields are omitted from the output.
 """
 from __future__ import annotations
 
@@ -115,13 +124,14 @@ def invert_superpixels(
     sp_counts: np.ndarray,
     setup: InversionSetup,
     noise,
+    invert_fn=None,
     **invert_kwargs,
 ) -> dict:
-    """OE inversion of superpixel mean spectra.
+    """Inversion of superpixel mean spectra.
 
-    Passes `noise` unchanged to `dask_oe_engine.invert_image`.  The resulting
-    chi2_raw will be < 1 for large segments (mean spectrum is smoother than
-    individual pixels).  `invert_image_superpixel` adds a calibrated chi2:
+    Passes `noise` unchanged to the invert function.  The resulting chi2_raw
+    will be < 1 for large segments (mean spectrum is smoother than individual
+    pixels).  `invert_image_superpixel` adds a calibrated chi2:
     chi2_calibrated = chi2_raw × sp_counts.
 
     Parameters
@@ -130,14 +140,20 @@ def invert_superpixels(
     sp_counts   : (n_segs,)  pixel counts (used for chi2 calibration upstream)
     setup       : InversionSetup
     noise       : scalar or (n_obs,) — per-pixel noise level in sr⁻¹
-    **invert_kwargs : forwarded to dask_oe_engine.invert_image (n_iter, tile_size, …)
+    invert_fn   : callable(spectra, setup, noise, **kwargs) → dict
+                  Defaults to dask_oe_engine.invert_image.  Pass
+                  invert_image_lsq for pure LSQ (no OE prior).
+    **invert_kwargs : forwarded to invert_fn (n_iter, tile_size, max_steps, …)
 
     Returns
     -------
-    results dict with x_hat/sigma/A_diag/chi2 shaped (n_segs, …)
+    results dict with at least x_hat/chi2 shaped (n_segs, …); sigma/A_diag
+    present only when invert_fn returns them.
     """
-    return dask_oe_engine.invert_image(
-        sp_spectra,   # (n_segs, n_obs) — flat 2-D input accepted by invert_image
+    if invert_fn is None:
+        invert_fn = dask_oe_engine.invert_image
+    return invert_fn(
+        sp_spectra,   # (n_segs, n_obs) — flat 2-D input accepted by both engines
         setup,
         noise,
         **invert_kwargs,
@@ -152,17 +168,17 @@ def backinterp_pca_knn(
     Rrs_pixels: np.ndarray,
     sp_spectra: np.ndarray,
     sp_x_hat: np.ndarray,
-    sp_sigma: np.ndarray,
-    sp_A_diag: np.ndarray,
+    sp_sigma: Optional[np.ndarray] = None,
+    sp_A_diag: Optional[np.ndarray] = None,
     k: int = 4,
     n_components: int = 6,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Back-interpolate superpixel OE results to full pixel resolution.
+) -> dict:
+    """Back-interpolate superpixel inversion results to full pixel resolution.
 
     Uses PCA on brightness-normalised spectra + inverse-distance weighted
     average of k nearest superpixels in PCA space (Adams et al. 2021).
 
-    Uncertainty propagation
+    Uncertainty propagation (when sp_sigma is provided)
     -----------------------
     σ²_pixel = Σ wᵢ · σ²_spᵢ  +  Σ wᵢ · (x_hat_spᵢ − x_hat_pixel)²
 
@@ -182,16 +198,17 @@ def backinterp_pca_knn(
     Rrs_pixels  : (n_pixels, n_obs)
     sp_spectra  : (n_segs, n_obs)
     sp_x_hat    : (n_segs, n_fit)  physical space
-    sp_sigma    : (n_segs, n_fit)  physical space
-    sp_A_diag   : (n_segs, n_fit)
+    sp_sigma    : (n_segs, n_fit)  physical space; None for LSQ (no posterior sigma)
+    sp_A_diag   : (n_segs, n_fit); None for LSQ (no averaging kernel)
     k           : number of nearest superpixel neighbours (paper default: 4)
     n_components: PCA components (paper default: 6)
 
     Returns
     -------
-    x_hat  : (n_pixels, n_fit)
-    sigma  : (n_pixels, n_fit)  propagated uncertainty
-    A_diag : (n_pixels, n_fit)  IDW averaged
+    dict with keys:
+        x_hat  : (n_pixels, n_fit)
+        sigma  : (n_pixels, n_fit)  only present when sp_sigma is not None
+        A_diag : (n_pixels, n_fit)  only present when sp_A_diag is not None
     """
     n_segs = sp_spectra.shape[0]
     k_eff  = min(k, n_segs)
@@ -230,19 +247,21 @@ def backinterp_pca_knn(
     x_hat_nb  = sp_x_hat[indices]                          # (n_pixels, k_eff, n_fit)
     x_hat_out = (w3 * x_hat_nb).sum(axis=1)                # (n_pixels, n_fit)
 
-    # --- A_diag: IDW average -------------------------------------------------
-    A_diag_out = (w3 * sp_A_diag[indices]).sum(axis=1)     # (n_pixels, n_fit)
+    out = {'x_hat': x_hat_out}
 
-    # --- sigma: propagated through IDW + interpolation spread ----------------
-    sigma_nb  = sp_sigma[indices]                          # (n_pixels, k_eff, n_fit)
+    # --- A_diag: IDW average (OE only) ---------------------------------------
+    if sp_A_diag is not None:
+        out['A_diag'] = (w3 * sp_A_diag[indices]).sum(axis=1)  # (n_pixels, n_fit)
 
-    var_post   = (w3 * sigma_nb ** 2).sum(axis=1)           # IDW-weighted avg of posterior variances
-    diff2      = (x_hat_nb - x_hat_out[:, np.newaxis, :]) ** 2
-    var_interp = (w3 * diff2).sum(axis=1)                  # interpolation spread
+    # --- sigma: propagated through IDW + interpolation spread (OE only) ------
+    if sp_sigma is not None:
+        sigma_nb   = sp_sigma[indices]                          # (n_pixels, k_eff, n_fit)
+        var_post   = (w3 * sigma_nb ** 2).sum(axis=1)
+        diff2      = (x_hat_nb - x_hat_out[:, np.newaxis, :]) ** 2
+        var_interp = (w3 * diff2).sum(axis=1)
+        out['sigma'] = np.sqrt(var_post + var_interp)           # (n_pixels, n_fit)
 
-    sigma_out = np.sqrt(var_post + var_interp)             # (n_pixels, n_fit)
-
-    return x_hat_out, sigma_out, A_diag_out
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -260,22 +279,29 @@ def invert_image_superpixel(
     n_components: int = 6,
     band_slice: Optional[np.ndarray] = None,
     store_sp_results: bool = False,
+    invert_fn=None,
     **invert_kwargs,
 ) -> dict:
-    """SLIC superpixel OE inversion with PCA+kNN back-interpolation.
+    """SLIC superpixel inversion with PCA+kNN back-interpolation.
 
-    Returns the same dict format as dask_oe_engine.invert_image() plus
-    superpixel-specific diagnostics:
+    Works with any inversion backend via `invert_fn`:
+      - Default (None): dask_oe_engine.invert_image  → full OE with prior
+      - Pass invert_image_lsq                        → pure LSQ, no prior
 
+    Output dict always contains:
       x_hat            (n_rows, n_cols, n_fit)  IDW back-interpolated
-      sigma            (n_rows, n_cols, n_fit)  propagated uncertainty
-      A_diag           (n_rows, n_cols, n_fit)  IDW back-interpolated
       chi2             (n_rows, n_cols)          label copy (superpixel chi2 at pixel noise)
       chi2_calibrated  (n_rows, n_cols)          chi2 × sp_counts (calibrated for mean-spectrum noise)
       fit_names        list[str]
       labels           (n_rows, n_cols) int      segment ID map
       sp_counts        (n_segs,)                 pixels per segment
-      sp_results       dict (if store_sp_results=True)
+
+    OE-only fields (present when invert_fn returns them):
+      sigma            (n_rows, n_cols, n_fit)  propagated uncertainty
+      A_diag           (n_rows, n_cols, n_fit)  IDW back-interpolated
+
+    LSQ-only fields (present when invert_fn returns them):
+      n_steps          (n_rows, n_cols)          label copy of solver iterations
 
     Parameters
     ----------
@@ -289,7 +315,9 @@ def invert_image_superpixel(
     n_components: PCA components for spectral embedding (paper default: 6)
     band_slice  : band indices for SLIC segmentation; None = all bands
     store_sp_results : include raw superpixel-level results in output dict
-    **invert_kwargs  : forwarded to dask_oe_engine.invert_image (n_iter, tile_size, …)
+    invert_fn   : callable(spectra, setup, noise, **kwargs) → dict
+                  Defaults to dask_oe_engine.invert_image.
+    **invert_kwargs  : forwarded to invert_fn (n_iter, tile_size, max_steps, …)
     """
     if Rrs.ndim != 3:
         raise ValueError(f"Rrs must be (n_rows, n_cols, n_obs), got shape {Rrs.shape}")
@@ -307,39 +335,46 @@ def invert_image_superpixel(
     sp_spectra, sp_counts = aggregate_superpixels(Rrs, labels)
 
     # 3. Invert superpixel mean spectra
-    sp_results = invert_superpixels(sp_spectra, sp_counts, setup, noise, **invert_kwargs)
+    sp_results = invert_superpixels(
+        sp_spectra, sp_counts, setup, noise,
+        invert_fn=invert_fn, **invert_kwargs,
+    )
 
-    sp_x_hat  = sp_results['x_hat']   # (n_segs, n_fit) — already physical space
-    sp_sigma  = sp_results['sigma']   # (n_segs, n_fit)
-    sp_A_diag = sp_results['A_diag']  # (n_segs, n_fit)
-    sp_chi2   = sp_results['chi2']    # (n_segs,)
+    sp_x_hat  = sp_results['x_hat']            # (n_segs, n_fit) — physical space
+    sp_sigma  = sp_results.get('sigma')         # None for LSQ
+    sp_A_diag = sp_results.get('A_diag')        # None for LSQ
+    sp_chi2   = sp_results['chi2']              # (n_segs,)
 
-    # 4. Back-interpolate x_hat, sigma, A_diag
-    x_hat_flat, sigma_flat, A_diag_flat = backinterp_pca_knn(
+    # 4. Back-interpolate x_hat (+ sigma/A_diag when available)
+    bp = backinterp_pca_knn(
         Rrs.reshape(n_pixels, n_obs),
-        sp_spectra, sp_x_hat, sp_sigma, sp_A_diag,
+        sp_spectra, sp_x_hat,
+        sp_sigma=sp_sigma, sp_A_diag=sp_A_diag,
         k=k, n_components=n_components,
     )
 
     # 5. chi2: label copy — map segment ID → superpixel chi2
-    # seg_ids[i] corresponds to sp_chi2[i] (same order as aggregate_superpixels)
     seg_id_to_idx = {sid: i for i, sid in enumerate(seg_ids)}
     sp_idx_flat   = np.array([seg_id_to_idx[sid] for sid in labels_flat], dtype=np.int64)
-    chi2_flat           = sp_chi2[sp_idx_flat]
-    chi2_cal_flat       = sp_chi2[sp_idx_flat] * sp_counts[sp_idx_flat]
+    chi2_flat     = sp_chi2[sp_idx_flat]
+    chi2_cal_flat = sp_chi2[sp_idx_flat] * sp_counts[sp_idx_flat]
 
     # 6. Reshape to spatial dims
-    n_fit = x_hat_flat.shape[-1]
+    n_fit = bp['x_hat'].shape[-1]
     out = {
-        'x_hat':           x_hat_flat.reshape(n_rows, n_cols, n_fit),
-        'sigma':           sigma_flat.reshape(n_rows, n_cols, n_fit),
-        'A_diag':          A_diag_flat.reshape(n_rows, n_cols, n_fit),
+        'x_hat':           bp['x_hat'].reshape(n_rows, n_cols, n_fit),
         'chi2':            chi2_flat.reshape(n_rows, n_cols),
         'chi2_calibrated': chi2_cal_flat.reshape(n_rows, n_cols),
         'fit_names':       sp_results['fit_names'],
         'labels':          labels,
         'sp_counts':       sp_counts,
     }
+    if 'sigma' in bp:
+        out['sigma']  = bp['sigma'].reshape(n_rows, n_cols, n_fit)
+    if 'A_diag' in bp:
+        out['A_diag'] = bp['A_diag'].reshape(n_rows, n_cols, n_fit)
+    if 'n_steps' in sp_results:
+        out['n_steps'] = sp_results['n_steps'][sp_idx_flat].reshape(n_rows, n_cols)
     if store_sp_results:
         out['sp_results'] = sp_results
 

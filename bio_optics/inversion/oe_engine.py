@@ -119,35 +119,39 @@ class OEResult(NamedTuple):
     ``posterior_sigma_physical()`` to convert back.
 
     Attributes:
-        x_hat:  posterior mean in retrieval space, shape (n_fit,).
-                For log-transformed parameters this is ln(x); apply
-                ``to_physical(x_hat, log_mask)`` to recover physical values.
-        S_hat:  posterior covariance in retrieval space, shape (n_fit, n_fit).
-                Diagonal elements are variances in retrieval space.  For
-                log-params, σ_physical ≈ exp(x_hat) * sqrt(S_hat_diag).
-        A:      averaging kernel matrix, shape (n_fit, n_fit).
-                A[i, i] close to 1 means the i-th parameter is well-constrained
-                by the data; close to 0 means the prior dominates.
-        dfs:    degrees of freedom for signal (= tr(A)), scalar.
-                Measures how many independent pieces of information are
-                extracted from the observed spectrum.
-        chi2:   chi-squared per observation band, scalar.
-                chi2 ≈ 1 indicates a good fit; chi2 >> 1 suggests model error
-                or underestimated noise; chi2 << 1 suggests over-fitting or
-                overestimated noise.
-        J:      Jacobian of the forward model at x_hat, shape (n_obs, n_fit).
-                Rows are spectral bands, columns are free parameters (in
-                retrieval space).
-        y_hat:  simulated spectrum at x_hat, shape (n_obs,).
-                Compare to y_obs to assess spectral fit quality.
+        x_hat:      posterior mean in retrieval space, shape (n_fit,).
+                    For log-transformed parameters this is ln(x); apply
+                    ``to_physical(x_hat, log_mask)`` to recover physical values.
+        S_hat:      posterior covariance in retrieval space, shape (n_fit, n_fit).
+                    Diagonal elements are variances in retrieval space.  For
+                    log-params, σ_physical ≈ exp(x_hat) * sqrt(S_hat_diag).
+        A:          averaging kernel matrix, shape (n_fit, n_fit).
+                    A[i, i] close to 1 means the i-th parameter is well-constrained
+                    by the data; close to 0 means the prior dominates.
+        dfs:        degrees of freedom for signal (= tr(A)), scalar.
+                    Measures how many independent pieces of information are
+                    extracted from the observed spectrum.
+        chi2:       chi-squared per observation band, scalar.
+                    chi2 ≈ 1 indicates a good fit; chi2 >> 1 suggests model error
+                    or underestimated noise; chi2 << 1 suggests over-fitting or
+                    overestimated noise.
+        J:          Jacobian of the forward model at x_hat, shape (n_obs, n_fit).
+                    Rows are spectral bands, columns are free parameters (in
+                    retrieval space).
+        y_hat:      simulated spectrum at x_hat, shape (n_obs,).
+                    Compare to y_obs to assess spectral fit quality.
+        num_steps:  number of solver iterations taken, scalar int.
+                    Only populated by oe_engine_optx (lax.while_loop-based);
+                    None when using the fixed-iteration oe_engine.solve().
     """
-    x_hat: jnp.ndarray
-    S_hat: jnp.ndarray
-    A:     jnp.ndarray
-    dfs:   float
-    chi2:  float
-    J:     jnp.ndarray
-    y_hat: jnp.ndarray
+    x_hat:     jnp.ndarray
+    S_hat:     jnp.ndarray
+    A:         jnp.ndarray
+    dfs:       float
+    chi2:      float
+    J:         jnp.ndarray
+    y_hat:     jnp.ndarray
+    num_steps: Optional[jnp.ndarray] = None
 
 
 # ---------------------------------------------------------------------------
@@ -397,6 +401,34 @@ def _build_S_eps_inv(noise, n_obs: int, weights=None) -> jnp.ndarray:
         S_eps_inv = S_eps_inv * jnp.outer(w, w)
 
     return S_eps_inv
+
+
+def _build_noise_sqrt_inv(noise, n_obs: int, weights=None) -> jnp.ndarray:
+    """
+    Return a 1-D array of shape (n_obs,) representing sqrt(S_ε⁻¹) diagonal.
+
+    Used to form the data-fit residual vector for optimistix-based engines:
+    ``r_data = sqrt_inv * (y_obs − f(x))``.
+    Scalar or 1-D per-band noise only; full covariance matrices not supported.
+
+    Args:
+        noise:   scalar float or 1-D array of length n_obs.
+        n_obs:   number of observation bands.
+        weights: optional per-band weight array, shape (n_obs,).
+    """
+    noise_jax = jnp.asarray(noise, dtype=jnp.float64)
+    if noise_jax.ndim == 0:
+        s = jnp.ones(n_obs, dtype=jnp.float64) / noise_jax
+    elif noise_jax.ndim == 1:
+        s = 1.0 / noise_jax
+    else:
+        raise ValueError(
+            "Full covariance matrix noise is not supported by optimistix-based engines. "
+            "Pass a scalar or a 1-D per-band noise array."
+        )
+    if weights is not None:
+        s = s * jnp.asarray(weights, dtype=jnp.float64)
+    return s
 
 
 def _build_f_vec_fit(f_vec: Callable,

@@ -19,14 +19,24 @@ time.  This means:
   ``‖step‖ ≤ atol + rtol · ‖x‖``, so easy pixels don't pay for hard ones.
 * **Adaptive LM damping** — ``LevenbergMarquardt`` uses a proper trust-region
   radius update; the damping in ``oe_engine.solve()`` is static.
+* **n_steps per pixel** — ``OEResult.num_steps`` records how many solver
+  iterations were taken; exposed via ``invert_image``'s ``n_steps`` key.
 
 Identical API surface
 ---------------------
-``solve_optx()`` returns the same ``OEResult`` as ``oe_engine.solve()``.
+``solve_optx()`` returns the same ``OEResult`` as ``oe_engine.solve()``,
+with the addition of ``OEResult.num_steps``.
 ``invert_pixels_optx()`` returns the same vmapped ``OEResult`` as
 ``oe_engine.invert_pixels()``.
 Both functions accept ``InversionSetup`` from ``oe_engine.build_inversion()``,
 so you can mix modules freely.
+
+Naming note
+-----------
+This module was renamed from ``optimistix_engine`` to ``oe_engine_optx`` to
+make clear that it is the **OE** (Optimal Estimation) engine backed by
+optimistix, as opposed to ``lsq_engine_optx`` which is the pure **LSQ**
+(no prior) engine also backed by optimistix.
 
 Formulation
 -----------
@@ -71,47 +81,13 @@ from bio_optics.inversion.oe_engine import (
     OEResult,
     InversionSetup,
     _build_S_eps_inv,
+    _build_noise_sqrt_inv,
     to_physical,
     posterior_sigma_physical,
     bottom_fractions,
 )
 
 jax.config.update("jax_enable_x64", True)
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
-
-def _build_noise_sqrt_inv(noise, n_obs: int, weights=None) -> jnp.ndarray:
-    """
-    Return a 1-D array of shape (n_obs,) representing sqrt(S_ε⁻¹) diagonal.
-
-    Used to form the data-fit residual vector for optimistix:
-    ``r_data = sqrt_inv * (y_obs − f(x))``.
-
-    Args:
-        noise:   scalar float or 1-D array of length n_obs.
-                 Full covariance matrices are not supported.
-        n_obs:   number of observation bands.
-        weights: optional per-band weight array, shape (n_obs,).
-
-    Returns:
-        1-D JAX array of shape (n_obs,).
-    """
-    noise_jax = jnp.asarray(noise, dtype=jnp.float64)
-    if noise_jax.ndim == 0:
-        s = jnp.ones(n_obs, dtype=jnp.float64) / noise_jax
-    elif noise_jax.ndim == 1:
-        s = 1.0 / noise_jax
-    else:
-        raise ValueError(
-            "optimistix_engine: full covariance matrix noise is not supported. "
-            "Pass a scalar or a 1-D per-band noise array."
-        )
-    if weights is not None:
-        s = s * jnp.asarray(weights, dtype=jnp.float64)
-    return s
 
 
 # ---------------------------------------------------------------------------
@@ -136,6 +112,7 @@ def solve_optx(f_vec: Callable,
     Drop-in replacement for ``oe_engine.solve()``.  Returns the same
     ``OEResult`` namedtuple; posterior covariance, averaging kernel, and χ²
     are computed analytically at the optimistix solution.
+    ``OEResult.num_steps`` records how many iterations were taken.
 
     The OE cost function is reformulated as nonlinear least-squares::
 
@@ -159,33 +136,31 @@ def solve_optx(f_vec: Callable,
         max_steps: maximum solver iterations, default 100.
         rtol:      relative convergence tolerance, default 1e-6.
         atol:      absolute convergence tolerance, default 1e-6.
-        use_lm:    if True (default) use LevenbergMarquardt; else GaussNewton.
+        use_lm:    if True use LevenbergMarquardt; else GaussNewton (default).
         weights:   optional per-band weight array, shape (n_obs,).
         aux:       optional per-pixel auxiliary dict forwarded to f_vec as
                    ``f_vec(x, aux)``.  Default None.
 
     Returns:
-        OEResult with the same fields as oe_engine.solve().  All in retrieval
-        space; apply ``to_physical()`` / ``posterior_sigma_physical()`` as usual.
+        OEResult with the same fields as oe_engine.solve(), plus num_steps.
+        All in retrieval space; apply ``to_physical()`` /
+        ``posterior_sigma_physical()`` as usual.
     """
     f = (lambda x: f_vec(x, aux)) if aux is not None else f_vec
 
     n_obs = y_obs.shape[0]
     n_fit = x0.shape[0]
 
-    # sqrt(S_ε⁻¹) diagonal for the residual vector
     eps_sqrt_inv = _build_noise_sqrt_inv(noise, n_obs, weights)
 
-    # sqrt(S_a⁻¹) diagonal — S_a_inv is diagonal by construction
-    S_a_inv_diag  = jnp.diag(S_a_inv)                          # (n_fit,)
-    sa_sqrt_inv   = jnp.sqrt(S_a_inv_diag)                     # = 1/sigma_a
+    S_a_inv_diag  = jnp.diag(S_a_inv)
+    sa_sqrt_inv   = jnp.sqrt(S_a_inv_diag)
 
-    # Residual function for optimistix
     def residual_fn(x, args):
         del args
-        r_data  = eps_sqrt_inv * (y_obs - f(x))                # (n_obs,)
-        r_prior = sa_sqrt_inv  * (x - x_a)                     # (n_fit,)
-        return jnp.concatenate([r_data, r_prior])               # (n_obs + n_fit,)
+        r_data  = eps_sqrt_inv * (y_obs - f(x))
+        r_prior = sa_sqrt_inv  * (x - x_a)
+        return jnp.concatenate([r_data, r_prior])
 
     _lin = lx.AutoLinearSolver(well_posed=False)
     solver = (optx.LevenbergMarquardt(rtol=rtol, atol=atol, linear_solver=_lin)
@@ -196,13 +171,8 @@ def solve_optx(f_vec: Callable,
                               max_steps=max_steps, throw=False)
     x_hat = sol.value
 
-    # --- posterior diagnostics at solution -----------------------------------
-    # jacfwd (forward mode) costs n_fit × forward_pass vs jacrev's n_obs ×.
-    # For our problems n_fit << n_obs (e.g. 6 params vs 224 EnMAP bands),
-    # so jacfwd is the right choice here. optimistix also uses forward mode
-    # internally for its Jacobian computations.
     y_hat     = f(x_hat)
-    J         = jax.jacfwd(f)(x_hat)                            # (n_obs, n_fit)
+    J         = jax.jacfwd(f)(x_hat)
     S_eps_inv = _build_S_eps_inv(noise, n_obs, weights)
     H         = J.T @ S_eps_inv @ J + S_a_inv
     S_hat     = jnp.linalg.inv(H)
@@ -212,7 +182,7 @@ def solve_optx(f_vec: Callable,
     chi2      = residual @ S_eps_inv @ residual / n_obs
 
     return OEResult(x_hat=x_hat, S_hat=S_hat, A=A, dfs=dfs, chi2=chi2,
-                    J=J, y_hat=y_hat)
+                    J=J, y_hat=y_hat, num_steps=sol.stats['num_steps'])
 
 
 # ---------------------------------------------------------------------------
@@ -241,7 +211,7 @@ def invert_pixels_optx(f_vec: Callable,
 
     Wrap with ``jax.jit`` for best performance::
 
-        results = jax.jit(optimistix_engine.invert_pixels_optx)(
+        results = jax.jit(oe_engine_optx.invert_pixels_optx)(
             setup.f_fit, Rrs_pixels, noise, setup.x_a, setup.S_a_inv,
             max_steps=100,
         )
@@ -258,14 +228,12 @@ def invert_pixels_optx(f_vec: Callable,
         max_steps:  maximum solver iterations per pixel, default 100.
         rtol:       relative convergence tolerance, default 1e-6.
         atol:       absolute convergence tolerance, default 1e-6.
-        use_lm:     True (default) = LevenbergMarquardt; False = GaussNewton.
+        use_lm:     True = LevenbergMarquardt; False = GaussNewton (default).
         weights:    optional per-band weights, shape (n_obs,).
-        aux_pixels: optional per-pixel auxiliary pytree.  Each pixel slice
-                    is forwarded to ``f_vec(x, aux)`` via solve_optx().
+        aux_pixels: optional per-pixel auxiliary pytree.
 
     Returns:
-        OEResult with leading pixel dimension on every field (same as
-        ``oe_engine.invert_pixels()``).
+        OEResult with leading pixel dimension on every field.
     """
     n_pixels = Rrs_pixels.shape[0]
 
@@ -305,8 +273,6 @@ def invert_pixels_optx(f_vec: Callable,
 
 # ---------------------------------------------------------------------------
 # Module-level JIT cache — compiled once per process, reused across tiles.
-# max_steps / rtol / atol / use_lm are static: they affect the while_loop
-# structure and must be concrete at compile time.
 # ---------------------------------------------------------------------------
 
 _invert_pixels_optx_jit = jax.jit(
@@ -338,53 +304,27 @@ def invert_tile_optx(
     """
     Run optimistix OE inversion on a single pixel tile.
 
-    Drop-in replacement for ``dask_oe_engine.invert_tile()`` using
-    ``invert_pixels_optx()`` (jacfwd + lax.while_loop) instead of the
-    unrolled Gauss-Newton loop.  JAX's JIT cache is process-local:
-    the first tile call compiles; subsequent tiles reuse the XLA program.
-
-    Args:
-        Rrs_tile:  observed spectra, shape (n_pixels, n_obs).
-        f_fit:     projected forward function from ``InversionSetup.f_fit``.
-        x_a:       prior mean, shape (n_fit,) or (n_pixels, n_fit).
-        S_a_inv:   inverse prior covariance, shape (n_fit, n_fit) or
-                   (n_pixels, n_fit, n_fit).
-        log_mask:  binary log-transform mask, shape (n_fit,).
-        noise:     scalar or 1-D noise std.
-        weights:   optional per-band weights, shape (n_obs,).
-        max_steps: solver iteration cap, default 100.
-        rtol:      relative convergence tolerance, default 1e-6.
-        atol:      absolute convergence tolerance, default 1e-6.
-        use_lm:    False (default) = GaussNewton; True = LevenbergMarquardt.
-        store_y_hat: if True include simulated spectra in output.
-        aux_tile:  optional per-pixel auxiliary pytree.
-
-    Returns:
-        Tuple of NumPy arrays (x_hat_phys, sigma_phys, A_diag, chi2)
-        and optionally y_hat when store_y_hat=True.
+    Returns tuple (x_hat_phys, sigma_phys, A_diag, chi2, n_steps)
+    and optionally y_hat as a 6th element when store_y_hat=True.
     """
-    # Pad invalid pixels with a dummy spectrum so the tile shape is always
-    # (n_tile, n_obs) — JAX sees a constant shape and compiles once regardless
-    # of how many masked pixels are in each tile.  Dummy pixel results are
-    # overwritten with NaN after inversion; real pixel results are unaffected.
-    valid_mask  = np.isfinite(Rrs_tile).all(axis=-1)   # (n_tile,)
+    valid_mask  = np.isfinite(Rrs_tile).all(axis=-1)
     n_tile      = Rrs_tile.shape[0]
     n_fit       = np.asarray(x_a).shape[-1]
     n_obs_tile  = Rrs_tile.shape[-1]
     has_invalid = not valid_mask.all()
 
     if has_invalid and not valid_mask.any():
-        # entire tile is invalid — return NaN arrays immediately
-        nan_fit = np.full((n_tile, n_fit), np.nan)
-        nan_chi = np.full(n_tile, np.nan)
-        out = (nan_fit, nan_fit.copy(), nan_fit.copy(), nan_chi)
+        nan_fit  = np.full((n_tile, n_fit), np.nan)
+        nan_chi  = np.full(n_tile, np.nan)
+        nan_step = np.full(n_tile, -1, dtype=np.int32)
+        out = (nan_fit, nan_fit.copy(), nan_fit.copy(), nan_chi, nan_step)
         if store_y_hat:
             out = out + (np.full((n_tile, n_obs_tile), np.nan),)
         return out
 
     if has_invalid:
         Rrs_padded = Rrs_tile.copy()
-        Rrs_padded[~valid_mask] = Rrs_tile[valid_mask][0]  # fill with first valid spectrum
+        Rrs_padded[~valid_mask] = Rrs_tile[valid_mask][0]
     else:
         Rrs_padded = Rrs_tile
 
@@ -416,18 +356,20 @@ def invert_tile_optx(
     sigma_phys = posterior_sigma_physical(results.S_hat, x_hat_phys, log_mask_jax)
     A_diag     = jnp.diagonal(results.A, axis1=-2, axis2=-1)
 
-    x_hat_np  = np.array(x_hat_phys)
-    sigma_np  = np.array(sigma_phys)
-    A_diag_np = np.array(A_diag)
-    chi2_np   = np.array(results.chi2)
+    x_hat_np   = np.array(x_hat_phys)
+    sigma_np   = np.array(sigma_phys)
+    A_diag_np  = np.array(A_diag)
+    chi2_np    = np.array(results.chi2)
+    n_steps_np = np.array(results.num_steps, dtype=np.int32)
 
     if has_invalid:
-        x_hat_np[~valid_mask]  = np.nan
-        sigma_np[~valid_mask]  = np.nan
-        A_diag_np[~valid_mask] = np.nan
-        chi2_np[~valid_mask]   = np.nan
+        x_hat_np[~valid_mask]   = np.nan
+        sigma_np[~valid_mask]   = np.nan
+        A_diag_np[~valid_mask]  = np.nan
+        chi2_np[~valid_mask]    = np.nan
+        n_steps_np[~valid_mask] = -1
 
-    out = (x_hat_np, sigma_np, A_diag_np, chi2_np)
+    out = (x_hat_np, sigma_np, A_diag_np, chi2_np, n_steps_np)
     if store_y_hat:
         y_hat_np = np.array(results.y_hat)
         if has_invalid:
@@ -458,20 +400,9 @@ def invert_image_optx(
     """
     Tile-parallel OE inversion using optimistix + Dask.
 
-    Best-of-all-worlds back-end combining:
-
-    * **Dask tiling** — cache-friendly tile sizes keep working sets in L3;
-      supports distributed schedulers for multi-node use.
-    * **lax.while_loop** — the solver loop is not unrolled; XLA compiles the
-      loop body once regardless of ``max_steps``.  Compilation is dramatically
-      faster than ``dask_oe_engine`` for large problems (e.g. EnMAP).
-    * **jacfwd** — forward-mode Jacobian costs ``n_fit`` forward passes instead
-      of ``n_obs``; for hyperspectral data (n_obs=224, n_fit=6) this is ~37×
-      cheaper than the reverse-mode default in ``oe_engine``.
-    * **Convergence stopping** — easy pixels exit the loop early.
-
-    The result dict is identical to ``dask_oe_engine.invert_image()`` and
-    compatible with ``dask_oe_engine.to_dataset()``.
+    The result dict matches ``dask_oe_engine.invert_image()`` and is
+    compatible with ``dask_oe_engine.to_dataset()``, with the addition
+    of ``n_steps`` (solver iterations per pixel).
 
     Args:
         Rrs:          observed reflectance, shape (n_rows, n_cols, n_obs) or
@@ -486,15 +417,13 @@ def invert_image_optx(
         store_y_hat:  if True include simulated spectra in output.
         scheduler:    Dask scheduler — ``'synchronous'``, ``'threads'``, or
                       ``'distributed'``.
-        x_a_image:    optional per-pixel prior mean, shape (n_rows, n_cols, n_fit)
-                      or (n_pixels, n_fit).  Log-params must already be in log-space.
+        x_a_image:    optional per-pixel prior mean.
         S_a_inv_image: optional per-pixel inverse prior covariance.
-        aux_image:    optional per-pixel auxiliary pytree (dict or array).
+        aux_image:    optional per-pixel auxiliary pytree.
 
     Returns:
         dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``,
-        ``fit_names``, and optionally ``y_hat``.  Arrays have the same
-        leading spatial shape as ``Rrs``.
+        ``n_steps``, ``fit_names``, and optionally ``y_hat``.
     """
     Rrs_arr = np.asarray(Rrs)
     spatial_shape = None
@@ -522,7 +451,7 @@ def invert_image_optx(
 
     n_spatial = len(spatial_shape) if spatial_shape is not None else 0
 
-    x_a_flat     = np.asarray(x_a_image).reshape(n_pixels, n_fit)         if x_a_image     is not None else None
+    x_a_flat     = np.asarray(x_a_image).reshape(n_pixels, n_fit)            if x_a_image     is not None else None
     S_a_inv_flat = np.asarray(S_a_inv_image).reshape(n_pixels, n_fit, n_fit) if S_a_inv_image is not None else None
 
     def _flatten_leaf(a):
@@ -561,29 +490,36 @@ def invert_image_optx(
 
     tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
 
-    x_hat_all  = np.concatenate([r[0] for r in tile_results], axis=0)
-    sigma_all  = np.concatenate([r[1] for r in tile_results], axis=0)
-    A_diag_all = np.concatenate([r[2] for r in tile_results], axis=0)
-    chi2_all   = np.concatenate([r[3] for r in tile_results], axis=0)
+    x_hat_all   = np.concatenate([r[0] for r in tile_results], axis=0)
+    sigma_all   = np.concatenate([r[1] for r in tile_results], axis=0)
+    A_diag_all  = np.concatenate([r[2] for r in tile_results], axis=0)
+    chi2_all    = np.concatenate([r[3] for r in tile_results], axis=0)
+    n_steps_all = np.concatenate([r[4] for r in tile_results], axis=0)
 
     if spatial_shape is not None:
-        x_hat_all  = x_hat_all.reshape(*spatial_shape, n_fit)
-        sigma_all  = sigma_all.reshape(*spatial_shape, n_fit)
-        A_diag_all = A_diag_all.reshape(*spatial_shape, n_fit)
-        chi2_all   = chi2_all.reshape(*spatial_shape)
+        x_hat_all   = x_hat_all.reshape(*spatial_shape, n_fit)
+        sigma_all   = sigma_all.reshape(*spatial_shape, n_fit)
+        A_diag_all  = A_diag_all.reshape(*spatial_shape, n_fit)
+        chi2_all    = chi2_all.reshape(*spatial_shape)
+        n_steps_all = n_steps_all.reshape(*spatial_shape)
 
     out: Dict[str, object] = {
         'x_hat':     x_hat_all,
         'sigma':     sigma_all,
         'A_diag':    A_diag_all,
         'chi2':      chi2_all,
+        'n_steps':   n_steps_all,
         'fit_names': setup.fit_names,
     }
 
     if store_y_hat:
-        y_hat_all = np.concatenate([r[4] for r in tile_results], axis=0)
+        y_hat_all = np.concatenate([r[5] for r in tile_results], axis=0)
         if spatial_shape is not None:
             y_hat_all = y_hat_all.reshape(*spatial_shape, n_obs)
         out['y_hat'] = y_hat_all
 
     return out
+
+
+# Alias matching dask_oe_engine and lsq_engine_optx convention
+invert_image = invert_image_optx
