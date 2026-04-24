@@ -68,6 +68,17 @@ def segment_image(
     labels : (n_rows, n_cols) int array of segment IDs starting at 0
     """
     Rrs_seg = Rrs[..., band_slice] if band_slice is not None else Rrs
+
+    # slic rejects NaN/Inf values — fill invalid pixels with the per-band
+    # nanmean so segmentation runs on the full spatial grid.  The original
+    # NaN mask is preserved in Rrs and applied downstream (aggregation counts
+    # only valid pixels; inversion engines skip NaN spectra).
+    valid = np.isfinite(Rrs_seg).all(axis=-1)
+    if not valid.all():
+        fill = np.nanmean(Rrs_seg.reshape(-1, Rrs_seg.shape[-1]), axis=0)
+        Rrs_seg = Rrs_seg.copy()
+        Rrs_seg[~valid] = fill
+
     return slic(
         Rrs_seg,
         n_segments=n_segments,
@@ -108,9 +119,15 @@ def aggregate_superpixels(
     sp_counts  = np.empty(n_segs, dtype=np.int64)
 
     for i, sid in enumerate(seg_ids):
-        mask          = labels_flat == sid
-        sp_spectra[i] = Rrs_flat[mask].mean(axis=0)
-        sp_counts[i]  = mask.sum()
+        mask  = labels_flat == sid
+        px    = Rrs_flat[mask]
+        valid = np.isfinite(px).all(axis=-1)
+        if valid.any():
+            sp_spectra[i] = px[valid].mean(axis=0)
+            sp_counts[i]  = int(valid.sum())
+        else:
+            sp_spectra[i] = np.nan   # all-land segment; inversion engine will skip
+            sp_counts[i]  = 0
 
     return sp_spectra, sp_counts
 
