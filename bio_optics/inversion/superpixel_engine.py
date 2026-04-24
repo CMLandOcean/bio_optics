@@ -227,7 +227,14 @@ def backinterp_pca_knn(
         sigma  : (n_pixels, n_fit)  only present when sp_sigma is not None
         A_diag : (n_pixels, n_fit)  only present when sp_A_diag is not None
     """
-    n_segs = sp_spectra.shape[0]
+    # --- filter valid superpixels (all-land segments have NaN spectra) --------
+    sp_valid = np.isfinite(sp_spectra).all(axis=-1)
+    sp_spec  = sp_spectra[sp_valid]
+    sp_xh    = sp_x_hat[sp_valid]
+    sp_sig   = sp_sigma[sp_valid]  if sp_sigma  is not None else None
+    sp_Ad    = sp_A_diag[sp_valid] if sp_A_diag is not None else None
+
+    n_segs = sp_spec.shape[0]
     k_eff  = min(k, n_segs)
 
     # --- brightness normalise ------------------------------------------------
@@ -235,8 +242,19 @@ def backinterp_pca_knn(
         s = X.sum(axis=-1, keepdims=True)
         return X / np.where(s == 0, 1.0, s)
 
-    sp_norm = _norm(sp_spectra)
-    px_norm = _norm(Rrs_pixels)
+    sp_norm = _norm(sp_spec)
+
+    # Fill NaN pixels with per-band nanmean before PCA transform.
+    # Invalid pixels will be NaN-masked in invert_image_superpixel after
+    # back-interpolation — we just need finite values here for sklearn.
+    px_finite = np.isfinite(Rrs_pixels).all(axis=-1)
+    if not px_finite.all():
+        fill     = np.nanmean(Rrs_pixels, axis=0)
+        Rrs_fill = Rrs_pixels.copy()
+        Rrs_fill[~px_finite] = fill
+    else:
+        Rrs_fill = Rrs_pixels
+    px_norm = _norm(Rrs_fill)
 
     # --- PCA on superpixel spectra -------------------------------------------
     n_comp = min(n_components, n_segs - 1, sp_norm.shape[-1])
@@ -261,22 +279,22 @@ def backinterp_pca_knn(
     w3 = weights[:, :, np.newaxis]                         # (n_pixels, k_eff, 1)
 
     # --- x_hat: IDW average --------------------------------------------------
-    x_hat_nb  = sp_x_hat[indices]                          # (n_pixels, k_eff, n_fit)
+    x_hat_nb  = sp_xh[indices]                             # (n_pixels, k_eff, n_fit)
     x_hat_out = (w3 * x_hat_nb).sum(axis=1)                # (n_pixels, n_fit)
 
     out = {'x_hat': x_hat_out}
 
     # --- A_diag: IDW average (OE only) ---------------------------------------
-    if sp_A_diag is not None:
-        out['A_diag'] = (w3 * sp_A_diag[indices]).sum(axis=1)  # (n_pixels, n_fit)
+    if sp_Ad is not None:
+        out['A_diag'] = (w3 * sp_Ad[indices]).sum(axis=1)  # (n_pixels, n_fit)
 
     # --- sigma: propagated through IDW + interpolation spread (OE only) ------
-    if sp_sigma is not None:
-        sigma_nb   = sp_sigma[indices]                          # (n_pixels, k_eff, n_fit)
+    if sp_sig is not None:
+        sigma_nb   = sp_sig[indices]                        # (n_pixels, k_eff, n_fit)
         var_post   = (w3 * sigma_nb ** 2).sum(axis=1)
         diff2      = (x_hat_nb - x_hat_out[:, np.newaxis, :]) ** 2
         var_interp = (w3 * diff2).sum(axis=1)
-        out['sigma'] = np.sqrt(var_post + var_interp)           # (n_pixels, n_fit)
+        out['sigma'] = np.sqrt(var_post + var_interp)       # (n_pixels, n_fit)
 
     return out
 
@@ -394,5 +412,17 @@ def invert_image_superpixel(
         out['n_steps'] = sp_results['n_steps'][sp_idx_flat].reshape(n_rows, n_cols)
     if store_sp_results:
         out['sp_results'] = sp_results
+
+    # Mask land/invalid pixels — back-interpolation fills them with extrapolated
+    # values from nearest superpixels; NaN them out to match the input mask.
+    pixel_valid = np.isfinite(Rrs).all(axis=-1)   # (n_rows, n_cols)
+    inv = ~pixel_valid
+    if inv.any():
+        out['x_hat'][inv] = np.nan
+        out['chi2'][inv] = np.nan
+        out['chi2_calibrated'][inv] = np.nan
+        if 'sigma'  in out: out['sigma'][inv]  = np.nan
+        if 'A_diag' in out: out['A_diag'][inv] = np.nan
+        if 'n_steps' in out: out['n_steps'][inv] = -1
 
     return out
