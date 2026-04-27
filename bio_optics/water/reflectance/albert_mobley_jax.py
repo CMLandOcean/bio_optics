@@ -4,10 +4,10 @@ import numpy as np
 
 jax.config.update("jax_enable_x64", True)
 
-from ..water import absorption_jax, backscattering_jax, attenuation_jax, bottom_reflectance_jax
-from ..water.backscattering import morel
-from ..surface import air_water_jax
-from ..helper import resampling
+from .. import absorption_jax, backscattering_jax, attenuation_jax, bottom_reflectance_jax
+from ..backscattering import morel
+from ...surface import air_water_jax
+from ...helper import resampling
 
 
 # ---------------------------------------------------------------------------

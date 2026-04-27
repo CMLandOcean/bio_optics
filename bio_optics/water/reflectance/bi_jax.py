@@ -13,7 +13,7 @@ Usage::
 
     import numpy as np
     import jax
-    from bio_optics.reflectance import bi_jax
+    from bio_optics.water.reflectance import bi_jax
 
     pre  = bi_jax.precompute(wavelengths)
     Rrs  = bi_jax.forward(params, pre)
@@ -35,8 +35,8 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-from ..water.backscattering import morel
-from ..helper import resampling
+from ..backscattering import morel
+from ...helper import resampling
 
 MAX_PHY_CLASSES = 8
 

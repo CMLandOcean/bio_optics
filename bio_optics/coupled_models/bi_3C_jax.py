@@ -36,7 +36,7 @@ jax.config.update("jax_enable_x64", True)
 
 from ..atmosphere import downwelling_irradiance
 from ..surface import air_water_jax
-from ..reflectance import bi_jax
+from ..water.reflectance import bi_jax
 
 
 # ---------------------------------------------------------------------------

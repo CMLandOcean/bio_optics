@@ -1,6 +1,6 @@
 ﻿import numpy as np
 from ..water import absorption, backscattering, attenuation, bottom_reflectance
-from ..reflectance import albert_mobley as water_alg
+from ..water.reflectance import albert_mobley as water_alg
 from ..atmosphere.adjacency import reflectance as adjacency_effect
 from ..surface import reflectance as surface, air_water
 

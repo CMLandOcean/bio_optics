@@ -37,9 +37,9 @@
 
 
 import numpy as np
-from ..water import absorption, backscattering, attenuation, bottom_reflectance
-from ..surface import air_water
-from ..helper import resampling
+from .. import absorption, backscattering, attenuation, bottom_reflectance
+from ...surface import air_water
+from ...helper import resampling
 
 
 def forward(parameters,

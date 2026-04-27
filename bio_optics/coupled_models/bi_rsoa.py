@@ -1,7 +1,7 @@
 """
 Coupled HEREON model: water-leaving Rrs + RSOA surface reflectance model.
 """
-from ..reflectance import bi
+from ..water.reflectance import bi
 from ..surface import reflectance as srf
 
 

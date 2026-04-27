@@ -1,7 +1,7 @@
 import numpy as np
-from ..water import absorption, backscattering, attenuation, bottom_reflectance
-from ..surface import air_water
-from ..helper import resampling, utils
+from .. import absorption, backscattering, attenuation, bottom_reflectance
+from ...surface import air_water
+from ...helper import resampling, utils
 
 
 def D_u_C(u, f1=1.03, f2=2.4):

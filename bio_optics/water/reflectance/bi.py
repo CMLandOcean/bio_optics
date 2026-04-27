@@ -1,8 +1,8 @@
 ﻿import numpy as np
-from ..water import fluorescence, absorption, backscattering, attenuation, scattering
+from .. import fluorescence, absorption, backscattering, attenuation, scattering
 from . import lee
-from ..helper import resampling, utils
-from ..surface import air_water
+from ...helper import resampling, utils
+from ...surface import air_water
 
 def forward(parameters,
             wavelengths,

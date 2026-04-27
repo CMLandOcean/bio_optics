@@ -9,7 +9,7 @@ Follow these phases in order for any new sensor/scene combination.
 
 ### 1.1 Precompute spectral lookup tables
 ```python
-from bio_optics.reflectance import albert_mobley_jax
+from bio_optics.water.reflectance import albert_mobley_jax
 
 pre = albert_mobley_jax.precompute(wavelengths)
 # pre contains: a_w, bb_w, R_b_i (bottom LUTs), and other spectral tables

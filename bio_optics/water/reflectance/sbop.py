@@ -1,8 +1,8 @@
 import numpy as np
-from ..water import absorption, backscattering, bottom_reflectance
+from .. import absorption, backscattering, bottom_reflectance
 from . import hope
-from ..surface import air_water
-from ..helper import resampling, utils
+from ...surface import air_water
+from ...helper import resampling, utils
 
 
 def rrs_sh(C_Mie=0,
