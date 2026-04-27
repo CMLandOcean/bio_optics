@@ -161,5 +161,43 @@ def Rrs_fl_phycoerythrin(L_fl_phycoerythrin=0.001, wavelengths=np.arange(400,800
         Rrs_fl_phycoerythrin = L_fl_phycoerythrin * h_C(wavelengths=wavelengths, fwhm=fwhm, lambda_C=lambda_C)
     else:
         Rrs_fl_phycoerythrin = L_fl_phycoerythrin * h_C_phycoerythrin_res
-        
+
     return Rrs_fl_phycoerythrin
+
+
+def forward(params, wavelengths=np.arange(400, 800),
+            h_C_res=[], h_C_phycocyanin_res=[], h_C_phycoerythrin_res=[]):
+    """
+    Combined fluorescence Rrs (Chl-a + phycocyanin + phycoerythrin) [sr-1].
+
+    Args:
+        params: lmfit Parameters or dict. Required keys:
+                L_fl_lambda0, L_fl_phycocyanin, L_fl_phycoerythrin.
+                Optional keys (fall back to emission shape defaults if absent):
+                fwhm_fl (25), lambda_C_fl (685),
+                fwhm_phycocyanin (20), lambda_C_phycocyanin (644),
+                fwhm_phycoerythrin (20), lambda_C_phycoerythrin (573).
+        wavelengths: wavelengths [nm], default: np.arange(400, 800)
+        h_C_res: optional precomputed Chl-a Gaussian [nm-1]
+        h_C_phycocyanin_res: optional precomputed phycocyanin Gaussian [nm-1]
+        h_C_phycoerythrin_res: optional precomputed phycoerythrin Gaussian [nm-1]
+
+    Returns:
+        Rrs_fl_total: total fluorescence radiance reflectance [sr-1], shape (n_wavelengths,)
+    """
+    p = params if isinstance(params, dict) else {k: float(v) for k, v in params.items()}
+    return (
+        Rrs_fl(wavelengths=wavelengths, L_fl_lambda0=p["L_fl_lambda0"],
+               fwhm1=p.get("fwhm_fl", 25), lambda_C1=p.get("lambda_C_fl", 685),
+               h_C_res=h_C_res)
+        + Rrs_fl_phycocyanin(L_fl_phycocyanin=p["L_fl_phycocyanin"],
+                              wavelengths=wavelengths,
+                              fwhm=p.get("fwhm_phycocyanin", 20),
+                              lambda_C=p.get("lambda_C_phycocyanin", 644),
+                              h_C_phycocyanin_res=h_C_phycocyanin_res)
+        + Rrs_fl_phycoerythrin(L_fl_phycoerythrin=p["L_fl_phycoerythrin"],
+                                wavelengths=wavelengths,
+                                fwhm=p.get("fwhm_phycoerythrin", 20),
+                                lambda_C=p.get("lambda_C_phycoerythrin", 573),
+                                h_C_phycoerythrin_res=h_C_phycoerythrin_res)
+    )

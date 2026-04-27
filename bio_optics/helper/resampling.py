@@ -46,6 +46,48 @@ from scipy.interpolate import interp1d
 # get absolute path to data folder
 data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
+### Phytoplankton spectral libraries
+
+# Registry: keyword → (filename, skiprows, separator)
+_PHY_SPEC_REGISTRY = {
+    'a_phy':       ('a_phy_spec.txt',        25, ','),
+    'a_phy_EnSAD': ('a_phy_spec_EnSAD.txt',  11, ','),
+    'b_phy_EnSAD': ('b_phy_spec_EnSAD.txt',   4, ','),
+}
+
+
+def resample_phy_spec(wavelengths, source, n_pad=None):
+    """
+    Generic phytoplankton spectral library loader.
+
+    Args:
+        wavelengths: target wavelengths [nm]
+        source: keyword from the internal registry ('a_phy', 'a_phy_EnSAD', 'b_phy_EnSAD')
+                OR an absolute/relative path to a CSV file. Custom files must use
+                wavelength_nm as the first column (no header skip applied).
+        n_pad: if set, zero-pad the output to exactly n_pad spectral classes.
+               Useful when a model requires a fixed-width matrix (e.g. n_pad=8).
+
+    Returns:
+        spec: resampled spectra, shape (n_wavelengths, n_classes) or (n_wavelengths, n_pad)
+    """
+    if source in _PHY_SPEC_REGISTRY:
+        filename, skiprows, sep = _PHY_SPEC_REGISTRY[source]
+        filepath = os.path.join(data_dir, filename)
+    else:
+        filepath = str(source)
+        skiprows = 0
+        sep = ','
+    db = pd.read_csv(filepath, skiprows=skiprows, sep=sep)
+    band_resampler = BandResampler(db.wavelength_nm.values, wavelengths)
+    spec = band_resampler(np.asarray(db)[:, 1:])
+    if n_pad is not None and spec.shape[1] < n_pad:
+        spec = np.concatenate(
+            [spec, np.zeros((spec.shape[0], n_pad - spec.shape[1]))], axis=1
+        )
+    return spec
+
+
 ### Water
 
 def resample_a_w(wavelengths = np.arange(400,800)):
@@ -97,7 +139,7 @@ def resample_da_w_div_dT(wavelengths = np.arange(400,800)):
 def resample_a_i_spec(wavelengths = np.arange(400,800)):
     """
     Specific absorption coefficients [m2 mg-1] of six phytoplankton types compiled from multiple sources
-    as distributed with the Water Color Simulator 6 (WASI6) [1] 
+    as distributed with the Water Color Simulator 6 (WASI6) [1]
 
     1. phytoplankton
     2. cryptophyta
@@ -114,13 +156,7 @@ def resample_a_i_spec(wavelengths = np.arange(400,800)):
     Returns:
         a_i_spec: specific absorption coefficients of six phytoplankton types resampled to input wavelengths [m2 mg-1]
     """
-    # read file
-    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec.txt'), skiprows=25, sep=",")
-    # resample to sensor bands
-    band_resampler = BandResampler(a_phyto_db.wavelength_nm.values, wavelengths) 
-    a_i_spec = band_resampler(np.asarray(a_phyto_db)[:,1:])
-    
-    return a_i_spec
+    return resample_phy_spec(wavelengths, source='a_phy')
 
 
 def resample_a_i_spec_EnSAD(wavelengths = np.arange(400,720)):
@@ -136,7 +172,7 @@ def resample_a_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     7. Dinoflagellates from [2]
     8. Phytoplankton Case 1
 
-    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352] 
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
     [2] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
 
     Args:
@@ -145,13 +181,7 @@ def resample_a_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     Returns:
         a_i_spec: specific absorption coefficients of eight phytoplankton types resampled to input wavelengths [m2 mg-1]
     """
-    # read file
-    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSAD.txt'), skiprows=11, sep=",")
-    # resample to sensor bands
-    band_resampler = BandResampler(a_phyto_db.wavelength_nm.values, wavelengths) 
-    a_i_spec = band_resampler(np.asarray(a_phyto_db)[:,1:])
-    
-    return a_i_spec
+    return resample_phy_spec(wavelengths, source='a_phy_EnSAD')
 
 
 def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
@@ -167,7 +197,7 @@ def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     7. Dinoflagellates (identical to Brown group)
     8. Phytoplankton Case-1
 
-    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352] 
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
 
     Args:
         wavelengths: wavelengths [nm], default: np.arange(400, 720)
@@ -175,13 +205,7 @@ def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     Returns:
         b_i_spec: specific scattering coefficients of eight phytoplankton types resampled to input wavelengths [m2 mg-1]
     """
-    # read file
-    b_phyto_db = pd.read_csv(os.path.join(data_dir, 'b_phy_spec_EnSAD.txt'), skiprows=4, sep=",")
-    # resample to sensor bands
-    band_resampler = BandResampler(b_phyto_db.wavelength_nm.values, wavelengths) 
-    b_i_spec = band_resampler(np.asarray(b_phyto_db)[:,1:])
-    
-    return b_i_spec
+    return resample_phy_spec(wavelengths, source='b_phy_EnSAD')
 
 
 def resample_bb_w(wavelengths = np.arange(400,800), 
