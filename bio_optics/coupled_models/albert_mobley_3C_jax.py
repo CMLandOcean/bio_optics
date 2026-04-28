@@ -27,7 +27,7 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-from ..reflectance import albert_mobley_jax
+from ..water.reflectance import albert_mobley_jax
 from ..atmosphere import downwelling_irradiance
 from ..surface import air_water_jax
 

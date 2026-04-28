@@ -2,7 +2,7 @@
 Coupled Albert & Mobley model: water-leaving Rrs + surface reflectance (Rrs_surf).
 """
 import numpy as np
-from ..reflectance import albert_mobley
+from ..water.reflectance import albert_mobley
 from ..surface import reflectance as surface_reflectance
 
 

@@ -2,7 +2,7 @@
 Coupled HEREON model: water-leaving Rrs + surface reflectance (Rrs_surf).
 """
 import numpy as np
-from ..reflectance import bi
+from ..water.reflectance import bi
 from ..surface import reflectance as srf, air_water
 from ..atmosphere import sky_radiance, downwelling_irradiance
 from ..helper import resampling

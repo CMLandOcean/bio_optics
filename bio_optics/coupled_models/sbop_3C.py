@@ -2,7 +2,7 @@
 Coupled SBOP model: water-leaving Rrs + surface reflectance term (3-component).
 """
 import numpy as np
-from ..reflectance import sbop
+from ..water.reflectance import sbop
 from ..surface import reflectance as srf
 from ..helper import utils
 

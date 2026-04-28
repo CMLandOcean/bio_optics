@@ -44,7 +44,7 @@ convert results back to physical space::
 
 Typical two-step usage (with log-transform)::
 
-    from bio_optics.reflectance import albert_mobley_jax
+    from bio_optics.water.reflectance import albert_mobley_jax
     from bio_optics.coupled_models import albert_mobley_3C_jax
     from bio_optics.inversion import oe_engine
 
