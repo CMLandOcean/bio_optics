@@ -315,6 +315,7 @@ def invert_image_superpixel(
     band_slice: Optional[np.ndarray] = None,
     store_sp_results: bool = False,
     invert_fn=None,
+    x0_image: Optional[np.ndarray] = None,
     **invert_kwargs,
 ) -> dict:
     """SLIC superpixel inversion with PCA+kNN back-interpolation.
@@ -352,6 +353,12 @@ def invert_image_superpixel(
     store_sp_results : include raw superpixel-level results in output dict
     invert_fn   : callable(spectra, setup, noise, **kwargs) → dict
                   Defaults to dask_oe_engine.invert_image.
+    x0_image    : (n_rows, n_cols, n_fit) array of per-pixel starting values in
+                  retrieval space (log-space for log-params).  Aggregated to
+                  per-superpixel means and injected as `x_a_image` into the OE
+                  engine.  Ignored by LSQ engines (which have no prior term).
+                  Typical use: set x0_image[..., zB_idx] = np.log(bathy_map) to
+                  provide a spatially varying bathymetry prior.
     **invert_kwargs  : forwarded to invert_fn (n_iter, tile_size, max_steps, …)
     """
     if Rrs.ndim != 3:
@@ -368,6 +375,25 @@ def invert_image_superpixel(
 
     # 2. Aggregate
     sp_spectra, sp_counts = aggregate_superpixels(Rrs, labels)
+
+    # 2b. Aggregate x0_image to per-superpixel means and inject as x_a_image.
+    #     dask_oe_engine.invert_image accepts x_a_image (n_segs, n_fit) to set
+    #     a per-pixel prior mean in retrieval space.  LSQ engines ignore it.
+    if x0_image is not None:
+        if x0_image.shape[:2] != (n_rows, n_cols):
+            raise ValueError(
+                f"x0_image leading dims {x0_image.shape[:2]} must match "
+                f"Rrs spatial dims ({n_rows}, {n_cols})"
+            )
+        n_fit_x0 = x0_image.shape[-1]
+        x0_flat  = x0_image.reshape(-1, n_fit_x0)
+        x0_sp    = np.full((n_segs, n_fit_x0), np.nan)
+        for i, sid in enumerate(seg_ids):
+            px    = x0_flat[labels_flat == sid]
+            valid = np.isfinite(px).all(axis=-1)
+            if valid.any():
+                x0_sp[i] = px[valid].mean(axis=0)
+        invert_kwargs = {**invert_kwargs, 'x_a_image': x0_sp}
 
     # 3. Invert superpixel mean spectra
     sp_results = invert_superpixels(

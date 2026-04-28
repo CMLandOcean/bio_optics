@@ -36,6 +36,7 @@ def invert_image(
     use_lm: bool = True,
     rtol: float = 1e-6,
     atol: float = 1e-6,
+    x_a_image: 'np.ndarray | None' = None,
 ) -> dict:
     """Pure weighted least-squares image inversion using JAX + optimistix.
 
@@ -48,6 +49,11 @@ def invert_image(
     tile_size : pixels per JIT-compiled tile (controls memory)
     use_lm    : True → LevenbergMarquardt (default); False → GaussNewton
     rtol/atol : convergence thresholds (solver exits early when met)
+    x_a_image : (n_pixels, n_fit) or (n_rows, n_cols, n_fit) per-pixel starting
+                values in retrieval space (log-space for log-params).  When None
+                every pixel starts from setup.x_a.  Analogous to the x_a_image
+                parameter in dask_oe_engine — for OE it sets the prior mean, for
+                LSQ it sets the solver starting point.
 
     Returns
     -------
@@ -70,8 +76,13 @@ def invert_image(
     n_fit    = len(setup.fit_names)
 
     eps_sqrt_inv = _build_noise_sqrt_inv(noise, n_obs)
-    x0           = jnp.array(setup.x_a,     dtype=jnp.float64)
     log_mask     = jnp.array(setup.log_mask, dtype=jnp.float64)
+
+    # Per-pixel starting values: broadcast scalar x_a or use provided image
+    if x_a_image is not None:
+        x0_flat = np.asarray(x_a_image, dtype=np.float64).reshape(n_pixels, n_fit)
+    else:
+        x0_flat = np.tile(np.asarray(setup.x_a, dtype=np.float64), (n_pixels, 1))
 
     def residual_fn(x, y_obs):
         return eps_sqrt_inv * (y_obs - setup.f_fit(x))
@@ -83,8 +94,8 @@ def invert_image(
         optx.GaussNewton(rtol=rtol, atol=atol, linear_solver=_lin)
     )
 
-    def invert_pixel(y_obs):
-        sol    = optx.least_squares(residual_fn, solver, x0,
+    def invert_pixel(y_obs, x0_px):
+        sol    = optx.least_squares(residual_fn, solver, x0_px,
                                     args=y_obs, max_steps=max_steps, throw=False)
         x_phys = to_physical(sol.value, log_mask)
         res    = residual_fn(sol.value, y_obs)
@@ -92,8 +103,8 @@ def invert_image(
         return x_phys, chi2, sol.stats['num_steps']
 
     @jax.jit
-    def invert_tile(tile):
-        return jax.vmap(invert_pixel)(tile)
+    def invert_tile(tile, x0_tile):
+        return jax.vmap(invert_pixel)(tile, x0_tile)
 
     x_hat_all   = np.full((n_pixels, n_fit), np.nan)
     chi2_all    = np.full(n_pixels, np.nan)
@@ -111,7 +122,10 @@ def invert_image(
         if not valid.all():
             tile_padded[~valid] = tile[valid][0]
 
-        x_tile, chi2_tile, steps_tile = invert_tile(jnp.asarray(tile_padded, dtype=jnp.float64))
+        x0_tile = jnp.asarray(x0_flat[start:end], dtype=jnp.float64)
+        x_tile, chi2_tile, steps_tile = invert_tile(
+            jnp.asarray(tile_padded, dtype=jnp.float64), x0_tile
+        )
         x_hat_all[start:end][valid]   = np.array(x_tile)[valid]
         chi2_all[start:end][valid]    = np.array(chi2_tile)[valid]
         n_steps_all[start:end][valid] = np.array(steps_tile, dtype=np.int32)[valid]
