@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -81,7 +81,7 @@ def bb_w(wavelengths: np.array = np.arange(400,800),
     Returns:
         bb_w: spectral backscattering coefficient of pure water [m-1]
     """
-    if len(bb_w_res)==0:
+    if bb_w_res is None:
         bb_w = morel(wavelengths=wavelengths, fresh=fresh)
     else:
         bb_w = bb_w_res
@@ -110,7 +110,7 @@ def bb_phy(C_phy: float = 0,
 
     # Math: b_{b,phy} = C_{phy} * b_{b, phy}^* * b_{b, phy}^N(\lambda)
     """       
-    if len(b_phy_norm_res)==0:
+    if b_phy_norm_res is None:
         b_phy_norm = resampling.resample_b_phy_norm(wavelengths=wavelengths)
     else:
         b_phy_norm = b_phy_norm_res
@@ -126,7 +126,7 @@ def dbb_phy_div_dC_phy(wavelengths: np.array = np.arange(400,800),
     """
     # Math: \frac{\partial}{\partial C_{phy}}b_{b,phy} = \frac{\partial}{\partial C_{phy}}\left[C_{phy} * b_{b, phy}^* * b_{b, phy}^N(\lambda)\right] = b_{b, phy}^* * b_{b, phy}^N(\lambda)
     """
-    if len(b_phy_norm_res)==0:
+    if b_phy_norm_res is None:
         b_phy_norm = resampling.resample_b_phy_norm(wavelengths=wavelengths)
     else:
         b_phy_norm = b_phy_norm_res
@@ -163,7 +163,7 @@ def bb_X(C_X: float = 0,
     Returns:
         bb_X: spectral backscattering coefficient of non-algal particles type I [m-1]
     """
-    if len(b_X_norm_res)==0:
+    if b_X_norm_res is None:
         b_X_norm = np.ones(wavelengths.shape) * b_X_norm_factor
     else:
         b_X_norm = b_X_norm_res
@@ -180,7 +180,7 @@ def dbb_X_div_dC_X(wavelengths: np.array = np.arange(400,800),
     """
     # Math: \frac{\partial}{\partial C_X} b_{b,x} = \frac{\partial}{\partial C_X}\left[C_X * b_{b,X}^* * b_{b,X}^N(\lambda)\right] = b_{b,X}^* * b_{b,X}^N(\lambda)
     """
-    if len(b_X_norm_res)==0:
+    if b_X_norm_res is None:
         b_X_norm = np.ones(wavelengths.shape) * bb_X_norm_factor
     else:
         b_X_norm = b_X_norm_res
@@ -201,7 +201,7 @@ def bb_Mie(C_Mie: float = 0,
            bb_Mie_spec: float = 0.0042,
            lambda_S: float = 500, 
            n: float = -1,
-           b_Mie_norm_res=[]):
+           b_Mie_norm_res=None):
     """
     Spectral backscattering coefficient of particles of type II "defined by the normalized scattering coefficient (wavelengths/lambda_S)**n, 
     where the Angström exponent n is related to the particle size distribution" [1]. The default parameter setting is representative for Lake Constance [1, 2].
@@ -222,7 +222,7 @@ def bb_Mie(C_Mie: float = 0,
 
     # Math: b_{b,Mie} = C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n
     """
-    if len(b_Mie_norm_res)==0:
+    if b_Mie_norm_res is None:
         bb_Mie = C_Mie * bb_Mie_spec * ((wavelengths/lambda_S)**n)
     else:
         bb_Mie = C_Mie * bb_Mie_spec * b_Mie_norm_res
@@ -234,11 +234,11 @@ def dbb_Mie_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
         bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        bb_Mie_norm_res=[]):
+        bb_Mie_norm_res=None):
     """
     # Math: \frac{\partial}{\partial C_{Mie}}b_{b,Mie} = \frac{\partial}{\partial C_{Mie}}\left[C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n \right] = b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n
     """
-    if len(bb_Mie_norm_res) == 0:
+    if bb_Mie_norm_res is None:
         bb_Mie_norm = (wavelengths/lambda_S)**n
     else:
         bb_Mie_norm = bb_Mie_norm_res
@@ -253,11 +253,11 @@ def dbb_Mie_div_dn(C_Mie: float = 0,
         bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        bb_Mie_norm_res=[]):
+        bb_Mie_norm_res=None):
     """
     # Math: \frac{\partial}{\partial n} \left[C_{Mie} * b_{b,Mie} * (\frac{\lambda}{\lambda_S})^n \right] = C_{Mie} * b_{b,Mie} * ln(\frac{\lambda}{\lambda_S}) (\frac{\lambda}{\lambda_S})^n
     """
-    if len(bb_Mie_norm_res) == 0:
+    if bb_Mie_norm_res is None:
         bb_Mie_norm = (wavelengths/lambda_S)**n
     else:
         bb_Mie_norm = bb_Mie_norm_res
@@ -319,7 +319,7 @@ def dbb_NAP_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
         bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n=-1,
-        bb_Mie_norm_res=[]):
+        bb_Mie_norm_res=None):
     """
     # Math: b_{b,NAP} = b_{b,X} + b_{b,Mie}
     # Math: \frac{\partial}{\partial C_{Mie}}b_{b,NAP} = \frac{\partial}{\partial C_{Mie}}b_{b,Mie}
@@ -331,7 +331,7 @@ def dbb_NAP_div_dn(C_Mie: float = 0,
         bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
         n: float = -1,
-        bb_Mie_norm_res=[]):
+        bb_Mie_norm_res=None):
     """
     # Math: b_{b,NAP} = b_{b,X} + b_{b,Mie}
     # Math: \frac{\partial}{\partial n}b_{b,NAP} = \frac{\partial}{\partial n}b_{b,Mie}
@@ -352,9 +352,9 @@ def bb(C_X: float = 0,
         bb_phy_spec: float = 0.0010,
         bb_w_res = [],
         b_phy_norm_res = [],
-        b_X_norm_res=[],
-        b_Mie_norm_res=[],
-        bb_res=[]
+        b_X_norm_res=None,
+        b_Mie_norm_res=None,
+        bb_res=None
         ):
     """
     Spectral backscattering coefficient of a natural water body as the sum of the backscattering coefficients of pure water, phytoplankton and non-algal particles [1].
@@ -383,7 +383,7 @@ def bb(C_X: float = 0,
     Returns:
         bb: spectral backscattering coefficient of a natural water body [m-1]
     """  
-    if len(bb_res)==0:
+    if bb_res is None:
         bb = bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
               bb_NAP(C_Mie=C_Mie, C_X=C_X, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n, bb_X_spec=bb_X_spec, bb_X_norm_factor=b_X_norm_factor, b_X_norm_res=b_X_norm_res, b_Mie_norm_res=b_Mie_norm_res) + \
               bb_phy(wavelengths=wavelengths, C_phy=C_phy, bb_phy_spec=bb_phy_spec, b_phy_norm_res=b_phy_norm_res)
@@ -396,7 +396,7 @@ def bb(C_X: float = 0,
 def dbb_div_dC_X(wavelengths: np.array = np.arange(400,800),
         bb_X_spec: float = 0.0086,
         bb_X_norm_factor: float = 1,
-        b_X_norm_res=[]
+        b_X_norm_res=None
         ):
     """
     # Math: \frac{\partial}{\partial C_X} b_b(\lambda) = \frac{\partial}{\partial C_X} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial C_X}b_{b,NAP}(\lambda)
@@ -409,7 +409,7 @@ def dbb_div_dC_Mie(wavelengths: np.array = np.arange(400,800),
         n=-1,
         bb_Mie_spec: float = 0.0042,
         lambda_S: float = 500, 
-        bb_Mie_norm_res=[]):
+        bb_Mie_norm_res=None):
     """
     # Math: \frac{\partial}{\partial C_{Mie}} b_b(\lambda) = \frac{\partial}{\partial C_{Mie}} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial C_{Mie}}b_{b,NAP}(\lambda)
     """  
@@ -422,7 +422,7 @@ def dbb_div_dn(C_Mie: float = 0,
     bb_Mie_spec: float = 0.0042,
     lambda_S: float = 500, 
     n: float = -1,
-    bb_Mie_norm_res=[]):
+    bb_Mie_norm_res=None):
     """
     # Math: \frac{\partial}{\partial n} b_b(\lambda) = \frac{\partial}{\partial n} \left[ b_{b,w}(\lambda) + b_{b, phy}(\lambda) + b_{b, NAP}(\lambda) \right] = \frac{\partial}{\partial n}b_{b,NAP}(\lambda)
     """  
@@ -495,7 +495,7 @@ def bb_phy_bi(C_0 = 0,
 
     bb_ratio_C_i = np.array([bb_ratio_C_0, bb_ratio_C_1, bb_ratio_C_2, bb_ratio_C_3, bb_ratio_C_4, bb_ratio_C_5, bb_ratio_C_6, bb_ratio_C_7])
     
-    if len(bb_i_spec_res)==0:
+    if bb_i_spec_res is None:
         b_i_spec = resampling.resample_b_i_spec_EnSAD(wavelengths=wavelengths)
     else:
         b_i_spec = bb_i_spec_res
@@ -557,9 +557,9 @@ def bb_total(wavelengths = np.arange(400,800),
          a_d_lambda_0_res=None,
          omega_d_lambda_0_res=None,
          interpolate=True,
-         a_d_res=[],
-         a_md_spec_res=[],
-         a_bd_spec_res=[],
+         a_d_res=None,
+         a_md_spec_res=None,
+         a_bd_spec_res=None,
          b_d_res = [],
          bb_d_res = [],
          bb_p_res = [],
@@ -624,13 +624,13 @@ def bb_total(wavelengths = np.arange(400,800),
     """
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
-    if len(bb_p_res)==0:
+    if bb_p_res is None:
       # compute bb_p
-      if len(bb_d_res)==0:
+      if bb_d_res is None:
         # compute bb_d
-        if len(b_d_res)==0:
+        if b_d_res is None:
           # compute b_d
-          if len(a_d_res)==0:
+          if a_d_res is None:
             # compute a_d
             a_d_res = absorption.a_d(wavelengths=wavelengths,
                                      C_phy=C_phy, 
@@ -648,7 +648,7 @@ def bb_total(wavelengths = np.arange(400,800),
             
           a_d_lambda_0_res = np.interp(lambda_0_c_d, wavelengths, a_d_res) if interpolate else a_d_res[utils.find_closest(wavelengths, lambda_0_c_d)[1]]
           
-          if len(c_d_res)==0:
+          if c_d_res is None:
             c_d_res = attenuation.c_d(wavelengths=wavelengths, 
                                       C_ism=C_ism, 
                                       C_phy=C_phy,

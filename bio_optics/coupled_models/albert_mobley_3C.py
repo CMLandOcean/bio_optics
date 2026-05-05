@@ -1,4 +1,4 @@
-"""
+﻿"""
 Coupled Albert & Mobley model: water-leaving Rrs + surface reflectance (Rrs_surf).
 """
 import numpy as np
@@ -8,29 +8,29 @@ from ..surface import reflectance as surface_reflectance
 
 def forward(parameters,
             wavelengths,
-            a_res=[],
-            bb_res=[],
-            a_w_res=[],
-            da_w_div_dT_res=[],
-            a_i_spec_res=[],
-            a_Y_N_res=[],
-            a_NAP_N_res=[],
-            b_phy_norm_res=[],
-            bb_w_res=[],
-            b_X_norm_res=[],
-            b_Mie_norm_res=[],
-            R_b_i_res=[],
-            E0_res=[],
-            a_oz_res=[],
-            a_ox_res=[],
-            a_wv_res=[],
-            Ed_d_res=[],
-            Ed_sa_res=[],
-            Ed_sr_res=[],
-            Ed_s_res=[],
-            Ed_res=[],
-            n2_res=[],
-            Ls_Ed=[]):
+            a_res=None,
+            bb_res=None,
+            a_w_res=None,
+            da_w_div_dT_res=None,
+            a_i_spec_res=None,
+            a_Y_N_res=None,
+            a_NAP_N_res=None,
+            b_phy_norm_res=None,
+            bb_w_res=None,
+            b_X_norm_res=None,
+            b_Mie_norm_res=None,
+            R_b_i_res=None,
+            E0_res=None,
+            a_oz_res=None,
+            a_ox_res=None,
+            a_wv_res=None,
+            Ed_d_res=None,
+            Ed_sa_res=None,
+            Ed_sr_res=None,
+            Ed_s_res=None,
+            Ed_res=None,
+            n2_res=None,
+            Ls_Ed=None):
     """
     Forward simulation: water-leaving Rrs (albert_mobley.forward) + surface reflectance (surface_reflectance.forward).
 

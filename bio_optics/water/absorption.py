@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -41,7 +41,7 @@ import pandas as pd
 from .. helper import resampling, utils
 
 
-def a_w(wavelengths = np.arange(400,800), a_w_res=[]):
+def a_w(wavelengths = np.arange(400,800), a_w_res=None):
     """
     Spectral absorption coefficient of pure water [1/m] at a reference temperature of 20 degree C. 
     The spectrum is from WASI6 [1] and a compilation of different sources.
@@ -55,14 +55,14 @@ def a_w(wavelengths = np.arange(400,800), a_w_res=[]):
     Returns:
         a_w: spectral absorption coefficient of pure water [m-1]
     """
-    if len(a_w_res)==0:
+    if a_w_res is None:
         a_w = resampling.resample_a_w(wavelengths=wavelengths)
     else:
         a_w = a_w_res
         
     return a_w
 
-def a_w_T(wavelengths = np.arange(400,800), T_W_0=20, T_W=20, a_w_res=[], da_W_div_dT_res=[]):
+def a_w_T(wavelengths = np.arange(400,800), T_W_0=20, T_W=20, a_w_res=None, da_W_div_dT_res=None):
     """
     Spectral absorption coefficient of pure water corrected for actual temperature in degrees C after [1].
     
@@ -81,7 +81,7 @@ def a_w_T(wavelengths = np.arange(400,800), T_W_0=20, T_W=20, a_w_res=[], da_W_d
     a_w_T = a_w(wavelengths=wavelengths, a_w_res=a_w_res) + (T_W - T_W_0) * da_w_div_dT(wavelengths=wavelengths, da_w_div_dT_res=da_W_div_dT_res)
     return a_w_T
 
-def da_w_div_dT(wavelengths = np.arange(400,800), da_w_div_dT_res=[]):
+def da_w_div_dT(wavelengths = np.arange(400,800), da_w_div_dT_res=None):
     """
     Temperature gradient of pure water absorption resampled to sensor's spectral sampling rate.
     The spectrum is from Roettgers et al. [1].
@@ -95,7 +95,7 @@ def da_w_div_dT(wavelengths = np.arange(400,800), da_w_div_dT_res=[]):
     Returns:
         da_w_div_dT: temperature gradient of pure water absorption [m-1 degrees C-1]
     """
-    if len(da_w_div_dT_res) == 0:
+    if da_w_div_dT_res is None:
         da_w_div_dT = resampling.resample_da_w_div_dT(wavelengths=wavelengths)
     else:
         da_w_div_dT = da_w_div_dT_res
@@ -129,7 +129,7 @@ def a_ph(C_0 = 0,
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5])
     
-    if len(a_i_spec_res)==0:
+    if a_i_spec_res is None:
         a_i_spec = resampling.resample_a_i_spec(wavelengths=wavelengths)
     else:
         a_i_spec = a_i_spec_res
@@ -148,7 +148,7 @@ def da_ph_div_dCi(i,
 
     # Math: \frac{\partial}{\partial C_j} a_{phy}(\lambda) = \frac{\partial}{\partial C_j} \sum_{i=0}^5 C_i * a_i^* (\lambda) = a_j^*(\lambda)
     """
-    if len(a_i_spec_res)==0:
+    if a_i_spec_res is None:
         a_i_spec = resampling.resample_a_i_spec(wavelengths=wavelengths)
     else:
         a_i_spec = a_i_spec_res
@@ -179,7 +179,7 @@ def a_Y(C_Y = 0,
         S = 0.014, 
         lambda_0 = 440,
         K = 0,
-        a_Y_N_res=[]):
+        a_Y_N_res=None):
     """
     Exponential approximation of spectral absorption of CDOM or yellow substances.
 
@@ -201,7 +201,7 @@ def a_Y(C_Y = 0,
 
     # Math: a_{CDOM}(\lambda) = C_Y * e^{-S (\lambda - \lambda_0)} + K
     """
-    if len(a_Y_N_res)==0:
+    if a_Y_N_res is None:
         a_Y_N = a_Y_norm(wavelengths=wavelengths, S=S, lambda_0=lambda_0)
     else:
         a_Y_N = a_Y_N_res
@@ -217,7 +217,7 @@ def da_Y_div_dC_Y(wavelengths = np.arange(400,800),
     """
     # Math: \frac{\partial}{\partial C_y}\left[C_Y * e^{-S (\lambda - \lambda_0)} + K \right] = e^{-S (\lambda - \lambda_0)}
     """
-    if len(a_Y_N_res) == 0:
+    if a_Y_N_res is None:
         da_Y_div_dC_Y = np.exp(-S * (wavelengths - lambda_0))
     else:
         da_Y_div_dC_Y = a_Y_N_res
@@ -233,7 +233,7 @@ def da_Y_div_dS(C_Y = 0,
     # Math: \frac{\partial}{\partial S}\left[C_Y * e^{-S (\lambda - \lambda_0)}\right] = C_Y \frac{\partial}{\partial S} e^{-S (\lambda - \lambda_0)}
     # Math: = C_Y (\lambda_0 - \lambda) e^{-S (\lambda - \lambda_0)}
     """
-    if len(a_Y_N_res) == 0:
+    if a_Y_N_res is None:
         a_Y_N = np.exp(-S * (wavelengths - lambda_0))
     else:
         a_Y_N = a_Y_N_res
@@ -267,7 +267,7 @@ def a_NAP(C_X = 0,
           lambda_0 = 440,
           a_NAP_spec_lambda_0 = 0.041,
           S_NAP = 0.011,
-          a_NAP_N_res=[]):
+          a_NAP_N_res=None):
     """
     Spectral absorption of non-algal particles (NAP), also known as detritus, tripton or bleached particles.
     Normalized at the same wavelength (lambda_0) as CDOM.
@@ -289,7 +289,7 @@ def a_NAP(C_X = 0,
     """
     C_NAP = C_X + C_Mie
     
-    if len(a_NAP_N_res)==0:
+    if a_NAP_N_res is None:
         a_NAP_N = a_NAP_norm(wavelengths=wavelengths, S_NAP=S_NAP, lambda_0=lambda_0)
     else:
         a_NAP_N = a_NAP_N_res
@@ -303,12 +303,12 @@ def da_NAP_div_dC_X(
           lambda_0 = 440,
           a_NAP_spec_lambda_0 = 0.041,
           S_NAP = 0.011,
-          a_NAP_N_res=[]):
+          a_NAP_N_res=None):
     """
     # Math: \frac{\partial}{\partial C_{X}}a_{NAP} = \frac{\partial}{\partial C_{X}}\left[ (C_X + C_{Mie}) * a_{NAP}^*(\lambda_0) * e^{ -S_{NAP} (\lambda - \lambda_0) } \right]
     # Math: = a_{NAP}^*(\lambda_0) * e^{-S(\lambda - \lambda_0)}
     """
-    if len(a_NAP_N_res) == 0:
+    if a_NAP_N_res is None:
         a_NAP_N = np.exp(-S_NAP * (wavelengths - lambda_0))
     else:
         a_NAP_N = a_NAP_N_res
@@ -322,12 +322,12 @@ def da_NAP_div_dC_Mie(
           lambda_0 = 440,
           a_NAP_spec_lambda_0 = 0.041,
           S_NAP = 0.011,
-          a_NAP_N_res=[]):
+          a_NAP_N_res=None):
     """
     # Math: \frac{\partial}{\partial C_{Mie}}a_{NAP} = \frac{\partial}{\partial C_{Mie}}\left[ (C_X + C_{Mie}) * a_{NAP}^*(\lambda_0) * e^{ -S_{NAP} (\lambda - \lambda_0) } \right]
     # Math: = a_{NAP}^*(\lambda_0) * e^{-S(\lambda - \lambda_0)}
     """    
-    if len(a_NAP_N_res) == 0:
+    if a_NAP_N_res is None:
         a_NAP_N = np.exp(-S_NAP * (wavelengths - lambda_0))
     else:
         a_NAP_N = a_NAP_N_res
@@ -342,14 +342,14 @@ def da_NAP_div_dS_NAP(C_X = 0,
                       lambda_0 = 440,
                       a_NAP_spec_lambda_0 = 0.041,
                       S_NAP = 0.011,
-                      a_NAP_N_res=[]):
+                      a_NAP_N_res=None):
     """
     # Math: \frac{\partial}{\partial S_{NAP}}a_{NAP} = C_{NAP} * a_{NAP}^*(\lambda_0) * \frac{\partial}{\partial S_{NAP}}e^{-S(\lambda - \lambda_0)}
     # Math: = C_{NAP} * a_{NAP}^*(\lambda_0) * (\lambda_0 - \lambda) * e^{-S(\lambda - \lambda_0)}
     """
     C_NAP = C_X + C_Mie
     
-    if len(a_NAP_N_res) == 0:
+    if a_NAP_N_res is None:
         a_NAP_n = np.exp(-S_NAP * (wavelengths - lambda_0))
     else:
         a_NAP_N = a_NAP_N_res
@@ -376,11 +376,11 @@ def a(C_0 = 0,
       S_NAP = 0.011,
       T_W=20,
       T_W_0=20,
-      a_w_res=[],
-      da_w_div_dT_res=[],
-      a_i_spec_res=[],
-      a_Y_N_res=[],
-      a_NAP_N_res=[]
+      a_w_res=None,
+      da_w_div_dT_res=None,
+      a_i_spec_res=None,
+      a_Y_N_res=None,
+      a_NAP_N_res=None
       ):
     """
     Spectral absorption coefficient of a natural water body.
@@ -422,7 +422,7 @@ def a(C_0 = 0,
 
 def da_div_dC_i(i,
       wavelengths = np.arange(400,800),
-      a_i_spec_res=[],
+      a_i_spec_res=None,
       ):
     """
     # Math: a(\lambda) = \left[ a_w(\lambda) + (T - T_0)\frac{da_w(\lambda)}{dT} \right] + a_{wc}(\lambda)
@@ -434,7 +434,7 @@ def da_div_dC_i(i,
 def da_div_dC_Y(wavelengths = np.arange(400,800),
       S = 0.014,
       lambda_0 = 440,
-      a_Y_N_res=[]):
+      a_Y_N_res=None):
     
     return da_Y_div_dC_Y(wavelengths=wavelengths, S=S, lambda_0=lambda_0, a_Y_N_res=a_Y_N_res)
 
@@ -442,7 +442,7 @@ def da_div_dS(C_Y = 0,
       wavelengths = np.arange(400,800),
       S = 0.014,
       lambda_0 = 440,
-      a_Y_N_res=[]):
+      a_Y_N_res=None):
     return da_Y_div_dS(C_Y=C_Y, wavelengths=wavelengths, S=S, lambda_0=lambda_0, a_Y_N_res=a_Y_N_res)
 
 def da_div_dC_X(
@@ -450,7 +450,7 @@ def da_div_dC_X(
       lambda_0 = 440,
       a_NAP_spec_lambda_0 = 0.041,
       S_NAP = 0.011,
-      a_NAP_N_res=[]):
+      a_NAP_N_res=None):
     return da_NAP_div_dC_X(wavelengths=wavelengths, lambda_0=lambda_0, a_NAP_spec_lambda_0=a_NAP_spec_lambda_0, S_NAP=S_NAP, a_NAP_N_res=a_NAP_N_res)
 
 def da_div_dC_Mie(
@@ -458,7 +458,7 @@ def da_div_dC_Mie(
       lambda_0 = 440,
       a_NAP_spec_lambda_0 = 0.041,
       S_NAP = 0.011,
-      a_NAP_N_res=[]
+      a_NAP_N_res=None
       ):
     return da_NAP_div_dC_Mie(wavelengths=wavelengths, lambda_0=lambda_0, a_NAP_spec_lambda_0=a_NAP_spec_lambda_0, S_NAP=S_NAP, a_NAP_N_res=a_NAP_N_res)
 
@@ -469,14 +469,14 @@ def da_div_dS_NAP(C_i,
       lambda_0 = 440,
       a_NAP_spec_lambda_0 = 0.041,
       S_NAP = 0.011,
-      a_NAP_N_res=[]
+      a_NAP_N_res=None
       ):
     return da_NAP_div_dS_NAP(C_X=C_X, C_Mie=C_Mie, wavelengths=wavelengths, lambda_0=lambda_0, a_NAP_spec_lambda_0=a_NAP_spec_lambda_0, S_NAP=S_NAP, a_NAP_N_res=a_NAP_N_res)
 
 
 def a_Phi(a_phy_440 = 0.01,
           wavelengths=np.arange(400,800),
-          A_res=[]):
+          A_res=None):
     """
     Phytoplankton pigment absorption coefficient based on the empirical parameters A0 and A1 (Phi0 and Phi1 in some publications) first described in Lee (1994) [1]
     according to the Eq. 12 and the values for A0 and A1 provided in Tab. 2 in Lee et al. (1998) [2].    
@@ -493,7 +493,7 @@ def a_Phi(a_phy_440 = 0.01,
     Returns:
         a_phy: phytoplankton pigment absorption coefficient [m-1]
     """    
-    if len(A_res)==0:
+    if A_res is None:
         A0, A1 = resampling.resample_A(wavelengths=wavelengths)
     else:
         A0, A1 = A_res[0], A_res[1]
@@ -681,8 +681,8 @@ def a_d(wavelengths=np.arange(400,800),
         C_bd= 0.9994e-3, 
         lambda_0_md=550., 
         lambda_0_bd=550., 
-        a_md_spec_res=[],
-        a_bd_spec_res=[]):
+        a_md_spec_res=None,
+        a_bd_spec_res=None):
     """
     Absorption coefficient of detritus (Eq. 7 in [1]).
 
@@ -706,8 +706,8 @@ def a_d(wavelengths=np.arange(400,800),
     Returns:
         a_d: absorption coefficient of detritus [m-1]
     """
-    a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md) if len(a_md_spec_res)==0 else a_md_spec_res
-    a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)  if len(a_bd_spec_res)==0 else a_bd_spec_res
+    a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md) if a_md_spec_res is None else a_md_spec_res
+    a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)  if a_bd_spec_res is None else a_bd_spec_res
 
     a_d = C_ism * a_md_spec_res + C_phy * a_bd_spec_res
 
@@ -744,7 +744,7 @@ def a_phy(C_0 = 0,
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
 
-    if len(a_i_spec_res)==0:
+    if a_i_spec_res is None:
         a_i_spec = resampling.resample_a_i_spec_EnSAD(wavelengths=wavelengths)
     else:
         a_i_spec = a_i_spec_res
@@ -822,14 +822,14 @@ def a_total(wavelengths=np.arange(400,800),
             interpolate=True, 
             T_W=20,
             T_W_0=20,
-            a_d_res=[],
-            a_md_spec_res=[],
-            a_bd_spec_res=[],
-            a_i_spec_res=[],
-            a_phy_res=[],
-            a_Y_N_res=[],
-            a_w_res=[],
-            da_W_div_dT_res=[]):
+            a_d_res=None,
+            a_md_spec_res=None,
+            a_bd_spec_res=None,
+            a_i_spec_res=None,
+            a_phy_res=None,
+            a_Y_N_res=None,
+            a_w_res=None,
+            da_W_div_dT_res=None):
     """
     Total spectral absorption coefficient of a natural water body following Bi et al. (2023) [1].
 
@@ -879,10 +879,10 @@ def a_total(wavelengths=np.arange(400,800),
     """
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
-    if len(a_d_res)==0:
+    if a_d_res is None:
         a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
     
-    if len(a_phy_res)==0:
+    if a_phy_res is None:
         a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, C_6=C_6, C_7=C_7, a_i_spec_res=a_i_spec_res)
 
     a_wc = correct_a_phy(a_phy_res=a_phy_res, wavelengths=wavelengths, C_phy=C_phy, A=A, E0=E0, E1=E1, lambda_0_phy=lambda_0_phy, interpolate=interpolate) + \

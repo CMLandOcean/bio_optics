@@ -1,4 +1,4 @@
-"""
+﻿"""
 Coupled SBOP model: water-leaving Rrs + surface reflectance term (3-component).
 """
 import numpy as np
@@ -9,9 +9,9 @@ from ..helper import utils
 
 def forward(params,
             wavelengths,
-            a_w_res=[],
-            bb_w_res=[],
-            R_b_i_res=[]):
+            a_w_res=None,
+            bb_w_res=None,
+            R_b_i_res=None):
     """
     Forward simulation of above-water Rrs including surface reflectance.
 

@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 from .. helper import resampling
 
 
@@ -47,7 +47,7 @@ def b_phy(C_0 = 0,
     """
     C_i = np.array([C_0,C_1,C_2,C_3,C_4,C_5,C_6,C_7])
     
-    if len(b_i_spec_res)==0:
+    if b_i_spec_res is None:
         b_i_spec = resampling.resample_b_i_spec_EnSAD(wavelengths=wavelengths)
     else:
         b_i_spec = b_i_spec_res

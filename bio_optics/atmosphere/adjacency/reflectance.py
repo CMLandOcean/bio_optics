@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 from ..scattering import b_rayleigh
 
@@ -8,8 +8,8 @@ def Rrs_adjacency(C_adj=0.1,
                   lambda_r = 400,
                   b_r_spec = 1,
                   n_r = -4,
-                  R_bg=[],
-                  b_ray=[]):
+                  R_bg=None,
+                  b_ray=None):
     """
     Adjacency reflectance contribution after a power-law Rayleigh scattering model.
 
@@ -26,10 +26,10 @@ def Rrs_adjacency(C_adj=0.1,
         Rrs_adjacency: Estimate of adjacency radiance reflectance spectrum.
     """
     # if no R_bg is provided set to zero, i.e. no adjacency effect
-    if len(R_bg)==0:
+    if R_bg is None:
         R_bg = np.zeros(len(wavelengths))
 
-    if len(b_ray)==0:
+    if b_ray is None:
         b_ray = b_rayleigh(wavelengths=wavelengths, lambda_r=lambda_r, b_r_spec=b_r_spec, n_r=n_r)
     
     Rrs_adjacency = C_adj * b_ray * R_bg

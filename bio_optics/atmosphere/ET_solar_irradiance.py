@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -41,7 +41,7 @@ import pandas as pd
 from .. helper import resampling
 
 
-def E0(wavelengths=np.arange(400,800), E0_res=[]):
+def E0(wavelengths=np.arange(400,800), E0_res=None):
     """
     Extraterrestrial solar irradiance resampled to the sensor's spectral sampling rate.
 
@@ -52,7 +52,7 @@ def E0(wavelengths=np.arange(400,800), E0_res=[]):
     Returns:
         E0: extraterrestrial solar irradiance [W m-2 nm-1]
     """
-    if len(E0_res)==0:
+    if E0_res is None:
         E0 = resampling.resample_E0(wavelengths=wavelengths)
     else:
         E0 = E0_res

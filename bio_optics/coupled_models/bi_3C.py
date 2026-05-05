@@ -1,4 +1,4 @@
-"""
+﻿"""
 Coupled HEREON model: water-leaving Rrs + surface reflectance (Rrs_surf).
 """
 import numpy as np
@@ -10,38 +10,38 @@ from ..helper import resampling
 
 def forward(parameters,
             wavelengths,
-            a_res=[],
-            a_md_res=[],
-            a_bd_res=[],
-            a_md_spec_res=[],
-            a_bd_spec_res=[],
-            a_w_res=[],
-            a_i_spec_res=[],
-            a_phy_res=[],
-            a_Y_N_res=[],
-            bb_res=[],
-            bb_bd_res=[],
-            bb_p_res=[],
-            bb_phy_res=[],
-            bb_w_res=[],
-            bb_i_spec_res=[],
-            c_md_res=[],
-            c_bd_res=[],
-            h_C_res=[],
-            h_C_phycocyanin_res=[],
-            h_C_phycoerythrin_res=[],
-            da_w_div_dT_res=[],
-            E0_res=[],
-            a_oz_res=[],
-            a_ox_res=[],
-            a_wv_res=[],
-            Ed_d_res=[],
-            Ed_sa_res=[],
-            Ed_sr_res=[],
-            Ed_res=[],
-            Ed_s_res=[],
-            n2_res=[],
-            Ls_Ed=[],
+            a_res=None,
+            a_md_res=None,
+            a_bd_res=None,
+            a_md_spec_res=None,
+            a_bd_spec_res=None,
+            a_w_res=None,
+            a_i_spec_res=None,
+            a_phy_res=None,
+            a_Y_N_res=None,
+            bb_res=None,
+            bb_bd_res=None,
+            bb_p_res=None,
+            bb_phy_res=None,
+            bb_w_res=None,
+            bb_i_spec_res=None,
+            c_md_res=None,
+            c_bd_res=None,
+            h_C_res=None,
+            h_C_phycocyanin_res=None,
+            h_C_phycoerythrin_res=None,
+            da_w_div_dT_res=None,
+            E0_res=None,
+            a_oz_res=None,
+            a_ox_res=None,
+            a_wv_res=None,
+            Ed_d_res=None,
+            Ed_sa_res=None,
+            Ed_sr_res=None,
+            Ed_res=None,
+            Ed_s_res=None,
+            n2_res=None,
+            Ls_Ed=None,
             omega_d_lambda_0_res=None,
             a_d_lambda_0_res=None,
             c_d_lambda_0_res=None):
@@ -90,7 +90,7 @@ def forward(parameters,
     Returns:
         Rrs_sim: above-water remote sensing reflectance [sr-1]
     """
-    if len(n2_res) == 0:
+    if n2_res is None:
         n2 = parameters["n2"]
     else:
         n2 = n2_res
@@ -100,7 +100,7 @@ def forward(parameters,
     else:
         rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
-    if len(Ls_Ed) == 0:
+    if Ls_Ed is None:
         Ls_Ed = np.zeros_like(wavelengths)
 
     Rrs_water = bi.forward(parameters=parameters,
@@ -141,27 +141,27 @@ def forward(parameters,
                                 a_d_lambda_0_res=a_d_lambda_0_res,
                                 c_d_lambda_0_res=c_d_lambda_0_res)
 
-    if len(Ed_d_res) == 0:
+    if Ed_d_res is None:
         Ed_d = downwelling_irradiance.Ed_d(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_d_res)
     else:
         Ed_d = Ed_d_res
 
-    if len(Ed_sa_res) == 0:
+    if Ed_sa_res is None:
         Ed_sa = downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sa_res)
     else:
         Ed_sa = Ed_sa_res
 
-    if len(Ed_sr_res) == 0:
+    if Ed_sr_res is None:
         Ed_sr = downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res, Ed_sr_res)
     else:
         Ed_sr = Ed_sr_res
 
-    if len(Ed_s_res) == 0:
+    if Ed_s_res is None:
         Ed_s = downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
     else:
         Ed_s = Ed_s_res
 
-    if len(Ed_res) == 0:
+    if Ed_res is None:
         Ed = downwelling_irradiance.Ed(Ed_d, Ed_s, parameters["fd_d"], parameters["fd_s"])
     else:
         Ed = Ed_res
