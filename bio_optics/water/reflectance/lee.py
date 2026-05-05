@@ -1,3 +1,15 @@
+"""
+Lee et al. (2011) deep-water remote sensing reflectance model.
+
+Partitions Rrs into water and particle contributions using empirical G coefficients.
+JAX-native version: bio_optics.water.reflectance.lee_jax
+
+Reference:
+    Lee et al. (2011): An inherent-optical-property-centered approach to correct the
+    angular effects in water-leaving radiance [10.1364/AO.50.003155]
+"""
+
+
 def Rrs_deep(a,
              bb,
              bb_p,
