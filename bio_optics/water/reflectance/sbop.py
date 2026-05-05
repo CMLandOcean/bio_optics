@@ -30,9 +30,9 @@ def rrs_sh(C_Mie=0,
            g_0=0.089,
            g_1=0.125,
            wavelengths=np.arange(400, 800),
-           a_w_res=[],
-           bb_w_res=[],
-           R_b_i_res=[]):
+           a_w_res=None,
+           bb_w_res=None,
+           R_b_i_res=None):
     """
     Shallow water bio-optical properties (SBOP) model after Li et al. (2017) [1].
 
@@ -73,10 +73,10 @@ def rrs_sh(C_Mie=0,
     Returns:
         rrs_sh: subsurface radiance reflectance [sr-1] of shallow water
     """
-    bs = backscattering.bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res) + \
+    bs = backscattering.bb_w(wavelengths=wavelengths, fresh=fresh, bb_w_res=bb_w_res if bb_w_res is not None else []) + \
          backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n)
 
-    ab = absorption.a_w(wavelengths=wavelengths, a_w_res=a_w_res) + \
+    ab = absorption.a_w(wavelengths=wavelengths, a_w_res=a_w_res if a_w_res is not None else []) + \
          absorption.a_Y(wavelengths=wavelengths, C_Y=C_Y, S=S, lambda_0=lambda_0) + \
          q * backscattering.bb_Mie(C_Mie=C_Mie, wavelengths=wavelengths, bb_Mie_spec=bb_Mie_spec, lambda_S=lambda_S, n=n)
 
@@ -86,7 +86,7 @@ def rrs_sh(C_Mie=0,
     rrs_sh = hope.rrs_dp(u, g_0=g_0, g_1=g_1) * (1 - np.exp(-hope.D_u_C(u, f1=1, f2=2.4) * kappa * zB)) + \
              bottom_reflectance.Rrs_b(f_0=f_0, f_1=f_1, f_2=f_2, f_3=f_3, f_4=f_4, f_5=f_5,
                                       B_0=B_0, B_1=B_1, B_2=B_2, B_3=B_3, B_4=B_4, B_5=B_5,
-                                      wavelengths=wavelengths, R_b_i_res=R_b_i_res) * \
+                                      wavelengths=wavelengths, R_b_i_res=R_b_i_res if R_b_i_res is not None else []) * \
              np.exp(-hope.D_u_B(u, f1=1, f2=5.5) * kappa * zB)
 
     return rrs_sh
@@ -94,9 +94,9 @@ def rrs_sh(C_Mie=0,
 
 def forward(params,
             wavelengths,
-            a_w_res=[],
-            bb_w_res=[],
-            R_b_i_res=[]):
+            a_w_res=None,
+            bb_w_res=None,
+            R_b_i_res=None):
     """
     Forward simulation of water-leaving remote sensing reflectance after Li et al. (2017) [1].
 
