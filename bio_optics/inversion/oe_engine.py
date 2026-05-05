@@ -140,6 +140,20 @@ class OEResult(NamedTuple):
                     retrieval space).
         y_hat:      simulated spectrum at x_hat, shape (n_obs,).
                     Compare to y_obs to assess spectral fit quality.
+        H_info:     information content in nats (Rodgers 2000, eq. 2.68), scalar.
+                    H = 0.5 · ln|S_a · S_hat⁻¹|.  Measures the total volume of
+                    uncertainty reduction in parameter space: H = 0 means the
+                    measurement added nothing beyond the prior; larger values
+                    indicate more information gained.  Unlike DFS (which counts
+                    resolved dimensions), H accounts for the magnitude of
+                    uncertainty reduction in each dimension via the log-determinant.
+                    Useful for comparing retrieval quality across spectra or sensors.
+        G:          gain matrix, shape (n_fit, n_obs).
+                    G = S_hat · J^T · S_ε⁻¹.  Maps a perturbation in observation
+                    space (Δy) to the resulting change in retrieved state (Δx̂ = G·Δy).
+                    Row i gives the spectral sensitivity of parameter i: which bands
+                    drive each retrieval.  Useful for band-selection analysis and
+                    error decomposition into noise vs. smoothing contributions.
         num_steps:  number of solver iterations taken, scalar int.
                     Only populated by oe_engine_optx (lax.while_loop-based);
                     None when using the fixed-iteration oe_engine.solve().
@@ -151,6 +165,8 @@ class OEResult(NamedTuple):
     chi2:      float
     J:         jnp.ndarray
     y_hat:     jnp.ndarray
+    H_info:    float
+    G:         jnp.ndarray
     num_steps: Optional[jnp.ndarray] = None
 
 
@@ -597,15 +613,17 @@ def solve(f_vec: Callable,
     if lm_damping > 0.0:
         H = H + lm_damping * jnp.diag(jnp.diag(H))
 
-    S_hat = jnp.linalg.inv(H)
-    A     = S_hat @ J.T @ S_eps_inv @ J
-    dfs   = jnp.trace(A)
+    S_hat  = jnp.linalg.inv(H)
+    A      = S_hat @ J.T @ S_eps_inv @ J
+    dfs    = jnp.trace(A)
+    G      = S_hat @ J.T @ S_eps_inv
+    H_info = 0.5 * (jnp.linalg.slogdet(H)[1] - jnp.linalg.slogdet(S_a_inv)[1])
 
     residual = y_obs - y_hat
     chi2 = residual @ S_eps_inv @ residual / n_obs
 
     return OEResult(x_hat=x, S_hat=S_hat, A=A, dfs=dfs, chi2=chi2,
-                    J=J, y_hat=y_hat)
+                    J=J, y_hat=y_hat, H_info=H_info, G=G)
 
 
 # ---------------------------------------------------------------------------
@@ -996,13 +1014,15 @@ def invert_pixels(f_vec: Callable,
 
     Returns:
         OEResult where every field has an extra leading pixel dimension:
-            x_hat  shape (n_pixels, n_params)  — retrieval space
-            S_hat  shape (n_pixels, n_params, n_params)
-            A      shape (n_pixels, n_params, n_params)
-            dfs    shape (n_pixels,)
-            chi2   shape (n_pixels,)
-            J      shape (n_pixels, n_obs, n_params)
-            y_hat  shape (n_pixels, n_obs)
+            x_hat   shape (n_pixels, n_params)  — retrieval space
+            S_hat   shape (n_pixels, n_params, n_params)
+            A       shape (n_pixels, n_params, n_params)
+            dfs     shape (n_pixels,)
+            chi2    shape (n_pixels,)
+            J       shape (n_pixels, n_obs, n_params)
+            y_hat   shape (n_pixels, n_obs)
+            H_info  shape (n_pixels,)  — information content in nats
+            G       shape (n_pixels, n_params, n_obs)  — gain matrix
         Apply to_physical(results.x_hat, setup.log_mask) for physical values.
     """
     n_pixels = Rrs_pixels.shape[0]

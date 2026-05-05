@@ -178,11 +178,14 @@ def solve_optx(f_vec: Callable,
     S_hat     = jnp.linalg.inv(H)
     A         = S_hat @ J.T @ S_eps_inv @ J
     dfs       = jnp.trace(A)
+    G         = S_hat @ J.T @ S_eps_inv
+    H_info    = 0.5 * (jnp.linalg.slogdet(H)[1] - jnp.linalg.slogdet(S_a_inv)[1])
     residual  = y_obs - y_hat
     chi2      = residual @ S_eps_inv @ residual / n_obs
 
     return OEResult(x_hat=x_hat, S_hat=S_hat, A=A, dfs=dfs, chi2=chi2,
-                    J=J, y_hat=y_hat, num_steps=sol.stats['num_steps'])
+                    J=J, y_hat=y_hat, H_info=H_info, G=G,
+                    num_steps=sol.stats['num_steps'])
 
 
 # ---------------------------------------------------------------------------
@@ -299,13 +302,14 @@ def invert_tile_optx(
     atol: float = 1e-6,
     use_lm: bool = False,
     store_y_hat: bool = False,
+    store_gain: bool = False,
     aux_tile=None,
 ):
     """
     Run optimistix OE inversion on a single pixel tile.
 
-    Returns tuple (x_hat_phys, sigma_phys, A_diag, chi2, n_steps)
-    and optionally y_hat as a 6th element when store_y_hat=True.
+    Returns tuple: (x_hat_phys, sigma_phys, A_diag, chi2, n_steps, H_info)
+    with y_hat appended when store_y_hat=True and G appended when store_gain=True.
     """
     valid_mask  = np.isfinite(Rrs_tile).all(axis=-1)
     n_tile      = Rrs_tile.shape[0]
@@ -356,11 +360,12 @@ def invert_tile_optx(
     sigma_phys = posterior_sigma_physical(results.S_hat, x_hat_phys, log_mask_jax)
     A_diag     = jnp.diagonal(results.A, axis1=-2, axis2=-1)
 
-    x_hat_np   = np.array(x_hat_phys)
-    sigma_np   = np.array(sigma_phys)
-    A_diag_np  = np.array(A_diag)
-    chi2_np    = np.array(results.chi2)
-    n_steps_np = np.array(results.num_steps, dtype=np.int32)
+    x_hat_np    = np.array(x_hat_phys)
+    sigma_np    = np.array(sigma_phys)
+    A_diag_np   = np.array(A_diag)
+    chi2_np     = np.array(results.chi2)
+    n_steps_np  = np.array(results.num_steps, dtype=np.int32)
+    H_info_np   = np.array(results.H_info)
 
     if has_invalid:
         x_hat_np[~valid_mask]   = np.nan
@@ -368,13 +373,19 @@ def invert_tile_optx(
         A_diag_np[~valid_mask]  = np.nan
         chi2_np[~valid_mask]    = np.nan
         n_steps_np[~valid_mask] = -1
+        H_info_np[~valid_mask]  = np.nan
 
-    out = (x_hat_np, sigma_np, A_diag_np, chi2_np, n_steps_np)
+    out = (x_hat_np, sigma_np, A_diag_np, chi2_np, n_steps_np, H_info_np)
     if store_y_hat:
         y_hat_np = np.array(results.y_hat)
         if has_invalid:
             y_hat_np[~valid_mask] = np.nan
         out = out + (y_hat_np,)
+    if store_gain:
+        G_np = np.array(results.G)
+        if has_invalid:
+            G_np[~valid_mask] = np.nan
+        out = out + (G_np,)
     return out
 
 
@@ -392,6 +403,7 @@ def invert_image_optx(
     use_lm: bool = False,
     tile_size: int = 65536,
     store_y_hat: bool = False,
+    store_gain: bool = False,
     scheduler: str = 'synchronous',
     x_a_image: Optional[np.ndarray] = None,
     S_a_inv_image: Optional[np.ndarray] = None,
@@ -415,6 +427,8 @@ def invert_image_optx(
         use_lm:       False (default) = GaussNewton; True = LevenbergMarquardt.
         tile_size:    pixels per Dask task, default 65536.
         store_y_hat:  if True include simulated spectra in output.
+        store_gain:   if True include gain matrix G in output, shape
+                      (…, n_fit, n_obs).  Default False.
         scheduler:    Dask scheduler — ``'synchronous'``, ``'threads'``, or
                       ``'distributed'``.
         x_a_image:    optional per-pixel prior mean.
@@ -423,7 +437,8 @@ def invert_image_optx(
 
     Returns:
         dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``,
-        ``n_steps``, ``fit_names``, and optionally ``y_hat``.
+        ``n_steps``, ``H_info``, ``fit_names``, and optionally ``y_hat``
+        and/or ``G``.
     """
     Rrs_arr = np.asarray(Rrs)
     spatial_shape = None
@@ -484,7 +499,7 @@ def invert_image_optx(
             tile_x_a, tile_S_a_inv, log_mask_np,
             noise, weights_np,
             max_steps, rtol, atol, use_lm,
-            store_y_hat, tile_aux,
+            store_y_hat, store_gain, tile_aux,
         )
         delayed_tasks.append(task)
 
@@ -495,6 +510,7 @@ def invert_image_optx(
     A_diag_all  = np.concatenate([r[2] for r in tile_results], axis=0)
     chi2_all    = np.concatenate([r[3] for r in tile_results], axis=0)
     n_steps_all = np.concatenate([r[4] for r in tile_results], axis=0)
+    H_info_all  = np.concatenate([r[5] for r in tile_results], axis=0)
 
     if spatial_shape is not None:
         x_hat_all   = x_hat_all.reshape(*spatial_shape, n_fit)
@@ -502,6 +518,7 @@ def invert_image_optx(
         A_diag_all  = A_diag_all.reshape(*spatial_shape, n_fit)
         chi2_all    = chi2_all.reshape(*spatial_shape)
         n_steps_all = n_steps_all.reshape(*spatial_shape)
+        H_info_all  = H_info_all.reshape(*spatial_shape)
 
     out: Dict[str, object] = {
         'x_hat':     x_hat_all,
@@ -509,14 +526,23 @@ def invert_image_optx(
         'A_diag':    A_diag_all,
         'chi2':      chi2_all,
         'n_steps':   n_steps_all,
+        'H_info':    H_info_all,
         'fit_names': setup.fit_names,
     }
 
+    next_idx = 6
     if store_y_hat:
-        y_hat_all = np.concatenate([r[5] for r in tile_results], axis=0)
+        y_hat_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
         if spatial_shape is not None:
             y_hat_all = y_hat_all.reshape(*spatial_shape, n_obs)
         out['y_hat'] = y_hat_all
+        next_idx += 1
+
+    if store_gain:
+        G_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
+        if spatial_shape is not None:
+            G_all = G_all.reshape(*spatial_shape, n_fit, n_obs)
+        out['G'] = G_all
 
     return out
 
