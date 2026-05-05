@@ -20,6 +20,9 @@ Here we list the major changes of every release. Please take a look at the commi
 - Log-transform support for strictly-positive parameters (lognormal prior, no negative-value failures)
 - Spatially varying priors (`x_a_image`, `S_a_inv_image`) for bathymetry-assisted retrievals
 - Restructured module layout: `bio_optics/water/reflectance/`, `bio_optics/coupled_models/`
+- JAX-native forward models for all reflectance models: `albert_mobley_jax`, `bi_jax`, `hope_jax` (Lee 1998/1999 shallow water), `sbop_jax` (Li 2017 shallow water), plus coupled surface models `albert_mobley_3C_jax`, `bi_3C_jax`, `hope_3C_jax`, `sbop_3C_jax`; all share the same two-layer `precompute` / `make_forward_vec` API and are `jax.jit` / `jax.jacobian` / `jax.vmap` compatible
+- JAX atmosphere layer: `transmittance_jax`, `downwelling_irradiance_jax` (dual-mode: pre-baked Ed for fixed scenes, or on-the-fly for atmosphere/geometry retrieval), `sky_radiance_jax`, `scattering_jax`
+- Package-wide cleanup: replaced all mutable default `*_res=[]` arguments with `*_res=None` across 21 files
 - See `docs/OE_PIPELINE.md` for the step-by-step inversion workflow
 
 </details>

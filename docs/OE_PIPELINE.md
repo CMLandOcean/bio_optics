@@ -8,11 +8,34 @@ Follow these phases in order for any new sensor/scene combination.
 ## Phase 1 — Setup (run once per sensor configuration)
 
 ### 1.1 Precompute spectral lookup tables
+
+Choose a forward model based on your water type.  All models share the same two-layer API.
+
+**Deep / optically deep water:**
 ```python
 from bio_optics.water.reflectance import albert_mobley_jax
+# or: from bio_optics.water.reflectance import bi_jax  (HEREON model)
 
 pre = albert_mobley_jax.precompute(wavelengths)
-# pre contains: a_w, bb_w, R_b_i (bottom LUTs), and other spectral tables
+# pre contains: a_w, bb_w, R_b_i, and other spectral tables
+```
+
+**Shallow water (Lee 1998/1999 HOPE model):**
+```python
+from bio_optics.coupled_models import hope_3C_jax
+# or: from bio_optics.coupled_models import sbop_3C_jax  (Li 2017)
+
+pre = hope_3C_jax.precompute(wavelengths, theta_sun=np.radians(30))
+# pre contains: a_w, bb_w, A0, A1, R_b_i + irradiance arrays
+```
+
+**Atmosphere modes** (all 3C coupled models):
+- **Mode A** (default): supply `theta_sun` → Ed arrays pre-baked, zero per-call overhead.  Use when geometry is fixed per scene.
+- **Mode B**: pass `theta_sun=None` → Ed computed on-the-fly; `theta_sun`, `alpha`, `beta`, etc. can be free fit parameters.
+
+```python
+pre_A = albert_mobley_3C_jax.precompute(wavelengths, theta_sun=np.radians(30))  # Mode A
+pre_B = albert_mobley_3C_jax.precompute(wavelengths, theta_sun=None)             # Mode B
 ```
 
 For LUT-based bottom parameterisation, optionally subset `R_b_i` to the types you want:
@@ -217,12 +240,17 @@ if fracs is not None:
 
 | Function | Location | Purpose |
 |---|---|---|
-| `precompute()` | `reflectance/albert_mobley_jax.py` | Spectral LUTs for one sensor config |
-| `make_forward_vec()` | `reflectance/albert_mobley_jax.py` | Build `f(params_vec, aux=None)` |
+| `precompute()` | `water/reflectance/albert_mobley_jax.py` | Deep water: spectral LUTs |
+| `precompute()` | `water/reflectance/bi_jax.py` | HEREON deep water: spectral LUTs |
+| `precompute()` | `water/reflectance/hope_jax.py` | Lee 1998/1999 shallow water: spectral LUTs |
+| `precompute()` | `water/reflectance/sbop_jax.py` | Li 2017 shallow water: spectral LUTs |
+| `precompute()` | `coupled_models/albert_mobley_3C_jax.py` | Deep water + surface (3C) |
+| `precompute()` | `coupled_models/hope_3C_jax.py` | Shallow water + surface (3C, Lee) |
+| `precompute()` | `coupled_models/sbop_3C_jax.py` | Shallow water + surface (3C, Li 2017) |
+| `make_forward_vec()` | any `*_jax.py` model | Build `f(params_vec, aux=None)` for JIT/vmap |
 | `build_inversion()` | `inversion/oe_engine.py` | Build `InversionSetup` from lmfit.Parameters |
 | `sigma_to_relative()` | `inversion/oe_engine.py` | Convert physical σ to log-space fractional σ |
 | `invert_image()` | `inversion/dask_oe_engine.py` | Tile-parallel image inversion |
 | `to_dataset()` | `inversion/dask_oe_engine.py` | Convert result dict to xarray Dataset |
 | `bottom_fractions()` | `inversion/oe_engine.py` | Convert `f_mix_*` logits to fractions |
 | `posterior_sigma_physical()` | `inversion/oe_engine.py` | Delta-method σ for log-params |
-| `to_dataset()` | `inversion/dask_oe_engine.py` | Includes `H_info` variable automatically |
