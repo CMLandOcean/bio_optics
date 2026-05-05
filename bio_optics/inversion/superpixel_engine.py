@@ -405,6 +405,7 @@ def invert_image_superpixel(
     sp_sigma  = sp_results.get('sigma')         # None for LSQ
     sp_A_diag = sp_results.get('A_diag')        # None for LSQ
     sp_chi2   = sp_results['chi2']              # (n_segs,)
+    sp_H_info = sp_results.get('H_info')        # None for LSQ engines
 
     # 4. Back-interpolate x_hat (+ sigma/A_diag when available)
     bp = backinterp_pca_knn(
@@ -414,11 +415,12 @@ def invert_image_superpixel(
         k=k, n_components=n_components,
     )
 
-    # 5. chi2: label copy — map segment ID → superpixel chi2
+    # 5. chi2 / H_info: label copy — map segment ID → superpixel value
     seg_id_to_idx = {sid: i for i, sid in enumerate(seg_ids)}
     sp_idx_flat   = np.array([seg_id_to_idx[sid] for sid in labels_flat], dtype=np.int64)
     chi2_flat     = sp_chi2[sp_idx_flat]
     chi2_cal_flat = sp_chi2[sp_idx_flat] * sp_counts[sp_idx_flat]
+    H_info_flat   = sp_H_info[sp_idx_flat] if sp_H_info is not None else None
 
     # 6. Reshape to spatial dims
     n_fit = bp['x_hat'].shape[-1]
@@ -434,6 +436,8 @@ def invert_image_superpixel(
         out['sigma']  = bp['sigma'].reshape(n_rows, n_cols, n_fit)
     if 'A_diag' in bp:
         out['A_diag'] = bp['A_diag'].reshape(n_rows, n_cols, n_fit)
+    if H_info_flat is not None:
+        out['H_info'] = H_info_flat.reshape(n_rows, n_cols)
     if 'n_steps' in sp_results:
         out['n_steps'] = sp_results['n_steps'][sp_idx_flat].reshape(n_rows, n_cols)
     if store_sp_results:
@@ -449,6 +453,7 @@ def invert_image_superpixel(
         out['chi2_calibrated'][inv] = np.nan
         if 'sigma'  in out: out['sigma'][inv]  = np.nan
         if 'A_diag' in out: out['A_diag'][inv] = np.nan
+        if 'H_info' in out: out['H_info'][inv] = np.nan
         if 'n_steps' in out: out['n_steps'][inv] = -1
 
     return out

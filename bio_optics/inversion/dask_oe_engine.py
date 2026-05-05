@@ -39,7 +39,9 @@ Recommended output fields per pixel
  sigma           (n_fit,)      Physical posterior σ (sqrt S_hat diag)
  A_diag          (n_fit,)      Averaging kernel diagonal (data fraction)
  chi2            scalar        Goodness of fit (≈1 = good)
+ H_info          scalar        Information content in nats (Rodgers 2000)
  y_hat           (n_obs,)      Simulated spectrum at solution (optional)
+ G               (n_fit,n_obs) Gain matrix — band sensitivity (optional)
 =============== ============= ======================================
 
 Store the full ``S_hat`` or Jacobian per pixel only for targeted offline
@@ -137,6 +139,7 @@ def invert_tile(
     n_iter: int = 10,
     lm_damping: float = 0.0,
     store_y_hat: bool = False,
+    store_gain: bool = False,
     aux_tile=None,
 ):
     """
@@ -196,13 +199,15 @@ def invert_tile(
                       rather than building manually here.  Default None.
 
     Returns:
-        Tuple of NumPy arrays:
+        Tuple of NumPy arrays (positions are fixed regardless of optional flags):
 
-        * ``x_hat_physical``  (n_pixels, n_fit)  — physical retrieved values
-        * ``sigma_physical``  (n_pixels, n_fit)  — posterior σ in physical space
-        * ``A_diagonal``      (n_pixels, n_fit)  — averaging kernel diagonal
-        * ``chi2``            (n_pixels,)         — chi-squared per band
-        * ``y_hat``           (n_pixels, n_obs)   — only if ``store_y_hat=True``
+        * [0] ``x_hat_physical``  (n_pixels, n_fit)  — physical retrieved values
+        * [1] ``sigma_physical``  (n_pixels, n_fit)  — posterior σ in physical space
+        * [2] ``A_diagonal``      (n_pixels, n_fit)  — averaging kernel diagonal
+        * [3] ``chi2``            (n_pixels,)         — chi-squared per band
+        * [4] ``H_info``          (n_pixels,)         — information content in nats
+        * [5] ``y_hat``           (n_pixels, n_obs)   — only if ``store_y_hat=True``
+        * [5 or 6] ``G``          (n_pixels, n_fit, n_obs) — only if ``store_gain=True``
     """
     import jax.numpy as jnp
 
@@ -236,9 +241,12 @@ def invert_tile(
         np.array(sigma_phys),
         np.array(A_diag),
         np.array(results.chi2),
+        np.array(results.H_info),
     )
     if store_y_hat:
         out = out + (np.array(results.y_hat),)
+    if store_gain:
+        out = out + (np.array(results.G),)
     return out
 
 
@@ -303,6 +311,7 @@ def invert_image(
     lm_damping: float = 0.0,
     tile_size: int = 65536,
     store_y_hat: bool = False,
+    store_gain: bool = False,
     scheduler: str = 'synchronous',
     x_a_image: Optional[np.ndarray] = None,
     S_a_inv_image: Optional[np.ndarray] = None,
@@ -345,6 +354,12 @@ def invert_image(
         store_y_hat:  if True, the returned dict includes a ``'y_hat'`` key
                       with the simulated spectra at the solution, shape
                       (…, n_obs).  Default False (saves memory).
+        store_gain:   if True, the returned dict includes a ``'G'`` key with
+                      the gain matrix G = S_hat · J^T · S_ε⁻¹, shape
+                      (…, n_fit, n_obs).  Each row gives the spectral
+                      sensitivity of one retrieved parameter — useful for
+                      band-selection analysis.  Default False (large array;
+                      only request when needed).
         scheduler:    Dask scheduler passed to ``dask.compute()``.
                       ``'synchronous'`` (default) — single-threaded, easiest
                       to debug; JAX parallelises within each tile via XLA.
@@ -412,14 +427,27 @@ def invert_image(
             indicates model–data mismatch,
             shape (n_rows, n_cols) or (n_pixels,).
 
+        ``'H_info'``
+            Information content in nats (Rodgers 2000, eq. 2.68) —
+            H = 0.5 · ln|S_a · S_hat⁻¹|.  Measures total uncertainty
+            reduction relative to the prior; useful for per-pixel quality
+            assessment and sensor comparison,
+            shape (n_rows, n_cols) or (n_pixels,).
+
         ``'y_hat'``
             Simulated spectrum at the solution (only present when
             ``store_y_hat=True``),
             shape (n_rows, n_cols, n_obs) or (n_pixels, n_obs).
 
+        ``'G'``
+            Gain matrix G = S_hat · J^T · S_ε⁻¹ (only present when
+            ``store_gain=True``).  Row i gives the spectral sensitivity of
+            parameter i — which bands drive each retrieval,
+            shape (n_rows, n_cols, n_fit, n_obs) or (n_pixels, n_fit, n_obs).
+
         ``'fit_names'``
             List of free parameter names, length n_fit.  Maps the last axis
-            of x_hat, sigma, and A_diag to parameter names.
+            of x_hat, sigma, A_diag, and G to parameter names.
 
     Raises:
         ValueError: if Rrs has an unsupported number of dimensions.
@@ -555,6 +583,7 @@ def invert_image(
             n_iter,
             lm_damping,
             store_y_hat,
+            store_gain,
             tile_aux,
         )
         delayed_tasks.append(task)
@@ -563,31 +592,42 @@ def invert_image(
     tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
 
     # --- assemble tile outputs into full-image arrays ------------------------
-    x_hat_all  = np.concatenate([r[0] for r in tile_results], axis=0)  # (n_pixels, n_fit)
-    sigma_all  = np.concatenate([r[1] for r in tile_results], axis=0)
-    A_diag_all = np.concatenate([r[2] for r in tile_results], axis=0)
-    chi2_all   = np.concatenate([r[3] for r in tile_results], axis=0)  # (n_pixels,)
+    x_hat_all   = np.concatenate([r[0] for r in tile_results], axis=0)  # (n_pixels, n_fit)
+    sigma_all   = np.concatenate([r[1] for r in tile_results], axis=0)
+    A_diag_all  = np.concatenate([r[2] for r in tile_results], axis=0)
+    chi2_all    = np.concatenate([r[3] for r in tile_results], axis=0)  # (n_pixels,)
+    H_info_all  = np.concatenate([r[4] for r in tile_results], axis=0)  # (n_pixels,)
 
     # --- reshape to spatial dimensions if input was 3-D ---------------------
     if spatial_shape is not None:
-        x_hat_all  = x_hat_all.reshape(*spatial_shape, n_fit)
-        sigma_all  = sigma_all.reshape(*spatial_shape, n_fit)
-        A_diag_all = A_diag_all.reshape(*spatial_shape, n_fit)
-        chi2_all   = chi2_all.reshape(*spatial_shape)
+        x_hat_all   = x_hat_all.reshape(*spatial_shape, n_fit)
+        sigma_all   = sigma_all.reshape(*spatial_shape, n_fit)
+        A_diag_all  = A_diag_all.reshape(*spatial_shape, n_fit)
+        chi2_all    = chi2_all.reshape(*spatial_shape)
+        H_info_all  = H_info_all.reshape(*spatial_shape)
 
     out: Dict[str, object] = {
         'x_hat':     x_hat_all,
         'sigma':     sigma_all,
         'A_diag':    A_diag_all,
         'chi2':      chi2_all,
+        'H_info':    H_info_all,
         'fit_names': setup.fit_names,
     }
 
+    next_idx = 5
     if store_y_hat:
-        y_hat_all = np.concatenate([r[4] for r in tile_results], axis=0)
+        y_hat_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
         if spatial_shape is not None:
             y_hat_all = y_hat_all.reshape(*spatial_shape, n_obs)
         out['y_hat'] = y_hat_all
+        next_idx += 1
+
+    if store_gain:
+        G_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
+        if spatial_shape is not None:
+            G_all = G_all.reshape(*spatial_shape, n_fit, n_obs)
+        out['G'] = G_all
 
     return out
 
@@ -629,6 +669,7 @@ def to_dataset(results: Dict[str, object],
         ``sigma``    — dims (*spatial_dims, 'param'), posterior σ in physical space
         ``A_diag``   — dims (*spatial_dims, 'param'), averaging kernel diagonal
         ``chi2``     — dims (*spatial_dims,),          goodness of fit
+        ``H_info``   — dims (*spatial_dims,),          information content in nats
         ``y_hat``    — dims (*spatial_dims, 'wavelength') if present
 
     Example::
@@ -655,6 +696,7 @@ def to_dataset(results: Dict[str, object],
         'sigma':  _make_da(results['sigma'],   (*spatial_dims, 'param'), param_coords),
         'A_diag': _make_da(results['A_diag'],  (*spatial_dims, 'param'), param_coords),
         'chi2':   _make_da(results['chi2'],    spatial_dims,             base_coords),
+        'H_info': _make_da(results['H_info'],  spatial_dims,             base_coords),
     }
 
     if 'y_hat' in results:

@@ -78,7 +78,7 @@ results = dask_oe_engine.invert_image(
     tile_size  = 4096,
     store_y_hat = True,    # keep simulated spectra for residual inspection
 )
-# results keys: x_hat, sigma, A_diag, chi2, y_hat, fit_names
+# results keys: x_hat, sigma, A_diag, chi2, H_info, y_hat (if store_y_hat), G (if store_gain), fit_names
 ```
 
 For per-pixel bottom reflectance (measured albedo from low-tide image):
@@ -116,7 +116,7 @@ Iterate: rerun `invert_image()` with `noise_implied` until median chi2 is stable
 
 ---
 
-## Phase 4 — Parameter pruning (A_diag check)
+## Phase 4 — Parameter pruning (A_diag and H_info check)
 
 For each free parameter `i`, compute the median averaging-kernel diagonal.
 `A_diag[i] ∈ [0, 1]`: 1 = fully data-driven, 0 = prior-dominated (no information from data).
@@ -125,9 +125,18 @@ For each free parameter `i`, compute the median averaging-kernel diagonal.
 for i, name in enumerate(results['fit_names']):
     a_med  = np.nanmedian(results['A_diag'][..., i])
     s_med  = np.nanmedian(results['sigma'][..., i])
-    sa     = setup.x_a[i]   # prior sigma in retrieval space (approx)
     print(f"{name:12s}  A_diag={a_med:.2f}  posterior_sigma={s_med:.3f}")
+
+# Scene-level information content (nats): how much total entropy was removed from the prior
+print(f"Median H_info: {np.nanmedian(results['H_info']):.4f} nats")
 ```
+
+**Interpreting H_info:**
+- H_info is the Shannon information content (Rodgers 2000 eq. 2.80): total entropy removed from the prior by the measurement, summed across all retrieved parameters.
+- For a **single uncorrelated parameter**: `H = −0.5·ln(1 − A[i,i])`, so H and A[i,i] carry identical information.
+- For **multiple parameters**: H is the log-determinant analogue of DFS (trace). DFS counts *how many* params are constrained; H measures *how tightly* in total. H is dominated by the best-constrained parameters.
+- Use H_info to compare scenes, sensor configurations, or retrieval setups — higher is better.
+- Rule of thumb: H_info / n_fit gives the average information per parameter in nats; `exp(H_info/n_fit)` is the geometric-mean ratio of prior-to-posterior σ.
 
 | Symptom | Diagnosis | Fix |
 |---|---|---|
@@ -216,3 +225,4 @@ if fracs is not None:
 | `to_dataset()` | `inversion/dask_oe_engine.py` | Convert result dict to xarray Dataset |
 | `bottom_fractions()` | `inversion/oe_engine.py` | Convert `f_mix_*` logits to fractions |
 | `posterior_sigma_physical()` | `inversion/oe_engine.py` | Delta-method σ for log-params |
+| `to_dataset()` | `inversion/dask_oe_engine.py` | Includes `H_info` variable automatically |

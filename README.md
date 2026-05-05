@@ -10,6 +10,21 @@ This framework was intentionally built to be a community project. If you want to
 Here we list the major changes of every release. Please take a look at the commit history for all details.
 
 <details>
+<summary>dev branch (unreleased)</summary>
+
+- JAX-native Optimal Estimation inversion engine (`bio_optics/inversion/oe_engine.py`, `dask_oe_engine.py`, `oe_engine_optx.py`) supporting image-scale retrieval via Dask tiling and the Optimistix solver
+- Superpixel inversion engine (`superpixel_engine.py`) for spatially regularised retrievals
+- Two-step retrieval pipeline: Step 1 (joint 3C glint+water fit) → Step 2 (water quality on corrected spectrum)
+- Benthic mapping support with LUT-based bottom reflectance and softmax bottom-fraction parameterisation (NB13/NB14)
+- Full Rodgers (2000) OE diagnostics: posterior covariance `S_hat`, averaging kernel `A`, DFS, χ², Jacobian `J`, fitted spectrum `y_hat`, information content `H_info` (nats), gain matrix `G`
+- Log-transform support for strictly-positive parameters (lognormal prior, no negative-value failures)
+- Spatially varying priors (`x_a_image`, `S_a_inv_image`) for bathymetry-assisted retrievals
+- Restructured module layout: `bio_optics/water/reflectance/`, `bio_optics/coupled_models/`
+- See `docs/OE_PIPELINE.md` for the step-by-step inversion workflow
+
+</details>
+
+<details>
 <summary>Version 0.0.2</summary>
 
 - Integration of HEREON bio-optical model including a split of `a_d` into `a_md` and `a_bd`, and `b_d` into `b_bd` and `b_md` 
