@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -146,7 +146,7 @@ def estimate_S_dg(Rrs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.002
 
 
 
-def compute_residual(y_true, y_pred, method=2, weights=[]):
+def compute_residual(y_true, y_pred, method=2, weights=None):
     """
     Residual computation for comparison of measured and simulated data.
 
@@ -159,7 +159,7 @@ def compute_residual(y_true, y_pred, method=2, weights=[]):
         residual
     """
 
-    if len(weights)==0:
+    if weights is None:
         weights = np.ones(len(y_true))
     if method == 0:
         return (y_pred-y_true) * weights

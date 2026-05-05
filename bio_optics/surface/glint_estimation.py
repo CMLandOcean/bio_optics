@@ -1,10 +1,10 @@
-import numpy as np
+﻿import numpy as np
 
 from .. helper import resampling, utils
 from . import air_water
 
 
-def gao(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=[]):
+def gao(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=None):
     """
     Sun glint estimation considering the spectral variation of the refractive index of water [1].
     Assumes zero reflectance of water in the infrared.
@@ -23,7 +23,7 @@ def gao(R, wavelengths, theta_sun=0.001, lambda_nir=1640, n1=1, n2=[]):
     Returns:
         glint reflectance [-]
     """
-    if len(n2) == 0:
+    if n2 is None:
         n2 = resampling.resample_n(wavelengths=wavelengths)
 
     fresnel_reflectance = air_water.fresnel(theta_inc=theta_sun, n1=n1, n2=n2)
