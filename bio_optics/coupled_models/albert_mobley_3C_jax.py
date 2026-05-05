@@ -28,7 +28,7 @@ import jax.numpy as jnp
 jax.config.update("jax_enable_x64", True)
 
 from ..water.reflectance import albert_mobley_jax
-from ..atmosphere import downwelling_irradiance
+from ..atmosphere import downwelling_irradiance_jax as _di
 from ..surface import air_water_jax
 
 
@@ -39,7 +39,8 @@ from ..surface import air_water_jax
 def precompute(wavelengths,
                fresh=False,
                b_X_norm_factor=1.0,
-               # Atmospheric scalars used to compute Ed_d / Ed_sr / Ed_sa
+               # Atmospheric scalars — supply theta_sun for Mode A (pre-baked Ed arrays);
+               # pass theta_sun=None for Mode B (Ed computed on-the-fly in _forward_core).
                theta_sun=np.radians(30),
                P=1013.25,
                AM=5,
@@ -48,28 +49,29 @@ def precompute(wavelengths,
                WV=2.5,
                alpha=1.317,
                beta=0.2602,
-               # Optional precomputed atmospheric absorption tables
-               E0_res=[],
-               a_oz_res=[],
-               a_ox_res=[],
-               a_wv_res=[],
-               # Optional precomputed irradiance components (skips recomputation)
-               Ed_d_res=[],
-               Ed_sa_res=[],
-               Ed_sr_res=[],
-               # Optional precomputed sky-to-Ed ratio spectrum
-               Ls_Ed=[]):
+               # Optional pre-computed irradiance arrays (override downwelling_irradiance_jax)
+               Ed_d_res=None,
+               Ed_sa_res=None,
+               Ed_sr_res=None,
+               # Optional pre-computed sky-to-Ed ratio spectrum
+               Ls_Ed=None):
     """
     Resample all static spectral lookup tables once and return as a dict of JAX arrays.
 
     Extends albert_mobley_jax.precompute() with atmospheric irradiance components.
+    Delegates irradiance computation to downwelling_irradiance_jax.precompute() which
+    supports dual-mode operation: Mode A (theta_sun supplied → Ed arrays pre-baked,
+    zero per-call overhead) and Mode B (theta_sun=None → Ed computed on-the-fly from
+    p in _forward_core, enables geometry / atmosphere retrieval).
+
     Must NOT be called inside a jax.jit context.
 
     Args:
         wavelengths: wavelengths to resample to [nm], numpy array of shape (n_wavelengths,)
         fresh: True for fresh water, False for oceanic water, default: False
         b_X_norm_factor: normalization factor for type I particle scattering, default: 1.0
-        theta_sun: sun zenith angle [radians], default: np.radians(30)
+        theta_sun: sun zenith angle [radians], default: np.radians(30).  Pass None for
+            Mode B (atmosphere / geometry retrieval via lmfit).
         P: atmospheric pressure [mbar], default: 1013.25
         AM: air mass type [1..10], default: 5
         RH: relative humidity [%], default: 80
@@ -77,46 +79,36 @@ def precompute(wavelengths,
         WV: precipitable water [cm], default: 2.5
         alpha: Angström exponent, default: 1.317
         beta: turbidity coefficient, default: 0.2602
-        E0_res: optional precomputed extraterrestrial solar irradiance
-        a_oz_res: optional precomputed ozone absorption coefficient
-        a_ox_res: optional precomputed oxygen absorption coefficient
-        a_wv_res: optional precomputed water vapour absorption coefficient
-        Ed_d_res: optional precomputed direct downwelling irradiance; skips computation if provided
-        Ed_sa_res: optional precomputed aerosol-scattered downwelling irradiance; skips computation if provided
-        Ed_sr_res: optional precomputed Rayleigh-scattered downwelling irradiance; skips computation if provided
-        Ls_Ed: optional ratio of sky radiance to downwelling irradiance [sr-1], shape (n_wavelengths,)
+        Ed_d_res: optional pre-computed direct downwelling irradiance [W m-2 nm-1];
+            overrides downwelling_irradiance_jax output if provided
+        Ed_sa_res: optional pre-computed aerosol-scattered irradiance [W m-2 nm-1]
+        Ed_sr_res: optional pre-computed Rayleigh-scattered irradiance [W m-2 nm-1]
+        Ls_Ed: optional sky radiance / downwelling irradiance ratio [sr-1], shape (n_wavelengths,)
 
     Returns:
         precomputed: dict of JAX arrays — all keys from albert_mobley_jax.precompute(), plus:
-            "Ed_d"   — direct downwelling irradiance [W m-2 nm-1], shape (n_wavelengths,)
-            "Ed_sr"  — Rayleigh-scattered downwelling irradiance [W m-2 nm-1], shape (n_wavelengths,)
-            "Ed_sa"  — aerosol-scattered downwelling irradiance [W m-2 nm-1], shape (n_wavelengths,)
-            "Ls_Ed"  — sky radiance / downwelling irradiance ratio [sr-1], shape (n_wavelengths,)
+            'E0', 'a_oz', 'a_ox', 'a_wv' — atmospheric spectral data (always)
+            'Ed_d', 'Ed_sr', 'Ed_sa'      — irradiance components (Mode A only)
+            'Ls_Ed'                        — sky-to-Ed ratio [sr-1]
     """
     pre = albert_mobley_jax.precompute(wavelengths,
                                        fresh=fresh,
                                        b_X_norm_factor=b_X_norm_factor)
 
-    atm_kwargs = dict(
-        theta_sun=theta_sun, P=P, AM=AM, RH=RH,
-        H_oz=H_oz, WV=WV, alpha=alpha, beta=beta,
-        E0_res=E0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res,
-    )
+    atm_pre = _di.precompute(wavelengths,
+                             theta_sun=theta_sun, P=P, AM=AM, RH=RH,
+                             H_oz=H_oz, WV=WV, alpha=alpha, beta=beta)
+    pre.update(atm_pre)
 
-    Ed_d  = (np.array(Ed_d_res)  if len(Ed_d_res)  > 0
-             else downwelling_irradiance.Ed_d( wavelengths, **atm_kwargs))
-    Ed_sr = (np.array(Ed_sr_res) if len(Ed_sr_res) > 0
-             else downwelling_irradiance.Ed_sr(wavelengths, **atm_kwargs))
-    Ed_sa = (np.array(Ed_sa_res) if len(Ed_sa_res) > 0
-             else downwelling_irradiance.Ed_sa(wavelengths, **atm_kwargs))
+    if Ed_d_res is not None:
+        pre["Ed_d"]  = jnp.array(np.asarray(Ed_d_res))
+    if Ed_sr_res is not None:
+        pre["Ed_sr"] = jnp.array(np.asarray(Ed_sr_res))
+    if Ed_sa_res is not None:
+        pre["Ed_sa"] = jnp.array(np.asarray(Ed_sa_res))
 
-    Ls_Ed_arr = (np.array(Ls_Ed) if len(Ls_Ed) > 0
-                 else np.zeros(len(wavelengths)))
-
-    pre["Ed_d"]  = jnp.array(Ed_d)
-    pre["Ed_sr"] = jnp.array(Ed_sr)
-    pre["Ed_sa"] = jnp.array(Ed_sa)
-    pre["Ls_Ed"] = jnp.array(Ls_Ed_arr)
+    pre["Ls_Ed"] = jnp.array(np.asarray(Ls_Ed) if Ls_Ed is not None
+                              else np.zeros(len(wavelengths)))
 
     return pre
 
@@ -142,20 +134,22 @@ def _forward_core(p, pre):
     # --- water-leaving contribution ---
     Rrs_water = albert_mobley_jax._forward_core(p, pre)
 
+    # --- irradiance components (Mode A: from pre; Mode B: computed from p) ---
+    Ed_d  = _di.get_Ed_d(p, pre)
+    Ed_sr = _di.get_Ed_sr(p, pre)
+    Ed_sa = _di.get_Ed_sa(p, pre)
+
     # --- sky radiance (Gege 2021) ---
-    # L_s = fd_d * g_dd * Ed_d + fd_s * (g_dsr * Ed_sr + g_dsa * Ed_sa)
-    L_s = (p["fd_d"] * p["g_dd"]  * pre["Ed_d"]
-           + p["fd_s"] * (p["g_dsr"] * pre["Ed_sr"] + p["g_dsa"] * pre["Ed_sa"]))
+    L_s = (p["fd_d"] * p["g_dd"]  * Ed_d
+           + p["fd_s"] * (p["g_dsr"] * Ed_sr + p["g_dsa"] * Ed_sa))
 
     # --- total downwelling irradiance ---
-    Ed = p["fd_d"] * pre["Ed_d"] + p["fd_s"] * (pre["Ed_sr"] + pre["Ed_sa"])
+    Ed = p["fd_d"] * Ed_d + p["fd_s"] * (Ed_sr + Ed_sa)
 
     # --- Fresnel reflectance of sea surface for viewing direction ---
     rho_L = air_water_jax.fresnel(p["theta_view"], n1=p["n1"], n2=p["n2"])
 
     # --- surface contribution ---
-    # Rrs_surf = rho_L * L_s / Ed + d_r  (direct sky glint)
-    #          + rho_L * Ls_Ed            (adjacency / residual sky glint)
     Rrs_surf = rho_L * L_s / Ed + p["d_r"] + rho_L * pre["Ls_Ed"]
 
     return Rrs_water + Rrs_surf + p["offset"]

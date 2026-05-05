@@ -72,14 +72,10 @@ def precompute(wavelengths,
                WV=2.5,
                alpha=1.317,
                beta=0.2602,
-               E0_res=[],
-               a_oz_res=[],
-               a_ox_res=[],
-               a_wv_res=[],
-               Ed_d_res=[],
-               Ed_sa_res=[],
-               Ed_sr_res=[],
-               Ls_Ed=[]):
+               Ed_d_res=None,
+               Ed_sa_res=None,
+               Ed_sr_res=None,
+               Ls_Ed=None):
     """
     Resample all static spectral lookup tables once and return as a dict of JAX arrays.
 
@@ -102,7 +98,8 @@ def precompute(wavelengths,
         lambda_C_phycocyanin: peak wavelength of phycocyanin fluorescence [nm], default: 644
         fwhm_phycoerythrin: FWHM of phycoerythrin fluorescence [nm], default: 20
         lambda_C_phycoerythrin: peak wavelength of phycoerythrin fluorescence [nm], default: 573
-        theta_sun .. Ls_Ed: atmospheric parameters, forwarded to ``bi_3C_jax.precompute()``
+        theta_sun .. Ls_Ed: atmospheric parameters, forwarded to ``bi_3C_jax.precompute()``.
+            Pass theta_sun=None for Mode B (atmosphere / geometry retrieval via lmfit).
 
     Returns:
         precomputed: dict of JAX arrays. All keys from ``bi_3C_jax.precompute()`` plus:
@@ -115,7 +112,6 @@ def precompute(wavelengths,
         phy_source=phy_source, b_phy_source=b_phy_source,
         theta_sun=theta_sun, P=P, AM=AM, RH=RH,
         H_oz=H_oz, WV=WV, alpha=alpha, beta=beta,
-        E0_res=E0_res, a_oz_res=a_oz_res, a_ox_res=a_ox_res, a_wv_res=a_wv_res,
         Ed_d_res=Ed_d_res, Ed_sa_res=Ed_sa_res, Ed_sr_res=Ed_sr_res, Ls_Ed=Ls_Ed,
     )
 
