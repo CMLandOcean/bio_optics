@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -29,7 +29,7 @@ def _get_residuals(fun, data, weights):
     Suitable as a residual function for scipy.optimize.least_squares.
     """
     def compositefun(*args, **kwargs):
-        if len(weights) == 0:
+        if weights is None:
             return fun(*args, **kwargs) - data
         return (fun(*args, **kwargs) - data) * weights
     return compositefun
@@ -53,7 +53,7 @@ def invert(params,
            wavelengths,
            forward_func,
            fixed_params=None,
-           weights=[],
+           weights=None,
            max_nfev=400,
            **fwd_kwargs):
     """

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -81,7 +81,7 @@ def Rrs_b(f_0 = 0,
     f_i = np.array([f_0,f_1,f_2,f_3,f_4,f_5])
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
-    if len(R_b_i_res)==0:
+    if R_b_i_res is None:
         R_b_i = resampling.resample_R_b_i(wavelengths=wavelengths)
     else:
         R_b_i = R_b_i_res
@@ -105,7 +105,7 @@ B_0 = 1/np.pi,
     """
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
-    if len(R_b_i_res)==0:
+    if R_b_i_res is None:
         R_b_i = resampling.resample_R_b_i(wavelengths=wavelengths)
     else: 
         R_b_i = R_b_i_res
@@ -136,7 +136,7 @@ def dRrs_b_div_dB_i(i,
     f_i = np.array([f_0,f_1,f_2,f_3,f_4,f_5])
     B_i = np.array([B_0,B_1,B_2,B_3,B_4,B_5])
     
-    if len(R_b_i_res)==0:
+    if R_b_i_res is None:
         R_b_i = resampling.resample_R_b_i(wavelengths=wavelengths)
     else: 
         R_b_i = R_b_i_res

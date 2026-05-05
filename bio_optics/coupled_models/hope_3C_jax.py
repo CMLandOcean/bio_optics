@@ -1,31 +1,34 @@
 """
-JAX implementation of the coupled HEREON model: water-leaving Rrs + surface reflectance.
-
-This is a two-component model (water + surface). For the three-component version
-that additionally includes fluorescence, see ``bio_optics.coupled_models.bi_fluo_3C_jax``.
+JAX implementation of the coupled HOPE model: shallow water Rrs + surface reflectance.
 
 Two-layer architecture:
-  - Layer 1: precompute() — numpy/scipy, runs once outside JIT, converts to JAX arrays
-  - Layer 2: _forward_core() — pure JAX arithmetic, JIT-compilable, vmap-able
+  - Layer 1: precompute() — numpy/scipy, runs once outside JIT.
+    Merges hope_jax.precompute() (water tables) with downwelling_irradiance_jax.precompute()
+    (atmosphere tables).  Supports dual-mode atmosphere: Mode A (theta_sun supplied →
+    Ed arrays pre-baked, zero overhead) or Mode B (theta_sun=None → Ed on-the-fly,
+    enables geometry/atmosphere retrieval).
+  - Layer 2: _forward_core() — pure JAX arithmetic, JIT-compilable, vmap-able.
 
 Usage::
 
     import numpy as np
     import jax
-    from bio_optics.coupled_models import bi_3C_jax
+    from bio_optics.coupled_models import hope_3C_jax
 
-    pre  = bi_3C_jax.precompute(wavelengths, theta_sun=np.radians(35))
-    Rrs  = bi_3C_jax.forward(params, pre)
+    pre  = hope_3C_jax.precompute(wavelengths, theta_sun=np.radians(35))
+    Rrs  = hope_3C_jax.forward(params, pre)
 
-    # JIT-compiled vectorised forward
     names  = list(params.keys())
-    f_vec  = bi_3C_jax.make_forward_vec(names, pre)
+    f_vec  = hope_3C_jax.make_forward_vec(names, pre)
     Rrs    = jax.jit(f_vec)(params_vec)
     J      = jax.jacobian(f_vec)(params_vec)   # shape (n_wl, n_params)
 
 References:
-    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
-    [2] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+    [1] Lee et al. (1998): Hyperspectral remote sensing for shallow waters: 1. A semianalytical
+        model [10.1364/AO.37.006329]
+    [2] Lee et al. (1999): Hyperspectral remote sensing for shallow waters: 2. Deriving bottom
+        depths and water properties by optimization [10.1364/ao.38.003831]
+    [3] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
 """
 
 import numpy as np
@@ -34,9 +37,9 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
+from ..water.reflectance import hope_jax
 from ..atmosphere import downwelling_irradiance_jax as _di
 from ..surface import air_water_jax
-from ..water.reflectance import bi_jax
 
 
 # ---------------------------------------------------------------------------
@@ -45,9 +48,7 @@ from ..water.reflectance import bi_jax
 
 def precompute(wavelengths,
                fresh=False,
-               phy_source='a_phy_EnSAD',
-               b_phy_source='b_phy_EnSAD',
-               # Atmospheric scalars — supply theta_sun for Mode A (pre-baked Ed arrays);
+               # Atmosphere — supply theta_sun for Mode A (pre-baked Ed arrays);
                # pass theta_sun=None for Mode B (Ed computed on-the-fly in _forward_core).
                theta_sun=np.radians(30),
                P=1013.25,
@@ -64,19 +65,15 @@ def precompute(wavelengths,
                # Optional pre-computed sky-to-Ed ratio spectrum
                Ls_Ed=None):
     """
-    Resample all static spectral lookup tables once and return as a dict of JAX arrays.
+    Load all static spectral lookup tables; optionally pre-compute Ed arrays.
 
-    Calls ``bi_jax.precompute()`` for water optical tables and delegates irradiance
-    computation to ``downwelling_irradiance_jax.precompute()`` (dual-mode: Mode A when
-    theta_sun is supplied → Ed arrays pre-baked; Mode B when theta_sun=None → Ed computed
-    on-the-fly in _forward_core).
-    Must NOT be called inside a jax.jit context.
+    Merges hope_jax.precompute() (a_w, bb_w, A0, A1, R_b_i) with
+    downwelling_irradiance_jax.precompute() (E0, a_oz, a_ox, a_wv; plus Ed arrays
+    in Mode A).  Must NOT be called inside a jax.jit context.
 
     Args:
         wavelengths: wavelengths [nm], numpy array of shape (n_wavelengths,)
-        fresh: True for fresh water, False for oceanic water (controls bb_w), default: False
-        phy_source: phytoplankton absorption library keyword or file path, default: 'a_phy_EnSAD'
-        b_phy_source: phytoplankton scattering library keyword or file path, default: 'b_phy_EnSAD'
+        fresh: True for fresh water (controls bb_w), default: False
         theta_sun: sun zenith angle [radians], default: np.radians(30).  Pass None for
             Mode B (atmosphere / geometry retrieval via lmfit).
         P: atmospheric pressure [mbar], default: 1013.25
@@ -86,20 +83,16 @@ def precompute(wavelengths,
         WV: precipitable water [cm], default: 2.5
         alpha: Angström exponent, default: 1.317
         beta: turbidity coefficient, default: 0.2602
-        Ed_d_res: optional pre-computed direct downwelling irradiance [W m-2 nm-1];
-            overrides downwelling_irradiance_jax output if provided
+        Ed_d_res: optional pre-computed direct downwelling irradiance [W m-2 nm-1]
         Ed_sa_res: optional pre-computed aerosol-scattered irradiance [W m-2 nm-1]
         Ed_sr_res: optional pre-computed Rayleigh-scattered irradiance [W m-2 nm-1]
         Ls_Ed: optional sky radiance / downwelling irradiance ratio [sr-1], shape (n_wavelengths,)
 
     Returns:
-        precomputed: dict of JAX arrays. All keys from ``bi_jax.precompute()`` plus:
-            'E0', 'a_oz', 'a_ox', 'a_wv' — atmospheric spectral data (always)
-            'Ed_d', 'Ed_sr', 'Ed_sa'      — irradiance components (Mode A only)
-            'Ls_Ed'                        — sky-to-Ed ratio [sr-1]
+        pre: merged dict of JAX arrays from hope_jax.precompute() and
+             downwelling_irradiance_jax.precompute(), plus 'Ls_Ed'
     """
-    pre = bi_jax.precompute(wavelengths, fresh=fresh,
-                             phy_source=phy_source, b_phy_source=b_phy_source)
+    pre = hope_jax.precompute(wavelengths, fresh=fresh)
 
     atm_pre = _di.precompute(wavelengths,
                              theta_sun=theta_sun, P=P, AM=AM, RH=RH,
@@ -127,33 +120,36 @@ def _forward_core(p, pre):
     """
     Core forward simulation — pure JAX arithmetic, JIT-compilable.
 
-    Combines water-leaving Rrs (via ``bi_jax._forward_core``) with sky/sun glint
-    surface reflectance following Gege (2021) [2].
+    Computes shallow water Rrs (hope_jax._forward_core) and adds sky glint surface
+    reflectance following Gege (2021).
 
     Args:
-        p: dict of scalar parameters (floats or JAX 0-d arrays). All keys required by
-           ``bi_jax._forward_core`` plus:
-               Surface / viewing geometry: theta_view, n1, n2, fd_d, fd_s, g_dd, g_dsr, g_dsa, d_r
-        pre: dict of precomputed JAX arrays from precompute()
+        p: dict of scalar parameters.  All keys from hope_jax._forward_core plus:
+            Surface / sky: fd_d, fd_s, g_dd, g_dsr, g_dsa, theta_view, n1, n2, d_r
+            (In Mode B also: theta_sun, P, AM, RH, H_oz, WV, alpha, beta, lambda_a)
+        pre: dict of JAX arrays from precompute()
 
     Returns:
         Rrs: above-water remote sensing reflectance [sr-1], shape (n_wavelengths,)
     """
-    Rrs_water = bi_jax._forward_core(p, pre)
+    Rrs_water = hope_jax._forward_core(p, pre)
 
     # --- irradiance components (Mode A: from pre; Mode B: computed from p) ---
     Ed_d  = _di.get_Ed_d(p, pre)
     Ed_sr = _di.get_Ed_sr(p, pre)
     Ed_sa = _di.get_Ed_sa(p, pre)
 
-    # --- Surface reflectance (sky glint; Gege 2021) ---
+    # --- Sky radiance (Gege 2021) ---
     L_s = (p["fd_d"] * p["g_dd"]  * Ed_d
            + p["fd_s"] * (p["g_dsr"] * Ed_sr + p["g_dsa"] * Ed_sa))
 
+    # --- Total downwelling irradiance ---
     Ed = p["fd_d"] * Ed_d + p["fd_s"] * (Ed_sr + Ed_sa)
 
+    # --- Fresnel reflectance for viewing direction ---
     rho_L = air_water_jax.fresnel(p["theta_view"], n1=p["n1"], n2=p["n2"])
 
+    # --- Surface contribution ---
     Rrs_surf = rho_L * L_s / Ed + p["d_r"] + rho_L * pre["Ls_Ed"]
 
     return Rrs_water + Rrs_surf
@@ -165,13 +161,10 @@ def _forward_core(p, pre):
 
 def forward(params, precomputed):
     """
-    Forward simulation: water-leaving Rrs (Bi et al. 2023) [1] + surface reflectance (Gege 2021) [2].
-
-    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
-    [2] Gege, P. (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+    Forward simulation: shallow water Rrs (Lee 1998/1999) + surface reflectance (Gege 2021).
 
     Args:
-        params: lmfit Parameters object or plain dict mapping parameter names to scalar values
+        params: lmfit Parameters object or plain dict mapping parameter names to values
         precomputed: dict of JAX arrays returned by precompute()
 
     Returns:
@@ -183,30 +176,14 @@ def forward(params, precomputed):
 
 def make_forward_vec(param_names, precomputed):
     """
-    Return a function f(params_vec, aux=None) -> Rrs suitable for jax.jit, jax.jacobian, and jax.vmap.
-
-    The returned function takes a 1-D JAX array of parameter values (in the order given by
-    param_names) and returns the simulated above-water reflectance spectrum.
-
-    The optional ``aux`` argument is a dict that overrides entries in ``precomputed`` on a
-    per-call basis, enabling per-pixel variation of any precomputed spectral quantity.
-
-    Example usage::
-
-        pre    = precompute(wavelengths, theta_sun=np.radians(35))
-        names  = ["C_0", "C_Y", "C_ism", "offset", "fd_d", ...]
-        f_vec  = make_forward_vec(names, pre)
-
-        Rrs = jax.jit(f_vec)(params_vec)
-        J   = jax.jacobian(f_vec)(params_vec)             # (n_wl, n_params)
-        Rrs_batch = jax.vmap(f_vec)(params_matrix)        # (n_pixels, n_wl)
+    Return a function f(params_vec, aux=None) -> Rrs suitable for jax.jit / jax.jacobian.
 
     Args:
-        param_names: ordered list of parameter name strings matching the columns of params_vec
+        param_names: ordered list of parameter name strings
         precomputed: dict of JAX arrays returned by precompute()
 
     Returns:
-        f: callable f(params_vec, aux=None) -> Rrs where params_vec has shape (len(param_names),).
+        f: callable f(params_vec, aux=None) -> Rrs.
            When aux is a dict it is merged with precomputed (aux takes precedence).
     """
     def f(params_vec, aux=None):

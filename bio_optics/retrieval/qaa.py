@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 from ..helper.utils import find_closest
 from ..helper.resampling import resample_a_w, resample_bb_w
 from ..surface.air_water import above2below
@@ -12,8 +12,8 @@ def qaa(Rrs,
         h0=-1.146,
         h1=-1.366,
         h2=-0.469,
-        a_w_res=[],
-        bb_w_res=[]):
+        a_w_res=None,
+        bb_w_res=None):
     """
     Quasi-Analytical Algorithm (QAA) to derive the absorption and backscattering coefficients by analytically inverting the spectral remote-sensing reflectance [sr-1] [1,2,3]. 
     Only valid for optically deep water.    
@@ -52,9 +52,9 @@ def qaa(Rrs,
     
     idx = np.array([find_closest(wavelengths, wl)[1] for wl in lambdas]).astype(int)
     
-    if len(a_w_res)==0:
+    if a_w_res is None:
         a_w_res = resample_a_w(wavelengths)
-    if len(bb_w_res)==0:
+    if bb_w_res is None:
         bb_w_res = resample_bb_w(wavelengths)
 
     # Step 0 [3]
@@ -107,8 +107,8 @@ def qaa_cdom(Rrs,
              h2=0.274,
              j1=0.63,
              j2=0.88,
-             a_w_res=[],
-             bb_w_res=[]):
+             a_w_res=None,
+             bb_w_res=None):
     """
     Quasi-Analytical Algorithm (QAA) to derive absorption of CDOM and particulate matter at a reference wavelength of 440 nm [1] based on the QAA_v5 algorithm [2,3]. 
     Only valid for optically deep water.
@@ -143,9 +143,9 @@ def qaa_cdom(Rrs,
     
     idx = np.array([find_closest(wavelengths, wl)[1] for wl in lambdas]).astype(int)
     
-    if len(a_w_res)==0:
+    if a_w_res is None:
         a_w_res = resample_a_w(wavelengths)
-    if len(bb_w_res)==0:
+    if bb_w_res is None:
         bb_w_res = resample_bb_w(wavelengths)
 
     # Step 0 [1]
@@ -183,8 +183,8 @@ def qaa_shallow(Rrs,
                 lambdas=np.array([412, 443, 490, 555, 640, 670]),
                 g0=0.089,
                 g1=0.125,
-                a_w_res=[],
-                bb_w_res=[]):
+                a_w_res=None,
+                bb_w_res=None):
     """
     Quasi-Analytical Algorithm (QAA) for optically shallow waters to derive the absorption and backscattering coefficients by analytically inverting the spectral remote-sensing reflectance [sr-1] [1,2,3].   
     The function can run with any number of bands as long as the crucial wavelengths (lambdas) are included.
@@ -212,9 +212,9 @@ def qaa_shallow(Rrs,
     
     idx = np.array([find_closest(wavelengths, wl)[1] for wl in lambdas]).astype(int)
     
-    if len(a_w_res)==0:
+    if a_w_res is None:
         a_w_res = resample_a_w(wavelengths)
-    if len(bb_w_res)==0:
+    if bb_w_res is None:
         bb_w_res = resample_bb_w(wavelengths)
 
     # Step 0 [2]

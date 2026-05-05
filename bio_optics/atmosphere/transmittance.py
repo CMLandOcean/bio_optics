@@ -241,7 +241,7 @@ def T_as(wavelengths=np.arange(400,800), theta_sun=np.radians(30), AM=5, RH=80, 
     return T_as
 
 
-def T_oz(wavelengths=np.arange(400,800), theta_sun=np.radians(30), H_oz=0.381, a_oz_res=[]):
+def T_oz(wavelengths=np.arange(400,800), theta_sun=np.radians(30), H_oz=0.381, a_oz_res=None):
     """
     Ozone absorption transmittance after Gege (2021) [1].
 
@@ -260,7 +260,7 @@ def T_oz(wavelengths=np.arange(400,800), theta_sun=np.radians(30), H_oz=0.381, a
     return T_oz
 
 
-def T_ox(wavelengths=np.arange(400,800), theta_sun=np.radians(30), P=1013.25, a_ox_res=[]):
+def T_ox(wavelengths=np.arange(400,800), theta_sun=np.radians(30), P=1013.25, a_ox_res=None):
     """
     Oxygen absorption transmittance after Gege (2021) [1].
 
@@ -279,7 +279,7 @@ def T_ox(wavelengths=np.arange(400,800), theta_sun=np.radians(30), P=1013.25, a_
     return T_ox
 
 
-def T_wv(wavelengths=np.arange(400,800), theta_sun=np.radians(30), WV=2.5, a_wv_res=[]):
+def T_wv(wavelengths=np.arange(400,800), theta_sun=np.radians(30), WV=2.5, a_wv_res=None):
     """
     Water vapour absorption transmittance after Gege (2021) [1].
 

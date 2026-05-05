@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -28,7 +28,7 @@ def invert(params,
            wavelengths,
            forward_func,
            fixed_params=None,
-           weights=[],
+           weights=None,
            error_method=2,
            method="least-squares",
            max_nfev=400,
@@ -63,7 +63,7 @@ def invert(params,
             params[name].value = value
             params[name].vary = False
 
-    if len(weights) == 0:
+    if weights is None:
         weights = np.ones(len(Rrs))
 
     def _func2opt(parameters, Rrs, wavelengths, weights):

@@ -7,31 +7,31 @@ from ..surface import reflectance as surface, air_water
 
 def forward(parameters,
         wavelengths,
-        a_res=[],
-        bb_res=[],
-        a_w_res=[],
-        da_w_div_dT_res=[],
-        a_i_spec_res=[],
+        a_res=None,
+        bb_res=None,
+        a_w_res=None,
+        da_w_div_dT_res=None,
+        a_i_spec_res=None,
         a_Y_N_res = [],
         a_NAP_N_res = [],
         b_phy_norm_res = [],
         bb_w_res = [],
-        b_X_norm_res=[],
-        b_Mie_norm_res=[],
+        b_X_norm_res=None,
+        b_Mie_norm_res=None,
         R_b_i_res = [],
-        E0_res=[],
-        a_oz_res=[],
-        a_ox_res=[],
-        a_wv_res=[],
-        Ed_d_res=[],
-        Ed_sa_res=[],
-        Ed_sr_res=[],
-        Ed_res=[],
-        Ed_s_res=[],
-        n2_res=[],
-        Ls_Ed=[],
-        R_bg=[],
-        b_ray=[]):
+        E0_res=None,
+        a_oz_res=None,
+        a_ox_res=None,
+        a_wv_res=None,
+        Ed_d_res=None,
+        Ed_sa_res=None,
+        Ed_sr_res=None,
+        Ed_res=None,
+        Ed_s_res=None,
+        n2_res=None,
+        Ls_Ed=None,
+        R_bg=None,
+        b_ray=None):
     """
     Forward simulation of shallow water Rrs with adjacency effect and surface reflectance after Albert & Mobley (2003) [1].
 
@@ -68,7 +68,7 @@ def forward(parameters,
     Returns:
         Rrs_sim: above-water remote sensing reflectance [sr-1]
     """
-    if len(n2_res) == 0:
+    if n2_res is None:
         n2 = parameters["n2"]
     else:
         n2 = n2_res
@@ -78,13 +78,13 @@ def forward(parameters,
     else:
         rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
-    if len(Ls_Ed) == 0:
+    if Ls_Ed is None:
         Ls_Ed = np.zeros_like(wavelengths)
 
     ctsp = np.cos(air_water.snell(parameters["theta_sun"],  n1=parameters["n1"], n2=n2))  #cos of theta_sun_prime. theta_sun_prime = snell(theta_sun, n1, n2)
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
 
-    if len(a_res) == 0:
+    if a_res is None:
         a_sim = absorption.a(C_0=parameters["C_0"], C_1=parameters["C_1"], C_2=parameters["C_2"], C_3=parameters["C_3"], C_4=parameters["C_4"], C_5=parameters["C_5"], 
                             C_Y=parameters["C_Y"], C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], S=parameters["S"], 
                             S_NAP=parameters["S_NAP"], 
@@ -102,7 +102,7 @@ def forward(parameters,
     else:
         a_sim = a_res
     
-    if len(bb_res) == 0:
+    if bb_res is None:
         bb_sim = backscattering.bb(C_X=parameters["C_X"], C_Mie=parameters["C_Mie"], C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"]]), wavelengths=wavelengths, 
                             fresh=parameters["fresh"],
                             bb_phy_spec=parameters["bb_phy_spec"],
@@ -154,8 +154,8 @@ def forward(parameters,
 
 def forward_adjacency(parameters,
                       wavelengths,
-                      R_bg=[], 
-                      b_ray=[]):
+                      R_bg=None, 
+                      b_ray=None):
     """
     Compute the adjacency reflectance contribution using parameters from the lmfit Parameters object.
 

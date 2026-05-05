@@ -42,17 +42,17 @@ from . import air_water
 
 def forward(parameters,
             wavelengths,
-            E0_res=[],
-            a_oz_res=[],
-            a_ox_res=[],
-            a_wv_res=[],
-            Ed_d_res=[],
-            Ed_sa_res=[],
-            Ed_sr_res=[],
-            Ed_s_res=[],
-            Ed_res=[],
-            n2_res=[],
-            Ls_Ed=[]):
+            E0_res=None,
+            a_oz_res=None,
+            a_ox_res=None,
+            a_wv_res=None,
+            Ed_d_res=None,
+            Ed_sa_res=None,
+            Ed_sr_res=None,
+            Ed_s_res=None,
+            Ed_res=None,
+            n2_res=None,
+            Ls_Ed=None):
     """
     Forward simulation of the surface reflectance (sky glint) contribution to above-water remote sensing reflectance.
 
@@ -63,38 +63,38 @@ def forward(parameters,
         a_oz_res: optional precomputed ozone absorption
         a_ox_res: optional precomputed oxygen absorption
         a_wv_res: optional precomputed water vapour absorption
-        Ed_d_res: optional precomputed direct downwelling irradiance
-        Ed_sa_res: optional precomputed aerosol-scattered downwelling irradiance
-        Ed_sr_res: optional precomputed Rayleigh-scattered downwelling irradiance
-        Ed_s_res: optional precomputed diffuse downwelling irradiance
-        Ed_res: optional precomputed total downwelling irradiance
+        Ed_d_res: optional precomputed direct downwelling irradiance [W m-2 nm-1]
+        Ed_sa_res: optional precomputed aerosol-scattered downwelling irradiance [W m-2 nm-1]
+        Ed_sr_res: optional precomputed Rayleigh-scattered downwelling irradiance [W m-2 nm-1]
+        Ed_s_res: optional precomputed diffuse downwelling irradiance [W m-2 nm-1]
+        Ed_res: optional precomputed total downwelling irradiance [W m-2 nm-1]
         n2_res: optional precomputed refractive index of water
-        Ls_Ed: optional ratio of sky radiance to downwelling irradiance
+        Ls_Ed: optional ratio of sky radiance to downwelling irradiance [sr-1]
 
     Returns:
         Rrs_surface: surface reflectance contribution [sr-1]
     """
-    n2 = n2_res if len(n2_res) > 0 else parameters["n2"]
+    n2 = n2_res if n2_res is not None else parameters["n2"]
 
     if "rho_L" in parameters:
         rho_L = parameters["rho_L"].value
     else:
         rho_L = air_water.fresnel(parameters["theta_view"], n1=parameters["n1"], n2=n2)
 
-    Ls_Ed = np.zeros_like(wavelengths) if len(Ls_Ed) == 0 else Ls_Ed
+    Ls_Ed_arr = np.zeros_like(wavelengths) if Ls_Ed is None else Ls_Ed
 
-    Ed_d  = Ed_d_res  if len(Ed_d_res)  > 0 else downwelling_irradiance.Ed_d( wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res)
-    Ed_sa = Ed_sa_res if len(Ed_sa_res) > 0 else downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res)
-    Ed_sr = Ed_sr_res if len(Ed_sr_res) > 0 else downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res)
-    Ed_s  = Ed_s_res  if len(Ed_s_res)  > 0 else downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
-    Ed    = Ed_res    if len(Ed_res)    > 0 else downwelling_irradiance.Ed(Ed_d, Ed_s, parameters["fd_d"], parameters["fd_s"])
+    Ed_d  = Ed_d_res  if Ed_d_res  is not None else downwelling_irradiance.Ed_d( wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res)
+    Ed_sa = Ed_sa_res if Ed_sa_res is not None else downwelling_irradiance.Ed_sa(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res)
+    Ed_sr = Ed_sr_res if Ed_sr_res is not None else downwelling_irradiance.Ed_sr(wavelengths, parameters["theta_sun"], parameters["P"], parameters["AM"], parameters["RH"], parameters["H_oz"], parameters["WV"], parameters["alpha"], parameters["beta"], E0_res, a_oz_res, a_ox_res, a_wv_res)
+    Ed_s  = Ed_s_res  if Ed_s_res  is not None else downwelling_irradiance.Ed_s(Ed_sr, Ed_sa)
+    Ed    = Ed_res    if Ed_res    is not None else downwelling_irradiance.Ed(Ed_d, Ed_s, parameters["fd_d"], parameters["fd_s"])
 
     L_s = sky_radiance.L_s(parameters["fd_d"], parameters["g_dd"], Ed_d,
                             parameters["fd_s"], parameters["g_dsr"], Ed_sr,
                             parameters["g_dsa"], Ed_sa)
 
     Rrs_surface = Rrs_surf(L_s, Ed, rho_L, parameters["d_r"])
-    Rrs_surface += air_water.fresnel(parameters["theta_view"], n2=n2) * Ls_Ed
+    Rrs_surface += air_water.fresnel(parameters["theta_view"], n2=n2) * Ls_Ed_arr
     return Rrs_surface
 
 

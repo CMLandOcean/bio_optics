@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -227,8 +227,8 @@ def estimate_c_d_lambda_0(C_ism=1.,
                           x2=-1.3390,
                           omega_d_lambda_0_res=None,
                           a_d_lambda_0_res = None,
-                          a_md_spec_res=[],
-                          a_bd_spec_res=[]):
+                          a_md_spec_res=None,
+                          a_bd_spec_res=None):
     """
     Helper function to estimate the attenuation coefficient of detritus at a reference wavelength (Eq. 10 in [1]).
 
@@ -303,8 +303,8 @@ def c_d(wavelengths=np.arange(400,800),
         c_d_lambda_0_res=None,
         omega_d_lambda_0_res=None,
         a_d_lambda_0_res = None,
-        a_md_spec_res=[],
-        a_bd_spec_res=[]):
+        a_md_spec_res=None,
+        a_bd_spec_res=None):
     """
     Attenuation coefficient of detritus (Eq. 9 in [1]).
 
@@ -353,8 +353,8 @@ def c_d(wavelengths=np.arange(400,800),
                                              x2=x2,
                                              omega_d_lambda_0_res=omega_d_lambda_0_res,
                                              a_d_lambda_0_res = a_d_lambda_0_res,
-                                             a_md_spec_res=[], # needs to be empty so function does not return a vector 
-                                             a_bd_spec_res=[]) # needs to be empty so function does not return a vector 
+                                             a_md_spec_res=None, # needs to be empty so function does not return a vector 
+                                             a_bd_spec_res=None) # needs to be empty so function does not return a vector 
 
     c_d = c_d_lambda_0_res * (lambda_0_c_d / wavelengths)**gamma_d
     return c_d 

@@ -9,44 +9,44 @@ def forward(parameters,
             a_d_lambda_0_res=None,
             c_d_lambda_0_res=None,
             omega_d_lambda_0_res=None,
-            a_res=[],
-            # a_d_res=[],
-            a_md_res=[],
-            a_bd_res=[],
-            a_md_spec_res=[],
-            a_bd_spec_res=[],
-            a_w_res=[],
-            a_i_spec_res=[],
-            a_phy_res=[],
-            a_Y_N_res=[],
-            bb_res=[],
-            bb_bd_res=[],
-            bb_md_res=[],
-            bb_p_res=[],
-            bb_phy_res=[],
-            b_md_res=[],
-            b_bd_res=[],
-            bb_w_res=[],
-            # b_d_res=[],
-            bb_i_spec_res=[],
-            # c_d_res=[],
-            c_md_res=[],
-            c_bd_res=[],
-            h_C_res=[],
-            h_C_phycocyanin_res=[],
-            h_C_phycoerythrin_res=[],
-            da_w_div_dT_res=[],
-            E0_res=[],
-            a_oz_res=[],
-            a_ox_res=[],
-            a_wv_res=[],
-            Ed_d_res=[],
-            Ed_sa_res=[],
-            Ed_sr_res=[],
-            Ed_res=[],
-            Ed_s_res=[],
-            n2_res=[],
-            Ls_Ed=[]):
+            a_res=None,
+            # a_d_res=None,
+            a_md_res=None,
+            a_bd_res=None,
+            a_md_spec_res=None,
+            a_bd_spec_res=None,
+            a_w_res=None,
+            a_i_spec_res=None,
+            a_phy_res=None,
+            a_Y_N_res=None,
+            bb_res=None,
+            bb_bd_res=None,
+            bb_md_res=None,
+            bb_p_res=None,
+            bb_phy_res=None,
+            b_md_res=None,
+            b_bd_res=None,
+            bb_w_res=None,
+            # b_d_res=None,
+            bb_i_spec_res=None,
+            # c_d_res=None,
+            c_md_res=None,
+            c_bd_res=None,
+            h_C_res=None,
+            h_C_phycocyanin_res=None,
+            h_C_phycoerythrin_res=None,
+            da_w_div_dT_res=None,
+            E0_res=None,
+            a_oz_res=None,
+            a_ox_res=None,
+            a_wv_res=None,
+            Ed_d_res=None,
+            Ed_sa_res=None,
+            Ed_sr_res=None,
+            Ed_res=None,
+            Ed_s_res=None,
+            n2_res=None,
+            Ls_Ed=None):
     """
     Forward function of the HEREON model described in [1]
     a_d and b_d split are into a_md/a_bd and b_md/b_bd, respectively.
@@ -100,16 +100,16 @@ def forward(parameters,
     """    
     C_phy = np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"], parameters["C_3"], parameters["C_4"], parameters["C_5"], parameters["C_6"], parameters["C_7"]])
 
-    if len(n2_res) == 0:
+    if n2_res is None:
         n2 = parameters["n2"]
     else:
         n2 = n2_res
 
     # it makes sense to precompute some coefficients outside of a() and bb() because they are used in both functions
-    if len(bb_w_res)==0:
+    if bb_w_res is None:
         bb_w_res = resampling.resample_bb_w(wavelengths=wavelengths)
 
-    # if len(a_d_res)==0:
+    # if a_d_res is None:
     #     a_d_res = absorption.a_d(wavelengths=wavelengths,
     #                              C_phy=C_phy,
     #                              C_ism=parameters["C_ism"],
@@ -125,7 +125,7 @@ def forward(parameters,
     #                              a_md_spec_res=a_md_spec_res)
     # a_d_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, a_d_res) if parameters["interpolate"].value else a_d_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
 
-    if len(a_md_res)==0:
+    if a_md_res is None:
         a_md_res = absorption.a_md(wavelengths=wavelengths,
                                  C_ism=parameters["C_ism"],
                                  A_md=parameters["A_md"],
@@ -135,7 +135,7 @@ def forward(parameters,
                                  a_md_spec_res=a_md_spec_res)
     a_md_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, a_md_res) if parameters["interpolate"].value else a_md_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
 
-    if len(a_bd_res)==0:
+    if a_bd_res is None:
         a_bd_res = absorption.a_bd(wavelengths=wavelengths,
                                  C_phy=C_phy,
                                  A_bd=parameters["A_bd"],
@@ -145,7 +145,7 @@ def forward(parameters,
                                  a_bd_spec_res=a_bd_spec_res)
     a_bd_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, a_bd_res) if parameters["interpolate"].value else a_bd_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
 
-    # if len(c_d_res)==0:
+    # if c_d_res is None:
     #     c_d_res = attenuation.c_d(wavelengths=wavelengths,
     #                               C_phy=C_phy,
     #                               C_ism=parameters["C_ism"],
@@ -168,7 +168,7 @@ def forward(parameters,
     #                               a_md_spec_res=a_md_spec_res,
     #                               a_bd_spec_res=a_bd_spec_res)
 
-    if len(c_md_res)==0:
+    if c_md_res is None:
         c_md_res = attenuation.c_md(wavelengths=wavelengths,
                                   C_ism=parameters["C_ism"],
                                   A_md=parameters["A_md"],
@@ -186,7 +186,7 @@ def forward(parameters,
     c_md_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, c_md_res) if parameters[
         "interpolate"].value else c_md_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
 
-    if len(c_bd_res)==0:
+    if c_bd_res is None:
         c_bd_res = attenuation.c_bd(wavelengths=wavelengths,
                                   C_phy=C_phy,
                                   A_bd=parameters["A_bd"],
@@ -204,19 +204,19 @@ def forward(parameters,
     c_bd_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, c_bd_res) if parameters[
         "interpolate"].value else c_bd_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
 
-    if len(b_md_res)==0:
+    if b_md_res is None:
         b_md_res = scattering.b(a=a_md_res, c=c_md_res)
 
-    if len(b_bd_res)==0:
+    if b_bd_res is None:
         b_bd_res = scattering.b(a=a_bd_res, c=c_bd_res)
     
-    if len(bb_bd_res)==0:
+    if bb_bd_res is None:
         bb_bd_res = backscattering.bb_d(b_d=b_bd_res, bb_ratio_d=parameters["b_ratio_bd"])
 
-    if len(bb_md_res)==0:
+    if bb_md_res is None:
         bb_md_res = backscattering.bb_d(b_d=b_md_res, bb_ratio_d=parameters["b_ratio_md"])
 
-    if len(bb_phy_res)==0:
+    if bb_phy_res is None:
         bb_phy_res = backscattering.bb_phy_bi(wavelengths=wavelengths,
                                                   C_0=parameters["C_0"], 
                                                   C_1=parameters["C_1"], 
@@ -227,10 +227,10 @@ def forward(parameters,
                                                   C_6=parameters["C_6"], 
                                                   C_7=parameters["C_7"], 
                                                   bb_i_spec_res=bb_i_spec_res)
-    if len(bb_p_res)==0:
+    if bb_p_res is None:
         bb_p_res = bb_bd_res + bb_md_res + bb_phy_res
 
-    if len(a_res) == 0:
+    if a_res is None:
         # C_phy could be used as an argument so it does not need to be recomputed inside functions
         a_res = absorption.a_total(wavelengths=wavelengths, 
                                    C_0=parameters["C_0"], 
@@ -271,7 +271,7 @@ def forward(parameters,
                                    a_w_res=a_w_res,
                                    da_W_div_dT_res=da_w_div_dT_res)
 
-    if len(bb_res)==0:
+    if bb_res is None:
         # C_phy could be used as an argument so it does not need to be recomputed inside functions
         bb_res = backscattering.bb_total(wavelengths=wavelengths,
                                            C_0=parameters["C_0"], 

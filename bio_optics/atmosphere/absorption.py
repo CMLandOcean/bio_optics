@@ -41,7 +41,7 @@ import pandas as pd
 from .. helper import resampling
 
 
-def a_oz(wavelengths=np.arange(400,800), a_oz_res=[]):
+def a_oz(wavelengths=np.arange(400,800), a_oz_res=None):
     """
     Spectral absorption coefficient of ozone resampled to the sensor's spectral sampling rate.
 
@@ -52,15 +52,12 @@ def a_oz(wavelengths=np.arange(400,800), a_oz_res=[]):
     Returns:
         a_oz: spectral absorption coefficient of ozone [m-1]
     """
-    if len(a_oz_res)==0:
-        a_oz = resampling.resample_a_oz(wavelengths=wavelengths)
-    else:
-        a_oz = a_oz_res
-
-    return a_oz
+    if a_oz_res is not None:
+        return a_oz_res
+    return resampling.resample_a_oz(wavelengths=wavelengths)
 
 
-def a_wv(wavelengths=np.arange(400,800), a_wv_res=[]):
+def a_wv(wavelengths=np.arange(400,800), a_wv_res=None):
     """
     Spectral absorption coefficient of water vapour resampled to the sensor's spectral sampling rate.
 
@@ -71,15 +68,12 @@ def a_wv(wavelengths=np.arange(400,800), a_wv_res=[]):
     Returns:
         a_wv: spectral absorption coefficient of water vapour [m-1]
     """
-    if len(a_wv_res)==0:
-        a_wv = resampling.resample_a_wv(wavelengths=wavelengths)
-    else:
-        a_wv = a_wv_res
-
-    return a_wv
+    if a_wv_res is not None:
+        return a_wv_res
+    return resampling.resample_a_wv(wavelengths=wavelengths)
 
 
-def a_ox(wavelengths=np.arange(400,800), a_ox_res=[]):
+def a_ox(wavelengths=np.arange(400,800), a_ox_res=None):
     """
     Spectral absorption coefficient of oxygen resampled to the sensor's spectral sampling rate.
 
@@ -90,9 +84,6 @@ def a_ox(wavelengths=np.arange(400,800), a_ox_res=[]):
     Returns:
         a_ox: spectral absorption coefficient of oxygen [m-1]
     """
-    if len(a_ox_res)==0:
-        a_ox = resampling.resample_a_ox(wavelengths=wavelengths)
-    else:
-        a_ox = a_ox_res
-
-    return a_ox
+    if a_ox_res is not None:
+        return a_ox_res
+    return resampling.resample_a_ox(wavelengths=wavelengths)

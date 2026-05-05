@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 from ..retrieval.qaa import qaa_shallow
 from ..water.attenuation import estimate_c
 from ..helper.resampling import resample_a_w, resample_bb_w
@@ -33,8 +33,8 @@ def opshal(Rrs,
            g1=0.125,
            eta_p=0.015,
            eta_w=0.5,
-           a_w_res=[],
-           bb_w_res=[]):
+           a_w_res=None,
+           bb_w_res=None):
     """
     Approach for identifying optically shallow pixels when processing ocean-color imagery following McKinna & Werdell (2018) [1] based on an adapted version of the QAA.
 
@@ -58,9 +58,9 @@ def opshal(Rrs,
         is_optically_shallow: binary mask where optically shallow is True.
     """
        
-    if len(a_w_res)==0:
+    if a_w_res is None:
         a_w_res = resample_a_w(wavelengths)
-    if len(bb_w_res)==0:
+    if bb_w_res is None:
         bb_w_res = resample_bb_w(wavelengths)
     
     # Step 1: Estimate a_t, b_bp and b_bw using the qaa_shallow

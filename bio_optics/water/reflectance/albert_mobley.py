@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #  Copyright 2023 
 #  Center for Global Discovery and Conservation Science, Arizona State University
 #
@@ -44,19 +44,19 @@ from ...helper import resampling
 
 def forward(parameters,
             wavelengths,
-            a_res=[],
-            bb_res=[],
-            a_w_res=[],
-            da_w_div_dT_res=[],
-            a_i_spec_res=[],
-            a_Y_N_res=[],
-            a_NAP_N_res=[],
-            b_phy_norm_res=[],
-            bb_w_res=[],
-            b_X_norm_res=[],
-            b_Mie_norm_res=[],
-            R_b_i_res=[],
-            n2_res=[]):
+            a_res=None,
+            bb_res=None,
+            a_w_res=None,
+            da_w_div_dT_res=None,
+            a_i_spec_res=None,
+            a_Y_N_res=None,
+            a_NAP_N_res=None,
+            b_phy_norm_res=None,
+            bb_w_res=None,
+            b_X_norm_res=None,
+            b_Mie_norm_res=None,
+            R_b_i_res=None,
+            n2_res=None):
     """
     Forward simulation of water-leaving remote sensing reflectance after Albert & Mobley (2003) [1].
 
@@ -83,11 +83,11 @@ def forward(parameters,
     Returns:
         Rrs_water: water-leaving remote sensing reflectance [sr-1]
     """
-    n2 = n2_res if len(n2_res) > 0 else parameters["n2"]
+    n2 = n2_res if n2_res is not None else parameters["n2"]
     ctsp = np.cos(air_water.snell(parameters["theta_sun"],  n1=parameters["n1"], n2=n2))
     ctvp = np.cos(air_water.snell(parameters["theta_view"], n1=parameters["n1"], n2=n2))
 
-    a_sim = a_res if len(a_res) > 0 else absorption.a(
+    a_sim = a_res if a_res is not None else absorption.a(
         C_0=parameters["C_0"], C_1=parameters["C_1"], C_2=parameters["C_2"],
         C_3=parameters["C_3"], C_4=parameters["C_4"], C_5=parameters["C_5"],
         C_Y=parameters["C_Y"], C_X=parameters["C_X"], C_Mie=parameters["C_Mie"],
@@ -98,7 +98,7 @@ def forward(parameters,
         a_w_res=a_w_res, da_w_div_dT_res=da_w_div_dT_res,
         a_i_spec_res=a_i_spec_res, a_Y_N_res=a_Y_N_res, a_NAP_N_res=a_NAP_N_res)
 
-    bb_sim = bb_res if len(bb_res) > 0 else backscattering.bb(
+    bb_sim = bb_res if bb_res is not None else backscattering.bb(
         C_X=parameters["C_X"], C_Mie=parameters["C_Mie"],
         C_phy=np.sum([parameters["C_0"], parameters["C_1"], parameters["C_2"],
                       parameters["C_3"], parameters["C_4"], parameters["C_5"]]),
