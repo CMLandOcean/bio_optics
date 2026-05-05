@@ -36,24 +36,29 @@
 # [7] König et al. (2023): WaterQuality python package (Version 1.2.0) [Software]. Available from https://github.com/CMLandOcean/WaterQuality. [10.5281/zenodo.7967294]
 
 
+"""
+Downwelling spectral irradiance model (Gege 2012 / WASI).
+JAX-native version: bio_optics.atmosphere.downwelling_irradiance_jax
+"""
+
 import numpy as np
 from . import transmittance, ET_solar_irradiance
 
 
-def Ed_d(wavelengths=np.arange(400,800), 
-         theta_sun=np.radians(30), 
-         P=1013.25, 
-         AM=5, 
-         RH=80, 
-         H_oz=0.381, 
-         WV=2.5, 
-         alpha=1.317, 
-         beta=0.2602, 
-         E0_res=[],
-         a_oz_res=[],
-         a_ox_res=[],
-         a_wv_res=[],
-         Ed_d_res=[]):
+def Ed_d(wavelengths=np.arange(400,800),
+         theta_sun=np.radians(30),
+         P=1013.25,
+         AM=5,
+         RH=80,
+         H_oz=0.381,
+         WV=2.5,
+         alpha=1.317,
+         beta=0.2602,
+         E0_res=None,
+         a_oz_res=None,
+         a_ox_res=None,
+         a_wv_res=None,
+         Ed_d_res=None):
     """
     Direct component of downwelling irradiance, representing the sun disk as light source [1].
 
@@ -78,33 +83,31 @@ def Ed_d(wavelengths=np.arange(400,800),
     Returns:
         Ed_d: direct downwelling irradiance [W m-2 nm-1]
     """
-    if len(Ed_d_res)==0:
-        Ed_d = ET_solar_irradiance.E0(wavelengths,E0_res=E0_res) * np.cos(theta_sun) * \
-               transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P) * \
-               transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
-               transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
-               transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
-               transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
-               transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
-    else:
-        Ed_d=Ed_d_res
-        
+    if Ed_d_res is not None:
+        return Ed_d_res
+    Ed_d = ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
+           transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P) * \
+           transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
+           transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
+           transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
+           transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
+           transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
     return Ed_d
     
-def Ed_sr(wavelengths=np.arange(400,800), 
-          theta_sun=np.radians(30), 
-          P=1013.25, 
-          AM=5, 
-          RH=80, 
-          H_oz=0.380, 
-          WV=2.5, 
-          alpha=1.317, 
-          beta=0.2602, 
-          E0_res=[],
-          a_oz_res=[],
-          a_ox_res=[],
-          a_wv_res=[],
-          Ed_sr_res=[]):
+def Ed_sr(wavelengths=np.arange(400,800),
+          theta_sun=np.radians(30),
+          P=1013.25,
+          AM=5,
+          RH=80,
+          H_oz=0.380,
+          WV=2.5,
+          alpha=1.317,
+          beta=0.2602,
+          E0_res=None,
+          a_oz_res=None,
+          a_ox_res=None,
+          a_wv_res=None,
+          Ed_sr_res=None):
     """
     Rayleigh-scattered component of diffuse downwelling irradiance [1].
 
@@ -129,32 +132,30 @@ def Ed_sr(wavelengths=np.arange(400,800),
     Returns:
         Ed_sr: Rayleigh-scattered downwelling irradiance [W m-2 nm-1]
     """
-    if len(Ed_sr_res)==0:
-        Ed_sr = 0.5 * ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
-                (1 - transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**0.95) * \
-                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
-                transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
-                transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
-                transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
-    else:
-        Ed_sr=Ed_sr_res
-        
+    if Ed_sr_res is not None:
+        return Ed_sr_res
+    Ed_sr = 0.5 * ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
+            (1 - transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**0.95) * \
+            transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
+            transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
+            transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
+            transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res)
     return Ed_sr
  
-def Ed_sa(wavelengths=np.arange(400,800), 
-          theta_sun=np.radians(30), 
-          P=1013.25, 
-          AM=5, 
-          RH=80, 
-          H_oz=0.38, 
-          WV=2.5, 
-          alpha=1.317, 
-          beta=0.2606, 
-          E0_res=[],
-          a_oz_res=[],
-          a_ox_res=[],
-          a_wv_res=[],
-          Ed_sa_res=[]):
+def Ed_sa(wavelengths=np.arange(400,800),
+          theta_sun=np.radians(30),
+          P=1013.25,
+          AM=5,
+          RH=80,
+          H_oz=0.38,
+          WV=2.5,
+          alpha=1.317,
+          beta=0.2606,
+          E0_res=None,
+          a_oz_res=None,
+          a_ox_res=None,
+          a_wv_res=None,
+          Ed_sa_res=None):
     """
     Aerosol-scattered component of diffuse downwelling irradiance [1].
 
@@ -179,18 +180,16 @@ def Ed_sa(wavelengths=np.arange(400,800),
     Returns:
         Ed_sa: aerosol-scattered downwelling irradiance [W m-2 nm-1]
     """
-    if len(Ed_sa_res)==0:
-        Ed_sa = ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
-                transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**1.5 * \
-                transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
-                transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
-                transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
-                transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res) * \
-                (1 - transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta)) * \
-                transmittance.F_a(theta_sun=theta_sun, alpha=alpha)
-    else:
-        Ed_sa=Ed_sa_res
-    
+    if Ed_sa_res is not None:
+        return Ed_sa_res
+    Ed_sa = ET_solar_irradiance.E0(wavelengths, E0_res=E0_res) * np.cos(theta_sun) * \
+            transmittance.T_r(wavelengths, theta_sun=theta_sun, P=P)**1.5 * \
+            transmittance.T_aa(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta) * \
+            transmittance.T_oz(wavelengths, theta_sun=theta_sun, H_oz=H_oz, a_oz_res=a_oz_res) * \
+            transmittance.T_ox(wavelengths, theta_sun=theta_sun, P=P, a_ox_res=a_ox_res) * \
+            transmittance.T_wv(wavelengths, theta_sun=theta_sun, WV=WV, a_wv_res=a_wv_res) * \
+            (1 - transmittance.T_as(wavelengths, theta_sun=theta_sun, AM=AM, RH=RH, alpha=alpha, beta=beta)) * \
+            transmittance.F_a(theta_sun=theta_sun, alpha=alpha)
     return Ed_sa
     
 def Ed_s(Ed_sr, Ed_sa):
