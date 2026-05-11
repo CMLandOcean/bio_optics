@@ -304,12 +304,14 @@ def invert_tile_optx(
     store_y_hat: bool = False,
     store_gain: bool = False,
     aux_tile=None,
+    store_chi2_spectral: bool = False,
 ):
     """
     Run optimistix OE inversion on a single pixel tile.
 
     Returns tuple: (x_hat_phys, sigma_phys, A_diag, chi2, n_steps, H_info)
-    with y_hat appended when store_y_hat=True and G appended when store_gain=True.
+    with y_hat appended when store_y_hat=True, G when store_gain=True,
+    and chi2_spectral when store_chi2_spectral=True.
     """
     valid_mask  = np.isfinite(Rrs_tile).all(axis=-1)
     n_tile      = Rrs_tile.shape[0]
@@ -386,6 +388,11 @@ def invert_tile_optx(
         if has_invalid:
             G_np[~valid_mask] = np.nan
         out = out + (G_np,)
+    if store_chi2_spectral:
+        chi2_sp_np = np.mean(np.square(Rrs_padded - np.array(results.y_hat)), axis=-1)
+        if has_invalid:
+            chi2_sp_np[~valid_mask] = np.nan
+        out = out + (chi2_sp_np,)
     return out
 
 
@@ -404,6 +411,7 @@ def invert_image_optx(
     tile_size: int = 65536,
     store_y_hat: bool = False,
     store_gain: bool = False,
+    store_chi2_spectral: bool = False,
     scheduler: str = 'synchronous',
     x_a_image: Optional[np.ndarray] = None,
     S_a_inv_image: Optional[np.ndarray] = None,
@@ -417,28 +425,30 @@ def invert_image_optx(
     of ``n_steps`` (solver iterations per pixel).
 
     Args:
-        Rrs:          observed reflectance, shape (n_rows, n_cols, n_obs) or
-                      (n_pixels, n_obs).
-        setup:        ``InversionSetup`` from ``oe_engine.build_inversion()``.
-        noise:        scalar or 1-D noise std.
-        max_steps:    solver iteration cap per pixel, default 100.
-        rtol:         relative convergence tolerance, default 1e-6.
-        atol:         absolute convergence tolerance, default 1e-6.
-        use_lm:       False (default) = GaussNewton; True = LevenbergMarquardt.
-        tile_size:    pixels per Dask task, default 65536.
-        store_y_hat:  if True include simulated spectra in output.
-        store_gain:   if True include gain matrix G in output, shape
-                      (…, n_fit, n_obs).  Default False.
-        scheduler:    Dask scheduler — ``'synchronous'``, ``'threads'``, or
-                      ``'distributed'``.
-        x_a_image:    optional per-pixel prior mean.
-        S_a_inv_image: optional per-pixel inverse prior covariance.
-        aux_image:    optional per-pixel auxiliary pytree.
+        Rrs:                 observed reflectance, shape (n_rows, n_cols, n_obs)
+                             or (n_pixels, n_obs).
+        setup:               ``InversionSetup`` from ``oe_engine.build_inversion()``.
+        noise:               scalar or 1-D noise std.
+        max_steps:           solver iteration cap per pixel, default 100.
+        rtol:                relative convergence tolerance, default 1e-6.
+        atol:                absolute convergence tolerance, default 1e-6.
+        use_lm:              False (default) = GaussNewton; True = LevenbergMarquardt.
+        tile_size:           pixels per Dask task, default 65536.
+        store_y_hat:         if True include simulated spectra in output.
+        store_gain:          if True include gain matrix G in output.
+        store_chi2_spectral: if True include ``chi2_spectral`` — mean squared
+                             difference between observed and simulated spectrum
+                             with no noise weighting or prior term.
+        scheduler:           Dask scheduler — ``'synchronous'``, ``'threads'``,
+                             or ``'distributed'``.
+        x_a_image:           optional per-pixel prior mean.
+        S_a_inv_image:       optional per-pixel inverse prior covariance.
+        aux_image:           optional per-pixel auxiliary pytree.
 
     Returns:
         dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``,
-        ``n_steps``, ``H_info``, ``fit_names``, and optionally ``y_hat``
-        and/or ``G``.
+        ``n_steps``, ``H_info``, ``fit_names``, and optionally ``y_hat``,
+        ``G``, and/or ``chi2_spectral``.
     """
     Rrs_arr = np.asarray(Rrs)
     spatial_shape = None
@@ -499,7 +509,7 @@ def invert_image_optx(
             tile_x_a, tile_S_a_inv, log_mask_np,
             noise, weights_np,
             max_steps, rtol, atol, use_lm,
-            store_y_hat, store_gain, tile_aux,
+            store_y_hat, store_gain, tile_aux, store_chi2_spectral,
         )
         delayed_tasks.append(task)
 
@@ -543,6 +553,13 @@ def invert_image_optx(
         if spatial_shape is not None:
             G_all = G_all.reshape(*spatial_shape, n_fit, n_obs)
         out['G'] = G_all
+        next_idx += 1
+
+    if store_chi2_spectral:
+        chi2_sp_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
+        if spatial_shape is not None:
+            chi2_sp_all = chi2_sp_all.reshape(*spatial_shape)
+        out['chi2_spectral'] = chi2_sp_all
 
     return out
 

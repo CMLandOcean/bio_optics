@@ -37,31 +37,35 @@ def invert_image(
     rtol: float = 1e-6,
     atol: float = 1e-6,
     x_a_image: 'np.ndarray | None' = None,
+    store_chi2_spectral: bool = False,
+    **kwargs,
 ) -> dict:
     """Pure weighted least-squares image inversion using JAX + optimistix.
 
     Parameters
     ----------
-    Rrs       : (n_rows, n_cols, n_obs) or (n_pixels, n_obs)
-    setup     : InversionSetup from oe_engine.build_inversion()
-    noise     : scalar or (n_obs,) per-pixel noise in sr⁻¹
-    max_steps : maximum solver iterations per pixel
-    tile_size : pixels per JIT-compiled tile (controls memory)
-    use_lm    : True → LevenbergMarquardt (default); False → GaussNewton
-    rtol/atol : convergence thresholds (solver exits early when met)
-    x_a_image : (n_pixels, n_fit) or (n_rows, n_cols, n_fit) per-pixel starting
-                values in retrieval space (log-space for log-params).  When None
-                every pixel starts from setup.x_a.  Analogous to the x_a_image
-                parameter in oe_engine.invert_image — for OE it sets the prior mean, for
-                LSQ it sets the solver starting point.
+    Rrs                 : (n_rows, n_cols, n_obs) or (n_pixels, n_obs)
+    setup               : InversionSetup from oe_engine.build_inversion()
+    noise               : scalar or (n_obs,) per-pixel noise in sr⁻¹
+    max_steps           : maximum solver iterations per pixel
+    tile_size           : pixels per JIT-compiled tile (controls memory)
+    use_lm              : True → LevenbergMarquardt (default); False → GaussNewton
+    rtol/atol           : convergence thresholds (solver exits early when met)
+    x_a_image           : (n_pixels, n_fit) or (n_rows, n_cols, n_fit) per-pixel
+                          starting values in retrieval space (log-space for
+                          log-params).  When None every pixel starts from setup.x_a.
+    store_chi2_spectral : if True include ``chi2_spectral`` in output — mean squared
+                          difference between observed and simulated spectrum with no
+                          noise weighting (complements noise-normalised ``chi2``).
 
     Returns
     -------
     dict with:
-        x_hat      (n_rows, n_cols, n_fit)  physical space
-        chi2       (n_rows, n_cols)
-        n_steps    (n_rows, n_cols)         solver iterations per pixel
-        fit_names  list[str]
+        x_hat           (n_rows, n_cols, n_fit)  physical space
+        chi2            (n_rows, n_cols)          noise-normalised spectral chi2
+        n_steps         (n_rows, n_cols)          solver iterations per pixel
+        fit_names       list[str]
+        chi2_spectral   (n_rows, n_cols)          only when store_chi2_spectral=True
     """
     Rrs_arr = np.asarray(Rrs)
     if Rrs_arr.ndim == 3:
@@ -100,15 +104,18 @@ def invert_image(
         x_phys = to_physical(sol.value, log_mask)
         res    = residual_fn(sol.value, y_obs)
         chi2   = jnp.sum(jnp.square(res)) / n_obs
-        return x_phys, chi2, sol.stats['num_steps']
+        # un-weighted residual: res = eps_sqrt_inv * (y_obs - y_hat), so y_obs - y_hat = res / eps_sqrt_inv
+        chi2_spectral = jnp.mean(jnp.square(res / eps_sqrt_inv))
+        return x_phys, chi2, sol.stats['num_steps'], chi2_spectral
 
     @jax.jit
     def invert_tile(tile, x0_tile):
         return jax.vmap(invert_pixel)(tile, x0_tile)
 
-    x_hat_all   = np.full((n_pixels, n_fit), np.nan)
-    chi2_all    = np.full(n_pixels, np.nan)
-    n_steps_all = np.full(n_pixels, -1, dtype=np.int32)
+    x_hat_all    = np.full((n_pixels, n_fit), np.nan)
+    chi2_all     = np.full(n_pixels, np.nan)
+    n_steps_all  = np.full(n_pixels, -1, dtype=np.int32)
+    chi2_sp_all  = np.full(n_pixels, np.nan)
 
     for i, start in enumerate(range(0, n_pixels, tile_size)):
         end   = min(start + tile_size, n_pixels)
@@ -123,12 +130,13 @@ def invert_image(
             tile_padded[~valid] = tile[valid][0]
 
         x0_tile = jnp.asarray(x0_flat[start:end], dtype=jnp.float64)
-        x_tile, chi2_tile, steps_tile = invert_tile(
+        x_tile, chi2_tile, steps_tile, chi2_sp_tile = invert_tile(
             jnp.asarray(tile_padded, dtype=jnp.float64), x0_tile
         )
-        x_hat_all[start:end][valid]   = np.array(x_tile)[valid]
-        chi2_all[start:end][valid]    = np.array(chi2_tile)[valid]
-        n_steps_all[start:end][valid] = np.array(steps_tile, dtype=np.int32)[valid]
+        x_hat_all[start:end][valid]    = np.array(x_tile)[valid]
+        chi2_all[start:end][valid]     = np.array(chi2_tile)[valid]
+        n_steps_all[start:end][valid]  = np.array(steps_tile, dtype=np.int32)[valid]
+        chi2_sp_all[start:end][valid]  = np.array(chi2_sp_tile)[valid]
 
         if (i + 1) % 10 == 0 or end == n_pixels:
             print(f'  {end}/{n_pixels} ({100*end/n_pixels:.0f}%)')
@@ -137,10 +145,14 @@ def invert_image(
         x_hat_all   = x_hat_all.reshape(n_rows, n_cols, n_fit)
         chi2_all    = chi2_all.reshape(n_rows, n_cols)
         n_steps_all = n_steps_all.reshape(n_rows, n_cols)
+        chi2_sp_all = chi2_sp_all.reshape(n_rows, n_cols)
 
-    return {
+    out = {
         'x_hat':     x_hat_all,
         'chi2':      chi2_all,
         'n_steps':   n_steps_all,
         'fit_names': list(setup.fit_names),
     }
+    if store_chi2_spectral:
+        out['chi2_spectral'] = chi2_sp_all
+    return out

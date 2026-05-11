@@ -143,36 +143,39 @@ def invert(params,
                     method=method, max_nfev=max_nfev)
 
 
-def invert_image(spectra, setup, noise, **kwargs):
+def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwargs):
     """
     Invert a batch of spectra using lmfit.minimize.
 
-    Compatible with superpixel_engine and dask_oe_engine as invert_fn:
+    Compatible with superpixel_engine and dask_engine as invert_fn:
         invert_fn=lmfit_engine.invert_image
 
     Parameters
     ----------
-    spectra : (n_spectra, n_obs)  mean spectra to invert (e.g. superpixel means)
-    setup   : LmfitSetup from build_inversion()
-    noise   : accepted for interface compatibility; not used (lmfit has no noise model)
+    spectra             : (n_spectra, n_obs)  mean spectra to invert
+    setup               : LmfitSetup from build_inversion()
+    noise               : accepted for interface compatibility; not used
+    store_chi2_spectral : if True include ``chi2_spectral`` in output — mean
+                          squared difference between observed and simulated
+                          spectrum with no prior term (extra forward call per
+                          spectrum).
     **kwargs:
-        x_a_image : (n_spectra, n_fit) optional warm-start values in physical space,
-                    injected by superpixel_engine when x0_image is supplied.  When
-                    present, each spectrum's free parameters are initialised to the
-                    corresponding row before the solver runs.
-        All other kwargs are silently ignored.
+        x_a_image : (n_spectra, n_fit) optional warm-start values in physical
+                    space.  All other kwargs are silently ignored.
 
     Returns
     -------
     dict with keys:
-        x_hat     : (n_spectra, n_fit)  optimised parameter values in physical space
-        chi2      : (n_spectra,)        raw sum of squared residuals (NaN on failure)
-        fit_names : list[str]           parameter names, matching x_hat columns
+        x_hat           : (n_spectra, n_fit)  optimised parameter values
+        chi2            : (n_spectra,)        raw sum of squared residuals
+        fit_names       : list[str]
+        chi2_spectral   : (n_spectra,)        only when store_chi2_spectral=True
     """
     n_spectra = spectra.shape[0]
     n_fit     = len(setup.fit_names)
     x_hat     = np.full((n_spectra, n_fit), np.nan)
     chi2      = np.full(n_spectra, np.nan)
+    chi2_sp   = np.full(n_spectra, np.nan) if store_chi2_spectral else None
 
     x0 = kwargs.get('x_a_image')   # (n_spectra, n_fit) or None
 
@@ -191,5 +194,11 @@ def invert_image(spectra, setup, noise, **kwargs):
         if result.success:
             x_hat[i] = [result.params[n].value for n in setup.fit_names]
             chi2[i]  = result.chisqr
+            if store_chi2_spectral:
+                y_hat = np.asarray(setup.forward_func(result.params, setup.wavelengths))
+                chi2_sp[i] = np.mean((spectrum - y_hat) ** 2)
 
-    return {'x_hat': x_hat, 'chi2': chi2, 'fit_names': setup.fit_names}
+    out = {'x_hat': x_hat, 'chi2': chi2, 'fit_names': setup.fit_names}
+    if store_chi2_spectral:
+        out['chi2_spectral'] = chi2_sp
+    return out

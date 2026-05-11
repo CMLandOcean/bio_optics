@@ -1119,6 +1119,7 @@ def invert_image(
     lm_damping: float = 0.0,
     store_y_hat: bool = False,
     store_gain: bool = False,
+    store_chi2_spectral: bool = False,
     x_a_image=None,
     S_a_inv_image=None,
     aux_image=None,
@@ -1133,26 +1134,31 @@ def invert_image(
     ``superpixel_engine.invert_image_superpixel``.
 
     Args:
-        spectra:       (n_spectra, n_obs) observed spectra.
-        setup:         InversionSetup from build_inversion().
-        noise:         scalar std, (n_obs,) per-band std, or (n_obs, n_obs)
-                       pre-inverted covariance.
-        n_iter:        Gauss-Newton iterations, default 10.
-        lm_damping:    LM damping factor, default 0.
-        store_y_hat:   include simulated spectra ``y_hat`` in output dict.
-        store_gain:    include gain matrix ``G`` in output dict.
-        x_a_image:     (n_spectra, n_fit) per-spectra prior mean in retrieval
-                       space; overrides ``setup.x_a`` when provided.
-        S_a_inv_image: (n_spectra, n_fit, n_fit) per-spectra inverse prior
-                       covariance; overrides ``setup.S_a_inv`` when provided.
-        aux_image:     per-spectra auxiliary data (array or dict of arrays)
-                       forwarded to ``f_fit(x, aux)``.
-        **kwargs:      silently absorbed (keeps interface compatible with
-                       non-OE invert_fn callers).
+        spectra:             (n_spectra, n_obs) observed spectra.
+        setup:               InversionSetup from build_inversion().
+        noise:               scalar std, (n_obs,) per-band std, or (n_obs, n_obs)
+                             pre-inverted covariance.
+        n_iter:              Gauss-Newton iterations, default 10.
+        lm_damping:          LM damping factor, default 0.
+        store_y_hat:         include simulated spectra ``y_hat`` in output dict.
+        store_gain:          include gain matrix ``G`` in output dict.
+        store_chi2_spectral: include un-noise-weighted spectral chi2
+                             ``chi2_spectral`` — mean squared difference between
+                             observed and simulated spectrum with no noise weighting
+                             or prior term.  Complements the noise-normalised
+                             ``chi2`` for cross-engine comparison.
+        x_a_image:           (n_spectra, n_fit) per-spectra prior mean in
+                             retrieval space; overrides ``setup.x_a``.
+        S_a_inv_image:       (n_spectra, n_fit, n_fit) per-spectra inverse prior
+                             covariance; overrides ``setup.S_a_inv``.
+        aux_image:           per-spectra auxiliary data (array or dict of arrays)
+                             forwarded to ``f_fit(x, aux)``.
+        **kwargs:            silently absorbed (keeps interface compatible with
+                             non-OE invert_fn callers).
 
     Returns:
         dict with keys: x_hat, sigma, A_diag, chi2, H_info, fit_names,
-        and optionally y_hat, G.
+        and optionally y_hat, G, chi2_spectral.
     """
     Rrs_jax     = jnp.asarray(spectra,      dtype=jnp.float64)
     x_a_jax     = jnp.asarray(x_a_image     if x_a_image     is not None else setup.x_a,     dtype=jnp.float64)
@@ -1190,4 +1196,8 @@ def invert_image(
         out['y_hat'] = np.array(res.y_hat)
     if store_gain:
         out['G'] = np.array(res.G)
+    if store_chi2_spectral:
+        out['chi2_spectral'] = np.mean(
+            np.square(np.asarray(spectra) - np.array(res.y_hat)), axis=-1
+        )
     return out
