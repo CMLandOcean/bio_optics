@@ -73,8 +73,6 @@ import jax
 import jax.numpy as jnp
 import optimistix as optx
 import lineax as lx
-import dask
-import dask.array as da
 from typing import Callable, Dict, Optional
 
 from bio_optics.inversion.oe_engine import (
@@ -397,169 +395,153 @@ def invert_tile_optx(
 
 
 # ---------------------------------------------------------------------------
-# Image-level convenience function
+# Image-level inversion — Layer-1 standard interface
 # ---------------------------------------------------------------------------
 
 def invert_image_optx(
-    Rrs,
+    spectra,
     setup: InversionSetup,
     noise,
     max_steps: int = 100,
     rtol: float = 1e-6,
     atol: float = 1e-6,
     use_lm: bool = False,
-    tile_size: int = 65536,
     store_y_hat: bool = False,
     store_gain: bool = False,
     store_chi2_spectral: bool = False,
-    scheduler: str = 'synchronous',
     x_a_image: Optional[np.ndarray] = None,
     S_a_inv_image: Optional[np.ndarray] = None,
     aux_image=None,
+    **kwargs,
 ) -> Dict[str, object]:
-    """
-    Tile-parallel OE inversion using optimistix + Dask.
+    """Batch OE inversion via vmap + optimistix — Layer-1 invert_fn interface.
 
-    The result dict matches the standard invert_image dict format and is
-    compatible with ``dask_engine.to_dataset()``, with the addition
-    of ``n_steps`` (solver iterations per pixel).
+    Drop-in replacement for ``oe_engine.invert_image`` using ``solve_optx()``
+    (lax.while_loop, convergence-stopping) instead of the fixed-iteration
+    Gauss-Newton loop.  Tiling and parallelism are delegated to Layer-2 engines
+    (``dask_engine``, ``superpixel_engine``).
+
+    Formerly contained internal Dask tiling; ``tile_size`` / ``scheduler``
+    arguments are silently absorbed via ``**kwargs`` for backwards compatibility.
 
     Args:
-        Rrs:                 observed reflectance, shape (n_rows, n_cols, n_obs)
-                             or (n_pixels, n_obs).
-        setup:               ``InversionSetup`` from ``oe_engine.build_inversion()``.
+        spectra:             (n_spectra, n_obs) or (n_rows, n_cols, n_obs).
+        setup:               InversionSetup from ``oe_engine.build_inversion()``.
         noise:               scalar or 1-D noise std.
         max_steps:           solver iteration cap per pixel, default 100.
         rtol:                relative convergence tolerance, default 1e-6.
         atol:                absolute convergence tolerance, default 1e-6.
-        use_lm:              False (default) = GaussNewton; True = LevenbergMarquardt.
-        tile_size:           pixels per Dask task, default 65536.
-        store_y_hat:         if True include simulated spectra in output.
-        store_gain:          if True include gain matrix G in output.
-        store_chi2_spectral: if True include ``chi2_spectral`` — mean squared
-                             difference between observed and simulated spectrum
-                             with no noise weighting or prior term.
-        scheduler:           Dask scheduler — ``'synchronous'``, ``'threads'``,
-                             or ``'distributed'``.
-        x_a_image:           optional per-pixel prior mean.
-        S_a_inv_image:       optional per-pixel inverse prior covariance.
-        aux_image:           optional per-pixel auxiliary pytree.
+        use_lm:              True = LevenbergMarquardt; False = GaussNewton (default).
+        store_y_hat:         include simulated spectra in output.
+        store_gain:          include gain matrix G in output.
+        store_chi2_spectral: include ``chi2_spectral`` — mean squared difference
+                             between observed and simulated spectrum, no noise
+                             weighting or prior term.
+        x_a_image:           per-spectra prior mean override.
+        S_a_inv_image:       per-spectra S_a_inv override.
+        aux_image:           per-spectra auxiliary pytree.
+        **kwargs:            silently absorbed (e.g. ``tile_size``, ``scheduler``).
 
     Returns:
-        dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``,
-        ``n_steps``, ``H_info``, ``fit_names``, and optionally ``y_hat``,
-        ``G``, and/or ``chi2_spectral``.
+        dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``, ``n_steps``,
+        ``H_info``, ``fit_names``, and optionally ``y_hat``, ``G``,
+        ``chi2_spectral``.
     """
-    Rrs_arr = np.asarray(Rrs)
+    spectra_arr   = np.asarray(spectra)
     spatial_shape = None
 
-    if Rrs_arr.ndim == 3:
-        n_rows, n_cols, n_obs = Rrs_arr.shape
+    if spectra_arr.ndim == 3:
+        n_rows, n_cols, n_obs = spectra_arr.shape
         spatial_shape = (n_rows, n_cols)
-        Rrs_flat = Rrs_arr.reshape(-1, n_obs)
-    elif Rrs_arr.ndim == 2:
-        Rrs_flat = Rrs_arr
-        n_obs    = Rrs_flat.shape[1]
+        Rrs_flat = spectra_arr.reshape(-1, n_obs)
     else:
-        raise ValueError(
-            f"Rrs must be 2-D (n_pixels, n_obs) or 3-D (n_rows, n_cols, n_obs), "
-            f"got shape {Rrs_arr.shape}"
-        )
+        Rrs_flat = spectra_arr
+        n_obs    = Rrs_flat.shape[1]
 
     n_pixels = Rrs_flat.shape[0]
     n_fit    = len(setup.fit_names)
+    log_mask = jnp.asarray(setup.log_mask, dtype=jnp.float64)
 
-    x_a_np      = np.array(setup.x_a)
-    S_a_inv_np  = np.array(setup.S_a_inv)
-    log_mask_np = np.array(setup.log_mask)
-    weights_np  = np.array(setup.weights) if setup.weights is not None else None
+    valid       = np.isfinite(Rrs_flat).all(axis=-1)
+    has_invalid = not valid.all()
+    Rrs_padded  = Rrs_flat.copy()
+    if has_invalid and valid.any():
+        Rrs_padded[~valid] = Rrs_flat[valid][0]
 
-    n_spatial = len(spatial_shape) if spatial_shape is not None else 0
+    x_hat_np   = np.full((n_pixels, n_fit), np.nan)
+    sigma_np   = np.full((n_pixels, n_fit), np.nan)
+    A_diag_np  = np.full((n_pixels, n_fit), np.nan)
+    chi2_np    = np.full(n_pixels, np.nan)
+    n_steps_np = np.full(n_pixels, -1, dtype=np.int32)
+    H_info_np  = np.full(n_pixels, np.nan)
+    y_hat_np   = None
 
-    x_a_flat     = np.asarray(x_a_image).reshape(n_pixels, n_fit)            if x_a_image     is not None else None
-    S_a_inv_flat = np.asarray(S_a_inv_image).reshape(n_pixels, n_fit, n_fit) if S_a_inv_image is not None else None
+    if valid.any():
+        x_a_jax    = jnp.asarray(x_a_image    if x_a_image    is not None else setup.x_a,     dtype=jnp.float64)
+        Sa_inv_jax = jnp.asarray(S_a_inv_image if S_a_inv_image is not None else setup.S_a_inv, dtype=jnp.float64)
+        weights_jax = jnp.asarray(setup.weights, dtype=jnp.float64) if setup.weights is not None else None
 
-    def _flatten_leaf(a):
-        a = np.asarray(a)
-        return a.reshape(n_pixels, *a.shape[n_spatial:])
-
-    aux_flat = None
-    if aux_image is not None:
-        if isinstance(aux_image, dict):
-            aux_flat = {k: _flatten_leaf(v) for k, v in aux_image.items()}
+        if aux_image is not None:
+            n_spatial = len(spatial_shape) if spatial_shape is not None else 0
+            def _flat(a):
+                a = np.asarray(a)
+                return a.reshape(n_pixels, *a.shape[n_spatial:])
+            aux_jax = ({k: jnp.asarray(_flat(v), dtype=jnp.float64) for k, v in aux_image.items()}
+                       if isinstance(aux_image, dict)
+                       else jnp.asarray(_flat(aux_image), dtype=jnp.float64))
         else:
-            aux_flat = _flatten_leaf(aux_image)
+            aux_jax = None
 
-    delayed_tasks = []
-    for start in range(0, n_pixels, tile_size):
-        end  = min(start + tile_size, n_pixels)
-        tile = Rrs_flat[start:end]
-
-        tile_x_a     = x_a_flat[start:end]      if x_a_flat     is not None else x_a_np
-        tile_S_a_inv = S_a_inv_flat[start:end]   if S_a_inv_flat is not None else S_a_inv_np
-
-        if aux_flat is not None:
-            tile_aux = ({k: v[start:end] for k, v in aux_flat.items()}
-                        if isinstance(aux_flat, dict) else aux_flat[start:end])
-        else:
-            tile_aux = None
-
-        task = dask.delayed(invert_tile_optx)(
-            tile, setup.f_fit,
-            tile_x_a, tile_S_a_inv, log_mask_np,
-            noise, weights_np,
-            max_steps, rtol, atol, use_lm,
-            store_y_hat, store_gain, tile_aux, store_chi2_spectral,
+        res = _invert_pixels_optx_jit(
+            setup.f_fit,
+            jnp.asarray(Rrs_padded, dtype=jnp.float64),
+            noise, x_a_jax, Sa_inv_jax,
+            max_steps=max_steps, rtol=rtol, atol=atol,
+            use_lm=use_lm, weights=weights_jax,
+            aux_pixels=aux_jax,
         )
-        delayed_tasks.append(task)
 
-    tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
+        x_hat_phys = to_physical(res.x_hat, log_mask)
+        sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
+        A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
 
-    x_hat_all   = np.concatenate([r[0] for r in tile_results], axis=0)
-    sigma_all   = np.concatenate([r[1] for r in tile_results], axis=0)
-    A_diag_all  = np.concatenate([r[2] for r in tile_results], axis=0)
-    chi2_all    = np.concatenate([r[3] for r in tile_results], axis=0)
-    n_steps_all = np.concatenate([r[4] for r in tile_results], axis=0)
-    H_info_all  = np.concatenate([r[5] for r in tile_results], axis=0)
+        x_hat_np[valid]   = np.array(x_hat_phys)[valid]
+        sigma_np[valid]   = np.array(sigma_phys)[valid]
+        A_diag_np[valid]  = np.array(A_diag)[valid]
+        chi2_np[valid]    = np.array(res.chi2)[valid]
+        n_steps_np[valid] = np.array(res.num_steps, dtype=np.int32)[valid]
+        H_info_np[valid]  = np.array(res.H_info)[valid]
 
-    if spatial_shape is not None:
-        x_hat_all   = x_hat_all.reshape(*spatial_shape, n_fit)
-        sigma_all   = sigma_all.reshape(*spatial_shape, n_fit)
-        A_diag_all  = A_diag_all.reshape(*spatial_shape, n_fit)
-        chi2_all    = chi2_all.reshape(*spatial_shape)
-        n_steps_all = n_steps_all.reshape(*spatial_shape)
-        H_info_all  = H_info_all.reshape(*spatial_shape)
+        if store_y_hat or store_chi2_spectral:
+            y_hat_np = np.full((n_pixels, n_obs), np.nan)
+            y_hat_np[valid] = np.array(res.y_hat)[valid]
+
+        if store_gain:
+            G_np = np.full((n_pixels, n_fit, n_obs), np.nan)
+            G_np[valid] = np.array(res.G)[valid]
+
+    def _reshape(arr, *extra):
+        if spatial_shape is not None:
+            return arr.reshape(*spatial_shape, *extra)
+        return arr
 
     out: Dict[str, object] = {
-        'x_hat':     x_hat_all,
-        'sigma':     sigma_all,
-        'A_diag':    A_diag_all,
-        'chi2':      chi2_all,
-        'n_steps':   n_steps_all,
-        'H_info':    H_info_all,
-        'fit_names': setup.fit_names,
+        'x_hat':     _reshape(x_hat_np, n_fit),
+        'sigma':     _reshape(sigma_np, n_fit),
+        'A_diag':    _reshape(A_diag_np, n_fit),
+        'chi2':      _reshape(chi2_np),
+        'n_steps':   _reshape(n_steps_np),
+        'H_info':    _reshape(H_info_np),
+        'fit_names': list(setup.fit_names),
     }
-
-    next_idx = 6
-    if store_y_hat:
-        y_hat_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
-        if spatial_shape is not None:
-            y_hat_all = y_hat_all.reshape(*spatial_shape, n_obs)
-        out['y_hat'] = y_hat_all
-        next_idx += 1
-
-    if store_gain:
-        G_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
-        if spatial_shape is not None:
-            G_all = G_all.reshape(*spatial_shape, n_fit, n_obs)
-        out['G'] = G_all
-        next_idx += 1
-
-    if store_chi2_spectral:
-        chi2_sp_all = np.concatenate([r[next_idx] for r in tile_results], axis=0)
-        if spatial_shape is not None:
-            chi2_sp_all = chi2_sp_all.reshape(*spatial_shape)
-        out['chi2_spectral'] = chi2_sp_all
+    if store_y_hat and y_hat_np is not None:
+        out['y_hat'] = _reshape(y_hat_np, n_obs)
+    if store_gain and valid.any():
+        out['G'] = _reshape(G_np, n_fit, n_obs)
+    if store_chi2_spectral and y_hat_np is not None:
+        chi2_sp = np.full(n_pixels, np.nan)
+        chi2_sp[valid] = np.mean(np.square(Rrs_flat[valid] - y_hat_np[valid]), axis=-1)
+        out['chi2_spectral'] = _reshape(chi2_sp)
 
     return out
 
