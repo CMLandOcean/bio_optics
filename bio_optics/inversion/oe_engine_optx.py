@@ -412,8 +412,8 @@ def invert_image_optx(
     """
     Tile-parallel OE inversion using optimistix + Dask.
 
-    The result dict matches ``dask_oe_engine.invert_image()`` and is
-    compatible with ``dask_oe_engine.to_dataset()``, with the addition
+    The result dict matches the standard invert_image dict format and is
+    compatible with ``dask_engine.to_dataset()``, with the addition
     of ``n_steps`` (solver iterations per pixel).
 
     Args:
@@ -547,5 +547,5 @@ def invert_image_optx(
     return out
 
 
-# Alias matching dask_oe_engine and lsq_engine_optx convention
+# Alias for standard Layer-1 invert_fn interface
 invert_image = invert_image_optx

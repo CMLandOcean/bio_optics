@@ -1,4 +1,4 @@
-# OE Inversion Pipeline
+﻿# OE Inversion Pipeline
 
 Step-by-step workflow for running the bio_optics Optimal Estimation inversion.
 Follow these phases in order for any new sensor/scene combination.
@@ -90,11 +90,11 @@ Use loose priors and a conservative noise estimate. The goal is a convergent sol
 not a perfect one — diagnostics in Phase 3 will guide all adjustments.
 
 ```python
-from bio_optics.inversion import dask_oe_engine
+from bio_optics.image_processing import dask_engine
 
 noise = 0.005   # sr⁻¹; ~1% of median Rrs is a safe starting point
 
-results = dask_oe_engine.invert_image(
+results = dask_engine.invert_image(
     Rrs_image, setup,
     noise      = noise,
     n_iter     = 15,
@@ -108,7 +108,7 @@ For per-pixel bottom reflectance (measured albedo from low-tide image):
 ```python
 R_b_i_image          = np.tile(np.array(pre['R_b_i']), (n_rows, n_cols, 1, 1))
 R_b_i_image[..., 0]  = albedo_image   # per-pixel measured albedo → first bottom type
-results = dask_oe_engine.invert_image(..., aux_image={'R_b_i': R_b_i_image})
+results = dask_engine.invert_image(..., aux_image={'R_b_i': R_b_i_image})
 ```
 
 ---
@@ -189,7 +189,7 @@ S_a_inv_image            = np.tile(np.array(setup.S_a_inv), (n_rows, n_cols, 1, 
 reliable_mask            = bathymetry_map < 5
 S_a_inv_image[reliable_mask, zB_idx, zB_idx] *= 4   # 2× tighter sigma
 
-results = dask_oe_engine.invert_image(
+results = dask_engine.invert_image(
     Rrs_image, setup, noise=noise_final, n_iter=15,
     x_a_image=x_a_image, S_a_inv_image=S_a_inv_image,
 )
@@ -203,15 +203,15 @@ and can pull chi2 below 1 if too aggressive.
 ## Phase 6 — Final run and interpretation
 
 ```python
-results = dask_oe_engine.invert_image(
+results = dask_engine.invert_image(
     Rrs_image, setup, noise=noise_final, n_iter=15,
     store_y_hat=False,   # saves memory once diagnostics are done
 )
 
 # Convert to xarray
-ds = dask_oe_engine.to_dataset(results, spatial_dims=('y', 'x'), coords=coords)
+ds = dask_engine.to_dataset(results, spatial_dims=('y', 'x'), coords=coords)
 
-# Physical-space results are already in results['x_hat'] (dask_oe_engine applies to_physical)
+# Physical-space results are already in results['x_hat'] (dask_engine applies to_physical)
 # sigma is already in physical space (delta-method for log-params)
 
 # Bottom type fractions (if using softmax f_mix_* parameterisation)
@@ -250,7 +250,7 @@ if fracs is not None:
 | `make_forward_vec()` | any `*_jax.py` model | Build `f(params_vec, aux=None)` for JIT/vmap |
 | `build_inversion()` | `inversion/oe_engine.py` | Build `InversionSetup` from lmfit.Parameters |
 | `sigma_to_relative()` | `inversion/oe_engine.py` | Convert physical σ to log-space fractional σ |
-| `invert_image()` | `inversion/dask_oe_engine.py` | Tile-parallel image inversion |
-| `to_dataset()` | `inversion/dask_oe_engine.py` | Convert result dict to xarray Dataset |
+| `invert_image()` | `inversion/image_processing/dask_engine.py` | Tile-parallel image inversion |
+| `to_dataset()` | `inversion/image_processing/dask_engine.py` | Convert result dict to xarray Dataset |
 | `bottom_fractions()` | `inversion/oe_engine.py` | Convert `f_mix_*` logits to fractions |
 | `posterior_sigma_physical()` | `inversion/oe_engine.py` | Delta-method σ for log-params |

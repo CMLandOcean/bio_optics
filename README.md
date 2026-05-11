@@ -1,4 +1,4 @@
-# bio_optics
+﻿# bio_optics
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10246861.svg)](https://doi.org/10.5281/zenodo.10246861)
 
 The bio_optics python package is an open-source framework for forward and inverse modelling of above-water multi- and hyperspectral observations of natural water bodies. It contains the bio-optical models of Albert & Mobley (2003)[^1] and couples them to the surface reflectance model of Gege (2012)[^2]. The intention of the authors was to build a modular and extendable software package that allows the combination and creation of different models to study optical properties of natural water bodies. It can be used for simulation and analysis of spectroscopy data through inversion of the above-mentioned models. Single parts of the models can also be run as single modules, e.g., for the analysis of spectral backscattering or absorption measurements, or the correction of sun and sky glint at the water surface. 
@@ -12,7 +12,7 @@ Here we list the major changes of every release. Please take a look at the commi
 <details>
 <summary>dev branch (unreleased)</summary>
 
-- JAX-native Optimal Estimation inversion engine (`bio_optics/inversion/oe_engine.py`, `dask_oe_engine.py`, `oe_engine_optx.py`) supporting image-scale retrieval via Dask tiling and the Optimistix solver
+- JAX-native Optimal Estimation inversion engine (`bio_optics/inversion/oe_engine.py`, `image_processing/dask_engine.py`, `oe_engine_optx.py`) supporting image-scale retrieval via Dask tiling and the Optimistix solver
 - Superpixel inversion engine (`superpixel_engine.py`) for spatially regularised retrievals
 - Two-step retrieval pipeline: Step 1 (joint 3C glint+water fit) → Step 2 (water quality on corrected spectrum)
 - Benthic mapping support with LUT-based bottom reflectance and softmax bottom-fraction parameterisation (NB13/NB14)

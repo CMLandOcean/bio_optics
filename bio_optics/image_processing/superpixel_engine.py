@@ -1,19 +1,18 @@
 """
-SLIC superpixel-based OE inversion.
+SLIC superpixel-based image inversion.
 
 Pipeline
 --------
 1. segment_image           — SLIC segmentation of the Rrs image
 2. aggregate_superpixels   — per-segment mean spectrum + pixel counts
-3. invert_superpixels      — inversion on mean spectra (OE or LSQ)
+3. invert_superpixels      — inversion on mean spectra (any Layer-1 engine)
 4. backinterp_pca_knn      — back-interpolate to full resolution via PCA+kNN IDW
-5. invert_image_superpixel — end-to-end wrapper (same dict format as dask_oe_engine)
+5. invert_image_superpixel — end-to-end wrapper
 
 Reference: Adams et al. (2021), Remote Sensing of Environment.
 
 Chi-2 note
 ----------
-`dask_oe_engine.invert_image` accepts a single noise level for all pixels.
 The mean spectrum of a segment with N pixels has noise σ/√N, so inverting it
 with the original pixel noise σ yields chi2_raw << 1 for large segments.
 The calibrated chi2 is:  chi2_calibrated = chi2_raw × sp_counts
@@ -21,12 +20,14 @@ Both are included in the output.
 
 invert_fn note
 --------------
-By default `invert_superpixels` calls `dask_oe_engine.invert_image` (full OE
-with prior).  Pass `invert_fn=invert_image_lsq` from
-`notebooks/10_glint_correction_lsq.ipynb` (or any function with the same
-signature: `fn(spectra, setup, noise, **kwargs) → dict`) to run pure
-weighted least-squares instead.  When the invert_fn returns no `sigma` or
-`A_diag` keys those fields are omitted from the output.
+By default `invert_superpixels` calls `oe_engine.invert_image` (JAX vmap OE
+with prior).  Pass any Layer-1 engine's `invert_image` to switch solver:
+    invert_fn=lsq_engine_optx.invert_image   — pure weighted LSQ
+    invert_fn=lmfit_engine.invert_image      — lmfit solver
+    invert_fn=scipy_engine.invert_image      — scipy solver
+All must have the signature: fn(spectra, setup, noise, **kwargs) → dict.
+When the invert_fn returns no `sigma` or `A_diag` keys those fields are
+omitted from the output.
 """
 from __future__ import annotations
 
@@ -36,8 +37,6 @@ from typing import Any, Optional
 from skimage.segmentation import slic
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
-
-from bio_optics.inversion import dask_oe_engine
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +157,7 @@ def invert_superpixels(
     noise       : scalar or (n_obs,) — per-pixel noise level in sr⁻¹
     invert_fn   : callable(spectra, setup, noise, **kwargs) → dict
                   Defaults to dask_oe_engine.invert_image.  Pass
-                  invert_image_lsq for pure LSQ (no OE prior).
+                  lmfit_engine.invert_image for lmfit-based LSQ.
     **invert_kwargs : forwarded to invert_fn (n_iter, tile_size, max_steps, …)
 
     Returns
@@ -167,7 +166,8 @@ def invert_superpixels(
     present only when invert_fn returns them.
     """
     if invert_fn is None:
-        invert_fn = dask_oe_engine.invert_image
+        from bio_optics.inversion import oe_engine
+        invert_fn = oe_engine.invert_image
     return invert_fn(
         sp_spectra,   # (n_segs, n_obs) — flat 2-D input accepted by both engines
         setup,
@@ -320,8 +320,8 @@ def invert_image_superpixel(
     """SLIC superpixel inversion with PCA+kNN back-interpolation.
 
     Works with any inversion backend via `invert_fn`:
-      - Default (None): dask_oe_engine.invert_image  → full OE with prior
-      - Pass invert_image_lsq                        → pure LSQ, no prior
+      - Default (None): oe_engine.invert_image         → JAX vmap OE with prior
+      - Pass lsq_engine_optx.invert_image            → pure LSQ, no prior
 
     Output dict always contains:
       x_hat            (n_rows, n_cols, n_fit)  IDW back-interpolated
@@ -376,8 +376,8 @@ def invert_image_superpixel(
     sp_spectra, sp_counts = aggregate_superpixels(Rrs, labels)
 
     # 2b. Aggregate x0_image to per-superpixel means and inject as x_a_image.
-    #     dask_oe_engine.invert_image accepts x_a_image (n_segs, n_fit) to set
-    #     a per-pixel prior mean in retrieval space.  LSQ engines ignore it.
+    #     oe_engine.invert_image accepts x_a_image (n_segs, n_fit) to set
+    #     a per-spectra prior mean in retrieval space.  LSQ engines ignore it.
     if x0_image is not None:
         if x0_image.shape[:2] != (n_rows, n_cols):
             raise ValueError(

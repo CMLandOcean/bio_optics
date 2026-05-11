@@ -1058,3 +1058,136 @@ def invert_pixels(f_vec: Callable,
         return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0))(
             Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch
         )
+
+
+# ---------------------------------------------------------------------------
+# Module-level JIT — compiled once per process, reused across tiles/calls.
+# f_fit is static (argnums=0): retraces only when the forward function changes.
+# n_iter and lm_damping are static because they control Python-level unrolling.
+# ---------------------------------------------------------------------------
+
+_invert_pixels_jit = jax.jit(
+    invert_pixels,
+    static_argnums=(0,),
+    static_argnames=('n_iter', 'lm_damping'),
+)
+
+
+# ---------------------------------------------------------------------------
+# JIT warm-up helper
+# ---------------------------------------------------------------------------
+
+def warmup_jit(
+    setup: 'InversionSetup',
+    noise,
+    n_iter: int = 10,
+    lm_damping: float = 0.0,
+    tile_size: int = 65536,
+) -> None:
+    """Pre-compile the JAX XLA program for this InversionSetup.
+
+    Runs a dummy tile of ``tile_size`` pixels through ``invert_image`` to
+    trigger XLA compilation before the real inversion.  Call this after
+    ``build_inversion()`` and before ``dask_engine.invert_image()`` to avoid
+    paying the compilation cost during the timed run.
+
+    ``tile_size`` must match the value passed to ``dask_engine.invert_image()``;
+    a mismatch causes a retrace on the first real tile.
+
+    Args:
+        setup:      InversionSetup from build_inversion().
+        noise:      same noise argument used in the real inversion.
+        n_iter:     same n_iter used in the real inversion.
+        lm_damping: same lm_damping used in the real inversion.
+        tile_size:  same tile_size used in dask_engine.invert_image().
+    """
+    _y    = setup.f_fit(jnp.asarray(setup.x_a, dtype=jnp.float64))
+    n_obs = int(_y.shape[0])
+    _rrs  = np.zeros((tile_size, n_obs), dtype=np.float64)
+    invert_image(_rrs, setup, noise, n_iter=n_iter, lm_damping=lm_damping)
+
+
+# ---------------------------------------------------------------------------
+# Batch invert_image — Layer 1 standard interface
+# ---------------------------------------------------------------------------
+
+def invert_image(
+    spectra,
+    setup: 'InversionSetup',
+    noise,
+    n_iter: int = 10,
+    lm_damping: float = 0.0,
+    store_y_hat: bool = False,
+    store_gain: bool = False,
+    x_a_image=None,
+    S_a_inv_image=None,
+    aux_image=None,
+    **kwargs,
+) -> dict:
+    """Batch OE inversion via vmap — standard invert_fn interface.
+
+    Wraps ``invert_pixels`` (vmapped Gauss-Newton) with physical-space
+    conversion and the standard ``{x_hat, sigma, A_diag, chi2, H_info,
+    fit_names}`` dict format, making ``oe_engine`` directly pluggable as
+    ``invert_fn`` into ``dask_engine.invert_image`` and
+    ``superpixel_engine.invert_image_superpixel``.
+
+    Args:
+        spectra:       (n_spectra, n_obs) observed spectra.
+        setup:         InversionSetup from build_inversion().
+        noise:         scalar std, (n_obs,) per-band std, or (n_obs, n_obs)
+                       pre-inverted covariance.
+        n_iter:        Gauss-Newton iterations, default 10.
+        lm_damping:    LM damping factor, default 0.
+        store_y_hat:   include simulated spectra ``y_hat`` in output dict.
+        store_gain:    include gain matrix ``G`` in output dict.
+        x_a_image:     (n_spectra, n_fit) per-spectra prior mean in retrieval
+                       space; overrides ``setup.x_a`` when provided.
+        S_a_inv_image: (n_spectra, n_fit, n_fit) per-spectra inverse prior
+                       covariance; overrides ``setup.S_a_inv`` when provided.
+        aux_image:     per-spectra auxiliary data (array or dict of arrays)
+                       forwarded to ``f_fit(x, aux)``.
+        **kwargs:      silently absorbed (keeps interface compatible with
+                       non-OE invert_fn callers).
+
+    Returns:
+        dict with keys: x_hat, sigma, A_diag, chi2, H_info, fit_names,
+        and optionally y_hat, G.
+    """
+    Rrs_jax     = jnp.asarray(spectra,      dtype=jnp.float64)
+    x_a_jax     = jnp.asarray(x_a_image     if x_a_image     is not None else setup.x_a,     dtype=jnp.float64)
+    Sa_inv_jax  = jnp.asarray(S_a_inv_image if S_a_inv_image is not None else setup.S_a_inv,  dtype=jnp.float64)
+    log_mask    = jnp.asarray(setup.log_mask, dtype=jnp.float64)
+    weights_jax = jnp.asarray(setup.weights,  dtype=jnp.float64) if setup.weights is not None else None
+
+    if aux_image is not None:
+        if isinstance(aux_image, dict):
+            aux_jax = {k: jnp.asarray(v, dtype=jnp.float64) for k, v in aux_image.items()}
+        else:
+            aux_jax = jnp.asarray(aux_image, dtype=jnp.float64)
+    else:
+        aux_jax = None
+
+    res = _invert_pixels_jit(
+        setup.f_fit, Rrs_jax, noise, x_a_jax, Sa_inv_jax,
+        n_iter=n_iter, lm_damping=lm_damping,
+        weights=weights_jax, aux_pixels=aux_jax,
+    )
+
+    x_hat_phys = to_physical(res.x_hat, log_mask)
+    sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
+    A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
+
+    out = {
+        'x_hat':     np.array(x_hat_phys),
+        'sigma':     np.array(sigma_phys),
+        'A_diag':    np.array(A_diag),
+        'chi2':      np.array(res.chi2),
+        'H_info':    np.array(res.H_info),
+        'fit_names': list(setup.fit_names),
+    }
+    if store_y_hat:
+        out['y_hat'] = np.array(res.y_hat)
+    if store_gain:
+        out['G'] = np.array(res.G)
+    return out

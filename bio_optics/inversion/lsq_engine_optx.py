@@ -52,7 +52,7 @@ def invert_image(
     x_a_image : (n_pixels, n_fit) or (n_rows, n_cols, n_fit) per-pixel starting
                 values in retrieval space (log-space for log-params).  When None
                 every pixel starts from setup.x_a.  Analogous to the x_a_image
-                parameter in dask_oe_engine — for OE it sets the prior mean, for
+                parameter in oe_engine.invert_image — for OE it sets the prior mean, for
                 LSQ it sets the solver starting point.
 
     Returns
