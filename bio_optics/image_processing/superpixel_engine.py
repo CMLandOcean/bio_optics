@@ -403,8 +403,9 @@ def invert_image_superpixel(
     sp_x_hat  = sp_results['x_hat']            # (n_segs, n_fit) — physical space
     sp_sigma  = sp_results.get('sigma')         # None for LSQ
     sp_A_diag = sp_results.get('A_diag')        # None for LSQ
-    sp_chi2   = sp_results['chi2']              # (n_segs,)
-    sp_H_info = sp_results.get('H_info')        # None for LSQ engines
+    sp_chi2    = sp_results['chi2']              # (n_segs,)
+    sp_H_info  = sp_results.get('H_info')        # None for LSQ engines
+    sp_chi2_sp = sp_results.get('chi2_spectral') # None unless store_chi2_spectral=True
 
     # 4. Back-interpolate x_hat (+ sigma/A_diag when available)
     bp = backinterp_pca_knn(
@@ -420,6 +421,7 @@ def invert_image_superpixel(
     chi2_flat     = sp_chi2[sp_idx_flat]
     chi2_cal_flat = sp_chi2[sp_idx_flat] * sp_counts[sp_idx_flat]
     H_info_flat   = sp_H_info[sp_idx_flat] if sp_H_info is not None else None
+    chi2_sp_flat  = sp_chi2_sp[sp_idx_flat] if sp_chi2_sp is not None else None
 
     # 6. Reshape to spatial dims
     n_fit = bp['x_hat'].shape[-1]
@@ -437,6 +439,8 @@ def invert_image_superpixel(
         out['A_diag'] = bp['A_diag'].reshape(n_rows, n_cols, n_fit)
     if H_info_flat is not None:
         out['H_info'] = H_info_flat.reshape(n_rows, n_cols)
+    if chi2_sp_flat is not None:
+        out['chi2_spectral'] = chi2_sp_flat.reshape(n_rows, n_cols)
     if 'n_steps' in sp_results:
         out['n_steps'] = sp_results['n_steps'][sp_idx_flat].reshape(n_rows, n_cols)
     if store_sp_results:
@@ -453,6 +457,7 @@ def invert_image_superpixel(
         if 'sigma'  in out: out['sigma'][inv]  = np.nan
         if 'A_diag' in out: out['A_diag'][inv] = np.nan
         if 'H_info' in out: out['H_info'][inv] = np.nan
+        if 'chi2_spectral' in out: out['chi2_spectral'][inv] = np.nan
         if 'n_steps' in out: out['n_steps'][inv] = -1
 
     return out
