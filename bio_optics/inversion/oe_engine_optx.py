@@ -273,11 +273,36 @@ def invert_pixels_optx(f_vec: Callable,
 
 
 # ---------------------------------------------------------------------------
-# Module-level JIT cache — compiled once per process, reused across tiles.
+# Module-level JIT caches — compiled once per process, reused across calls.
 # ---------------------------------------------------------------------------
 
 _invert_pixels_optx_jit = jax.jit(
     invert_pixels_optx,
+    static_argnums=(0,),
+    static_argnames=('max_steps', 'rtol', 'atol', 'use_lm'),
+)
+
+
+def _solve_postprocess(f_fit, Rrs, noise, x_a, S_a_inv, log_mask,
+                        max_steps, rtol, atol, use_lm, weights, aux_pixels):
+    """Fused solve + physical-space conversion — single XLA program.
+
+    Putting to_physical / posterior_sigma_physical / jnp.diagonal inside the
+    same jit boundary as the solve avoids separate GPU kernel launches and
+    device→host synchronisations between the two phases, which caused a
+    significant regression on GPU compared to the old single-lambda JIT.
+    """
+    res = invert_pixels_optx(f_fit, Rrs, noise, x_a, S_a_inv,
+                             max_steps=max_steps, rtol=rtol, atol=atol,
+                             use_lm=use_lm, weights=weights, aux_pixels=aux_pixels)
+    x_hat_phys = to_physical(res.x_hat, log_mask)
+    sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
+    A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
+    return x_hat_phys, sigma_phys, A_diag, res.chi2, res.H_info, res.y_hat, res.num_steps
+
+
+_solve_postprocess_jit = jax.jit(
+    _solve_postprocess,
     static_argnums=(0,),
     static_argnames=('max_steps', 'rtol', 'atol', 'use_lm'),
 )
@@ -492,33 +517,49 @@ def invert_image_optx(
         else:
             aux_jax = None
 
-        res = _invert_pixels_optx_jit(
-            setup.f_fit,
-            jnp.asarray(Rrs_padded, dtype=jnp.float64),
-            noise, x_a_jax, Sa_inv_jax,
-            max_steps=max_steps, rtol=rtol, atol=atol,
-            use_lm=use_lm, weights=weights_jax,
-            aux_pixels=aux_jax,
-        )
-
-        x_hat_phys = to_physical(res.x_hat, log_mask)
-        sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
-        A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
+        if store_gain:
+            # Full OEResult needed for G — use the solve-only JIT and post-process
+            # in Python.  store_gain is a diagnostic flag so the extra kernel
+            # launches here are acceptable.
+            res = _invert_pixels_optx_jit(
+                setup.f_fit,
+                jnp.asarray(Rrs_padded, dtype=jnp.float64),
+                noise, x_a_jax, Sa_inv_jax,
+                max_steps=max_steps, rtol=rtol, atol=atol,
+                use_lm=use_lm, weights=weights_jax,
+                aux_pixels=aux_jax,
+            )
+            x_hat_phys = to_physical(res.x_hat, log_mask)
+            sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
+            A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
+            _chi2    = res.chi2
+            _H_info  = res.H_info
+            _y_hat   = res.y_hat
+            _n_steps = res.num_steps
+            G_np = np.full((n_pixels, n_fit, n_obs), np.nan)
+            G_np[valid] = np.array(res.G)[valid]
+        else:
+            # Fused path: solve + post-processing in one XLA program.
+            x_hat_phys, sigma_phys, A_diag, _chi2, _H_info, _y_hat, _n_steps = \
+                _solve_postprocess_jit(
+                    setup.f_fit,
+                    jnp.asarray(Rrs_padded, dtype=jnp.float64),
+                    noise, x_a_jax, Sa_inv_jax, log_mask,
+                    max_steps=max_steps, rtol=rtol, atol=atol,
+                    use_lm=use_lm, weights=weights_jax,
+                    aux_pixels=aux_jax,
+                )
 
         x_hat_np[valid]   = np.array(x_hat_phys)[valid]
         sigma_np[valid]   = np.array(sigma_phys)[valid]
         A_diag_np[valid]  = np.array(A_diag)[valid]
-        chi2_np[valid]    = np.array(res.chi2)[valid]
-        n_steps_np[valid] = np.array(res.num_steps, dtype=np.int32)[valid]
-        H_info_np[valid]  = np.array(res.H_info)[valid]
+        chi2_np[valid]    = np.array(_chi2)[valid]
+        n_steps_np[valid] = np.array(_n_steps, dtype=np.int32)[valid]
+        H_info_np[valid]  = np.array(_H_info)[valid]
 
         if store_y_hat or store_chi2_spectral:
             y_hat_np = np.full((n_pixels, n_obs), np.nan)
-            y_hat_np[valid] = np.array(res.y_hat)[valid]
-
-        if store_gain:
-            G_np = np.full((n_pixels, n_fit, n_obs), np.nan)
-            G_np[valid] = np.array(res.G)[valid]
+            y_hat_np[valid] = np.array(_y_hat)[valid]
 
     def _reshape(arr, *extra):
         if spatial_shape is not None:
