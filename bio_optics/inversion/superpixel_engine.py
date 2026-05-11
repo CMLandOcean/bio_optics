@@ -31,14 +31,13 @@ weighted least-squares instead.  When the invert_fn returns no `sigma` or
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional
+from typing import Any, Optional
 
 from skimage.segmentation import slic
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 
 from bio_optics.inversion import dask_oe_engine
-from bio_optics.inversion.oe_engine import InversionSetup
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +138,7 @@ def aggregate_superpixels(
 def invert_superpixels(
     sp_spectra: np.ndarray,
     sp_counts: np.ndarray,
-    setup: InversionSetup,
+    setup: Any,
     noise,
     invert_fn=None,
     **invert_kwargs,
@@ -305,7 +304,7 @@ def backinterp_pca_knn(
 
 def invert_image_superpixel(
     Rrs: np.ndarray,
-    setup: InversionSetup,
+    setup: Any,
     noise,
     n_segments: int = 1000,
     compactness: float = 0.1,
