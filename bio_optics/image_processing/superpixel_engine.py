@@ -443,6 +443,10 @@ def invert_image_superpixel(
         out['chi2_spectral'] = chi2_sp_flat.reshape(n_rows, n_cols)
     if 'n_steps' in sp_results:
         out['n_steps'] = sp_results['n_steps'][sp_idx_flat].reshape(n_rows, n_cols)
+    if 'success' in sp_results:
+        out['success'] = sp_results['success'][sp_idx_flat].reshape(n_rows, n_cols)
+    if 'n_nfev' in sp_results:
+        out['n_nfev'] = sp_results['n_nfev'][sp_idx_flat].reshape(n_rows, n_cols)
     if store_sp_results:
         out['sp_results'] = sp_results
 
