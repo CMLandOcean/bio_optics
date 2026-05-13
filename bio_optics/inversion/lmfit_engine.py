@@ -168,6 +168,8 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
     dict with keys:
         x_hat           : (n_spectra, n_fit)  optimised parameter values
         chi2            : (n_spectra,)        raw sum of squared residuals
+        success         : (n_spectra,) bool   True if lmfit convergence criterion met
+        n_nfev          : (n_spectra,) int    number of forward-model evaluations (-1 = skipped)
         fit_names       : list[str]
         chi2_spectral   : (n_spectra,)        only when store_chi2_spectral=True
     """
@@ -175,6 +177,8 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
     n_fit     = len(setup.fit_names)
     x_hat     = np.full((n_spectra, n_fit), np.nan)
     chi2      = np.full(n_spectra, np.nan)
+    success   = np.zeros(n_spectra, dtype=bool)
+    n_nfev    = np.full(n_spectra, -1, dtype=np.int32)
     chi2_sp   = np.full(n_spectra, np.nan) if store_chi2_spectral else None
 
     x0 = kwargs.get('x_a_image')   # (n_spectra, n_fit) or None
@@ -191,14 +195,19 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
             weights=setup.weights, error_method=setup.error_method,
             method=setup.method, max_nfev=setup.max_nfev,
         )
-        if result.success:
-            x_hat[i] = [result.params[n].value for n in setup.fit_names]
-            chi2[i]  = result.chisqr
-            if store_chi2_spectral:
-                y_hat = np.asarray(setup.forward_func(result.params, setup.wavelengths))
-                chi2_sp[i] = np.mean((spectrum - y_hat) ** 2)
+        # Always store best-found parameters — result.success=False only means
+        # the convergence criterion was not met (e.g. max_nfev reached), not
+        # that the result is unusable.
+        x_hat[i]   = [result.params[n].value for n in setup.fit_names]
+        chi2[i]    = result.chisqr
+        success[i] = bool(result.success)
+        n_nfev[i]  = int(result.nfev)
+        if store_chi2_spectral:
+            y_hat = np.asarray(setup.forward_func(result.params, setup.wavelengths))
+            chi2_sp[i] = np.mean((spectrum - y_hat) ** 2)
 
-    out = {'x_hat': x_hat, 'chi2': chi2, 'fit_names': setup.fit_names}
+    out = {'x_hat': x_hat, 'chi2': chi2, 'success': success, 'n_nfev': n_nfev,
+           'fit_names': setup.fit_names}
     if store_chi2_spectral:
         out['chi2_spectral'] = chi2_sp
     return out
