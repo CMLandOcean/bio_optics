@@ -1,5 +1,5 @@
 ﻿import numpy as np
-from .. import fluorescence, absorption, backscattering, attenuation, scattering
+from .. import absorption, backscattering, attenuation, scattering
 from . import lee
 from ...helper import resampling, utils
 from ...surface import air_water
@@ -335,28 +335,5 @@ def forward(parameters,
                                Gw1=parameters["Gw1"],
                                Gp0=parameters["Gp0"],
                                Gp1=parameters["Gp1"])
-    
-    if parameters["C_0"]+parameters["C_1"]+parameters["C_2"]+parameters["C_3"]+parameters["C_4"]+parameters["C_5"]+parameters["C_6"]+parameters["C_7"] >0.1:
-        R_rs_water += fluorescence.Rrs_fl(wavelengths=wavelengths,
-                                             L_fl_lambda0=parameters['L_fl_lambda0'],
-                                             W=parameters['W'],
-                                             fwhm1=parameters['fwhm1'],
-                                             fwhm2=parameters['fwhm2'],
-                                             lambda_C1=parameters['lambda_C1'],
-                                             lambda_C2=parameters['lambda_C2'],
-                                             double=parameters['double'],
-                                             h_C_res=h_C_res)
-    if parameters["C_3"] > 0.1:
-        R_rs_water += fluorescence.Rrs_fl_phycocyanin(wavelengths=wavelengths,
-                                         L_fl_phycocyanin=parameters['L_fl_phycocyanin'],
-                                         fwhm=parameters['fwhm_phycocyanin'],
-                                         lambda_C=parameters['lambda_C_phycocyanin'],
-                                         h_C_phycocyanin_res=h_C_phycocyanin_res)
-    if parameters["C_4"] > 0.1:
-        R_rs_water += fluorescence.Rrs_fl_phycoerythrin(wavelengths=wavelengths,
-                                           L_fl_phycoerythrin=parameters['L_fl_phycoerythrin'],
-                                           fwhm=parameters['fwhm_phycoerythrin'],
-                                           lambda_C=parameters['lambda_C_phycoerythrin'],
-                                           h_C_phycoerythrin_res=h_C_phycoerythrin_res)
     
     return R_rs_water + parameters["offset"]
