@@ -670,6 +670,60 @@ def a_bd_spec(wavelengths=np.arange(400,800),
     return a_bd_spec
 
 
+def a_md(wavelengths=np.arange(400,800),
+         C_ism=1.,
+         A_md=13.4685e-3,
+         S_md=10.3845e-3,
+         C_md=12.1700e-3,
+         lambda_0_md=550.,
+         a_md_spec_res=None):
+    """
+    Absorption coefficient of minerogenic detritus [m-1] (Bi et al. 2023, Eq. 5).
+
+    Args:
+        wavelengths: wavelengths [nm]
+        C_ism: inorganic suspended matter concentration [g m-3], default: 1.0
+        A_md: amplitude coefficient [m2 g-1], default: 13.4685e-3
+        S_md: spectral slope [nm-1], default: 10.3845e-3
+        C_md: constant offset [m2 g-1], default: 12.1700e-3
+        lambda_0_md: reference wavelength [nm], default: 550
+        a_md_spec_res: optional precomputed mass-specific absorption [m2 g-1]
+
+    Returns:
+        a_md: absorption coefficient of minerogenic detritus [m-1]
+    """
+    if a_md_spec_res is None:
+        a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md)
+    return C_ism * a_md_spec_res
+
+
+def a_bd(wavelengths=np.arange(400,800),
+         C_phy=1.,
+         A_bd=0.3893e-3,
+         S_bd=15.7621e-3,
+         C_bd=0.9994e-3,
+         lambda_0_bd=550.,
+         a_bd_spec_res=None):
+    """
+    Absorption coefficient of biogenic detritus [m-1] (Bi et al. 2023, Eq. 6).
+
+    Args:
+        wavelengths: wavelengths [nm]
+        C_phy: phytoplankton (Chl-a) concentration [mg m-3], default: 1.0
+        A_bd: amplitude coefficient [m2 mg-1], default: 0.3893e-3
+        S_bd: spectral slope [nm-1], default: 15.7621e-3
+        C_bd: constant offset [m2 mg-1], default: 0.9994e-3
+        lambda_0_bd: reference wavelength [nm], default: 550
+        a_bd_spec_res: optional precomputed Chl-specific absorption [m2 mg-1]
+
+    Returns:
+        a_bd: absorption coefficient of biogenic detritus [m-1]
+    """
+    if a_bd_spec_res is None:
+        a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)
+    return C_phy * a_bd_spec_res
+
+
 def a_d(wavelengths=np.arange(400,800), 
         C_ism=1., 
         C_phy=1.,

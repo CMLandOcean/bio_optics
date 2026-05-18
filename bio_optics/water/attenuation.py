@@ -357,7 +357,93 @@ def c_d(wavelengths=np.arange(400,800),
                                              a_bd_spec_res=None) # needs to be empty so function does not return a vector 
 
     c_d = c_d_lambda_0_res * (lambda_0_c_d / wavelengths)**gamma_d
-    return c_d 
+    return c_d
+
+
+def c_md(wavelengths=np.arange(400,800),
+         C_ism=1.,
+         A_md=13.4685e-3,
+         S_md=10.3845e-3,
+         C_md=12.1700e-3,
+         lambda_0_c_d=550.,
+         lambda_0_md=550.,
+         gamma_d=0.3835,
+         x0=1.,
+         x1=10,
+         x2=-1.3390,
+         omega_d_lambda_0_res=None,
+         a_md_lambda_0_res=None):
+    """
+    Attenuation coefficient of minerogenic detritus [m-1] (Bi et al. 2023).
+
+    Follows the same power-law spectral shape as c_d but uses only the
+    minerogenic-detrital component at the reference wavelength:
+    c_md(lambda_0) = a_md(lambda_0) / (1 - omega_d).
+
+    Args:
+        wavelengths: wavelengths [nm]
+        C_ism: inorganic suspended matter concentration [g m-3], default: 1.0
+        A_md, S_md, C_md, lambda_0_md: minerogenic detritus absorption parameters
+        lambda_0_c_d: reference wavelength for the power law [nm], default: 550
+        gamma_d: power-law exponent, default: 0.3835
+        x0, x1, x2: omega_d power-law parameters
+        omega_d_lambda_0_res: optional precomputed single scattering albedo at lambda_0_c_d
+        a_md_lambda_0_res: optional precomputed a_md at lambda_0_c_d [m-1]
+
+    Returns:
+        c_md: spectral attenuation coefficient of minerogenic detritus [m-1]
+    """
+    if omega_d_lambda_0_res is None:
+        omega_d_lambda_0_res = omega_d_lambda_0(x0=x0, x1=x1, x2=x2)
+    if a_md_lambda_0_res is None:
+        a_md_lambda_0_res = absorption.a_md(wavelengths=lambda_0_c_d,
+                                            C_ism=C_ism, A_md=A_md, S_md=S_md,
+                                            C_md=C_md, lambda_0_md=lambda_0_md)
+    c_md_at_ref = a_md_lambda_0_res / (1 - omega_d_lambda_0_res)
+    return c_md_at_ref * (lambda_0_c_d / wavelengths) ** gamma_d
+
+
+def c_bd(wavelengths=np.arange(400,800),
+         C_phy=1.,
+         A_bd=0.3893e-3,
+         S_bd=15.7621e-3,
+         C_bd=0.9994e-3,
+         lambda_0_c_d=550.,
+         lambda_0_bd=550.,
+         gamma_d=0.3835,
+         x0=1.,
+         x1=10,
+         x2=-1.3390,
+         omega_d_lambda_0_res=None,
+         a_bd_lambda_0_res=None):
+    """
+    Attenuation coefficient of biogenic detritus [m-1] (Bi et al. 2023).
+
+    Follows the same power-law spectral shape as c_d but uses only the
+    biogenic-detrital component at the reference wavelength:
+    c_bd(lambda_0) = a_bd(lambda_0) / (1 - omega_d).
+
+    Args:
+        wavelengths: wavelengths [nm]
+        C_phy: phytoplankton concentration [mg m-3], default: 1.0
+        A_bd, S_bd, C_bd, lambda_0_bd: biogenic detritus absorption parameters
+        lambda_0_c_d: reference wavelength for the power law [nm], default: 550
+        gamma_d: power-law exponent, default: 0.3835
+        x0, x1, x2: omega_d power-law parameters
+        omega_d_lambda_0_res: optional precomputed single scattering albedo at lambda_0_c_d
+        a_bd_lambda_0_res: optional precomputed a_bd at lambda_0_c_d [m-1]
+
+    Returns:
+        c_bd: spectral attenuation coefficient of biogenic detritus [m-1]
+    """
+    if omega_d_lambda_0_res is None:
+        omega_d_lambda_0_res = omega_d_lambda_0(x0=x0, x1=x1, x2=x2)
+    if a_bd_lambda_0_res is None:
+        a_bd_lambda_0_res = absorption.a_bd(wavelengths=lambda_0_c_d,
+                                            C_phy=C_phy, A_bd=A_bd, S_bd=S_bd,
+                                            C_bd=C_bd, lambda_0_bd=lambda_0_bd)
+    c_bd_at_ref = a_bd_lambda_0_res / (1 - omega_d_lambda_0_res)
+    return c_bd_at_ref * (lambda_0_c_d / wavelengths) ** gamma_d
 
 
 def Kd_Lee(a_t, 
