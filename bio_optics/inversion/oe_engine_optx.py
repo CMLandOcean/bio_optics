@@ -25,8 +25,10 @@ time.  This means:
 * **Pluggable solver** — pass ``solver='<ClassName>'`` to swap the optimistix
   solver at call time.  Least-squares solvers (``GaussNewton``,
   ``LevenbergMarquardt``, ``Dogleg``, …) run via ``optx.least_squares``;
-  minimizers (``LBFGS``, ``BFGS``, ``NonlinearCG``, …) run via
-  ``optx.minimise`` on the squared residual sum.
+  minimizers run via ``optx.minimise`` on the squared residual sum.
+  The special name ``'OptaxLBFGS'`` wraps ``optax.lbfgs()`` via
+  ``OptaxMinimiser`` — preferred over the native ``'LBFGS'`` which is only
+  available in newer optimistix versions.
 
 Identical API surface
 ---------------------
@@ -107,12 +109,22 @@ _LEAST_SQUARES_SOLVERS = frozenset({
 
 
 def _make_solver(solver: str, rtol: float, atol: float):
-    """Instantiate an optimistix solver by class name."""
+    """Instantiate an optimistix solver by class name.
+
+    Special name ``'OptaxLBFGS'`` creates an ``OptaxMinimiser`` wrapping
+    ``optax.lbfgs()`` — preferred over the native ``'LBFGS'`` which is only
+    available in newer optimistix versions.
+    """
+    if solver == 'OptaxLBFGS':
+        import optax
+        return optx.OptaxMinimiser(optax.lbfgs(), atol=atol, rtol=rtol,
+                                   norm=optx.max_norm)
     cls = getattr(optx, solver, None)
     if cls is None:
         raise ValueError(
             f"Unknown optimistix solver {solver!r}. "
-            f"Use the exact class name, e.g. 'GaussNewton', 'LevenbergMarquardt', 'LBFGS'."
+            f"Use the exact class name, e.g. 'GaussNewton', 'LevenbergMarquardt', "
+            f"'OptaxLBFGS'."
         )
     if solver in _LEAST_SQUARES_SOLVERS:
         return cls(rtol=rtol, atol=atol,
