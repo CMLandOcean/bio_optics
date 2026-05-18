@@ -38,7 +38,6 @@ class LmfitSetup(NamedTuple):
         forward_func: forward model callable, signature f(params, wavelengths, **kwargs)
         fit_names:    names of free parameters (p.vary == True), in params iteration order
         weights:      optional per-band weights, shape (n_obs,)
-        error_method: residual method forwarded to utils.compute_residual (default 2)
         method:       lmfit minimisation method (default 'least-squares')
         max_nfev:     maximum function evaluations (default 400)
     """
@@ -47,7 +46,6 @@ class LmfitSetup(NamedTuple):
     forward_func: Callable
     fit_names:    List[str]
     weights:      Optional[np.ndarray]
-    error_method: int
     method:       str
     max_nfev:     int
 
@@ -58,7 +56,6 @@ def build_inversion(
     forward_func,
     fixed_params=None,
     weights=None,
-    error_method=2,
     method='least-squares',
     max_nfev=400,
 ) -> LmfitSetup:
@@ -72,7 +69,6 @@ def build_inversion(
     forward_func : forward model callable f(params, wavelengths, **fwd_kwargs)
     fixed_params : optional {name: value} dict — fixes params before baking into setup
     weights      : optional per-band spectral weights
-    error_method : passed to utils.compute_residual (default 2 = absolute difference)
     method       : lmfit minimisation method (default 'least-squares')
     max_nfev     : max function evaluations per spectrum (default 400)
 
@@ -92,7 +88,6 @@ def build_inversion(
         forward_func=forward_func,
         fit_names=fit_names,
         weights=weights,
-        error_method=error_method,
         method=method,
         max_nfev=max_nfev,
     )
@@ -104,7 +99,6 @@ def invert(params,
            forward_func,
            fixed_params=None,
            weights=None,
-           error_method=2,
            method="least-squares",
            max_nfev=400,
            **fwd_kwargs):
@@ -118,8 +112,7 @@ def invert(params,
         forward_func: forward model callable with signature forward_func(parameters, wavelengths, **kwargs)
         fixed_params: optional dict of {param_name: value} to fix before inversion,
                       useful for incorporating measured data (e.g. {'zB': measured_depth})
-        weights: optional spectral weighting coefficients
-        error_method: residual method passed to utils.compute_residual, default: 2 (absolute difference)
+        weights: optional per-band spectral weights; ones if not provided
         method: lmfit minimisation method, default: 'least-squares'
         max_nfev: maximum number of function evaluations, default: 400
         **fwd_kwargs: additional keyword arguments forwarded to forward_func (e.g. precomputed arrays)
@@ -137,7 +130,7 @@ def invert(params,
 
     def _func2opt(parameters, Rrs, wavelengths, weights):
         Rrs_sim = forward_func(parameters, wavelengths, **fwd_kwargs)
-        return utils.compute_residual(Rrs, Rrs_sim, method=error_method, weights=weights)
+        return (Rrs_sim - Rrs) * weights
 
     return minimize(_func2opt, params, args=(Rrs, wavelengths, weights),
                     method=method, max_nfev=max_nfev)
@@ -192,8 +185,7 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
                 p[name].value = x0[i, j]
         result = invert(
             p, spectrum, setup.wavelengths, setup.forward_func,
-            weights=setup.weights, error_method=setup.error_method,
-            method=setup.method, max_nfev=setup.max_nfev,
+            weights=setup.weights, method=setup.method, max_nfev=setup.max_nfev,
         )
         # Always store best-found parameters — result.success=False only means
         # the convergence criterion was not met (e.g. max_nfev reached), not

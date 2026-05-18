@@ -148,15 +148,45 @@ def estimate_S_dg(Rrs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.002
 
 def compute_residual(y_true, y_pred, method=2, weights=None):
     """
-    Residual computation for comparison of measured and simulated data.
+    Residual / error metric for comparing measured and simulated spectra.
+
+    Intended for **post-hoc evaluation** (reporting, plotting, validation).
+    Do NOT pass the output of this function directly to a gradient-based solver
+    (e.g. scipy least_squares / lmfit 'least-squares'): only method=0 returns
+    the signed residual vector that those solvers require. All other element-wise
+    methods (1–6) either double-penalise or flip gradient signs for bands where
+    the model undershoots; scalar methods (7–16) collapse the vector to a scalar,
+    destroying the per-band gradient structure entirely.
+
+    Methods
+    -------
+    Element-wise (return array of same length as input):
+        0  signed difference         (y_pred - y_true)              [optimizer-safe]
+        1  squared difference        (y_pred - y_true)²             [evaluation only]
+        2  absolute difference       |y_pred - y_true|              [evaluation only]
+        3  relative difference       |1 - y_pred/y_true|            [evaluation only]
+        4  Li et al. (2017)          |y_true-y_pred| / sqrt(y_true) [evaluation only]
+        5  Barnes et al. (2018)      |y_true-y_pred| / y_true       [evaluation only]
+        6  squared spectral deriv.   (Savitzky-Golay, order 1)²     [evaluation only]
+    Scalar (return single float):
+        7  summed least squares      sum((y_pred-y_true)²)
+        8  summed absolute diff      sum(|y_pred-y_true|)
+        9  summed relative diff      sum(|1-y_pred/y_true|)
+        10 Li et al. (2017) global   sqrt(sum((y_true-y_pred)²)) / sqrt(sum(y_true))
+        11 Barnes et al. (2018) glob sqrt(sum((y_true-y_pred)²)) / sum(y_true)
+        12 RMSE
+        13 1 - R²
+        14 SAM  (spectral angle)
+        15 SID  (spectral information divergence)
+        16 Chebyshev distance
 
     Args:
-        y_true: array of true (measured) values
-        y_pred: array of predicted or simulated values
-        method: residual method index (0=signed diff, 1=squared, 2=absolute, 3=relative, ...), default: 2
-        weights: element-wise weighting factors; ones if not provided, default: []
+        y_true:  array of true (measured) values
+        y_pred:  array of predicted or simulated values
+        method:  index from the table above, default: 2
+        weights: element-wise weighting factors; ones if not provided
     Returns:
-        residual
+        residual or scalar metric
     """
 
     if weights is None:
