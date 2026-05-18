@@ -2,9 +2,10 @@
 OE inversion engine using optimistix JAX-native solvers.
 
 Provides drop-in replacements for ``oe_engine.solve()`` and
-``oe_engine.invert_pixels()`` that use
-``optimistix.LevenbergMarquardt`` (default) or ``optimistix.GaussNewton``
-instead of the hand-written Gauss-Newton loop in ``oe_engine``.
+``oe_engine.invert_pixels()`` that use any optimistix solver
+(default: ``GaussNewton``) instead of the hand-written Gauss-Newton loop
+in ``oe_engine``.  Pass ``solver='<ClassName>'`` using the exact optimistix
+class name, e.g. ``'GaussNewton'``, ``'LevenbergMarquardt'``, ``'LBFGS'``.
 
 Key differences from oe_engine
 -------------------------------
@@ -21,6 +22,11 @@ time.  This means:
   radius update; the damping in ``oe_engine.solve()`` is static.
 * **n_steps per pixel** — ``OEResult.num_steps`` records how many solver
   iterations were taken; exposed via ``invert_image``'s ``n_steps`` key.
+* **Pluggable solver** — pass ``solver='<ClassName>'`` to swap the optimistix
+  solver at call time.  Least-squares solvers (``GaussNewton``,
+  ``LevenbergMarquardt``, ``Dogleg``, …) run via ``optx.least_squares``;
+  minimizers (``LBFGS``, ``BFGS``, ``NonlinearCG``, …) run via
+  ``optx.minimise`` on the squared residual sum.
 
 Identical API surface
 ---------------------
@@ -89,6 +95,32 @@ jax.config.update("jax_enable_x64", True)
 
 
 # ---------------------------------------------------------------------------
+# Solver dispatch helpers
+# ---------------------------------------------------------------------------
+
+# Solvers that expect a residual vector and use optx.least_squares.
+# All others are treated as minimizers and use optx.minimise on 0.5*||r||².
+_LEAST_SQUARES_SOLVERS = frozenset({
+    'GaussNewton', 'LevenbergMarquardt', 'Dogleg',
+    'IndirectLevenbergMarquardt', 'ClassicalTrustRegion', 'LinearTrustRegion',
+})
+
+
+def _make_solver(solver: str, rtol: float, atol: float):
+    """Instantiate an optimistix solver by class name."""
+    cls = getattr(optx, solver, None)
+    if cls is None:
+        raise ValueError(
+            f"Unknown optimistix solver {solver!r}. "
+            f"Use the exact class name, e.g. 'GaussNewton', 'LevenbergMarquardt', 'LBFGS'."
+        )
+    if solver in _LEAST_SQUARES_SOLVERS:
+        return cls(rtol=rtol, atol=atol,
+                   linear_solver=lx.AutoLinearSolver(well_posed=False))
+    return cls(rtol=rtol, atol=atol)
+
+
+# ---------------------------------------------------------------------------
 # Core solver — pure JAX, lax.while_loop-based
 # ---------------------------------------------------------------------------
 
@@ -101,7 +133,7 @@ def solve_optx(f_vec: Callable,
                max_steps: int = 100,
                rtol: float = 1e-6,
                atol: float = 1e-6,
-               use_lm: bool = False,
+               solver: str = 'GaussNewton',
                weights=None,
                aux=None) -> OEResult:
     """
@@ -134,7 +166,12 @@ def solve_optx(f_vec: Callable,
         max_steps: maximum solver iterations, default 100.
         rtol:      relative convergence tolerance, default 1e-6.
         atol:      absolute convergence tolerance, default 1e-6.
-        use_lm:    if True use LevenbergMarquardt; else GaussNewton (default).
+        solver:    optimistix solver class name, default ``'GaussNewton'``.
+                   Least-squares solvers (``'GaussNewton'``,
+                   ``'LevenbergMarquardt'``, ``'Dogleg'``, …) run via
+                   ``optx.least_squares``; minimizers (``'LBFGS'``,
+                   ``'BFGS'``, ``'NonlinearCG'``, …) run via
+                   ``optx.minimise`` on the squared residual sum.
         weights:   optional per-band weight array, shape (n_obs,).
         aux:       optional per-pixel auxiliary dict forwarded to f_vec as
                    ``f_vec(x, aux)``.  Default None.
@@ -160,13 +197,17 @@ def solve_optx(f_vec: Callable,
         r_prior = sa_sqrt_inv  * (x - x_a)
         return jnp.concatenate([r_data, r_prior])
 
-    _lin = lx.AutoLinearSolver(well_posed=False)
-    solver = (optx.LevenbergMarquardt(rtol=rtol, atol=atol, linear_solver=_lin)
-              if use_lm else
-              optx.GaussNewton(rtol=rtol, atol=atol, linear_solver=_lin))
-
-    sol = optx.least_squares(residual_fn, solver, x0,
-                              max_steps=max_steps, throw=False)
+    _solver = _make_solver(solver, rtol, atol)
+    if solver in _LEAST_SQUARES_SOLVERS:
+        sol = optx.least_squares(residual_fn, _solver, x0,
+                                  max_steps=max_steps, throw=False)
+    else:
+        def loss_fn(x, args):
+            del args
+            r = residual_fn(x, None)
+            return 0.5 * jnp.sum(r ** 2)
+        sol = optx.minimise(loss_fn, _solver, x0,
+                             max_steps=max_steps, throw=False)
     x_hat = sol.value
 
     y_hat     = f(x_hat)
@@ -199,7 +240,7 @@ def invert_pixels_optx(f_vec: Callable,
                         max_steps: int = 100,
                         rtol: float = 1e-6,
                         atol: float = 1e-6,
-                        use_lm: bool = False,
+                        solver: str = 'GaussNewton',
                         weights=None,
                         aux_pixels=None) -> OEResult:
     """
@@ -229,7 +270,7 @@ def invert_pixels_optx(f_vec: Callable,
         max_steps:  maximum solver iterations per pixel, default 100.
         rtol:       relative convergence tolerance, default 1e-6.
         atol:       absolute convergence tolerance, default 1e-6.
-        use_lm:     True = LevenbergMarquardt; False = GaussNewton (default).
+        solver:     optimistix solver class name, default ``'GaussNewton'``.
         weights:    optional per-band weights, shape (n_obs,).
         aux_pixels: optional per-pixel auxiliary pytree.
 
@@ -258,7 +299,7 @@ def invert_pixels_optx(f_vec: Callable,
         def _solve_one(y, x, xa, Sa, a):
             return solve_optx(f_vec, y, noise, x, xa, Sa,
                                max_steps=max_steps, rtol=rtol, atol=atol,
-                               use_lm=use_lm, weights=weights, aux=a)
+                               solver=solver, weights=weights, aux=a)
         return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0, 0))(
             Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch, aux_pixels
         )
@@ -266,7 +307,7 @@ def invert_pixels_optx(f_vec: Callable,
         def _solve_one(y, x, xa, Sa):
             return solve_optx(f_vec, y, noise, x, xa, Sa,
                                max_steps=max_steps, rtol=rtol, atol=atol,
-                               use_lm=use_lm, weights=weights)
+                               solver=solver, weights=weights)
         return jax.vmap(_solve_one, in_axes=(0, 0, 0, 0))(
             Rrs_pixels, x0_batch, x_a_batch, S_a_inv_batch
         )
@@ -279,12 +320,12 @@ def invert_pixels_optx(f_vec: Callable,
 _invert_pixels_optx_jit = jax.jit(
     invert_pixels_optx,
     static_argnums=(0,),
-    static_argnames=('max_steps', 'rtol', 'atol', 'use_lm'),
+    static_argnames=('max_steps', 'rtol', 'atol', 'solver'),
 )
 
 
 def _solve_postprocess(f_fit, Rrs, noise, x_a, S_a_inv, log_mask,
-                        max_steps, rtol, atol, use_lm, weights, aux_pixels):
+                        max_steps, rtol, atol, solver, weights, aux_pixels):
     """Fused solve + physical-space conversion — single XLA program.
 
     Putting to_physical / posterior_sigma_physical / jnp.diagonal inside the
@@ -294,7 +335,7 @@ def _solve_postprocess(f_fit, Rrs, noise, x_a, S_a_inv, log_mask,
     """
     res = invert_pixels_optx(f_fit, Rrs, noise, x_a, S_a_inv,
                              max_steps=max_steps, rtol=rtol, atol=atol,
-                             use_lm=use_lm, weights=weights, aux_pixels=aux_pixels)
+                             solver=solver, weights=weights, aux_pixels=aux_pixels)
     x_hat_phys = to_physical(res.x_hat, log_mask)
     sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
     A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
@@ -304,7 +345,7 @@ def _solve_postprocess(f_fit, Rrs, noise, x_a, S_a_inv, log_mask,
 _solve_postprocess_jit = jax.jit(
     _solve_postprocess,
     static_argnums=(0,),
-    static_argnames=('max_steps', 'rtol', 'atol', 'use_lm'),
+    static_argnames=('max_steps', 'rtol', 'atol', 'solver'),
 )
 
 
@@ -323,7 +364,7 @@ def invert_tile_optx(
     max_steps: int = 100,
     rtol: float = 1e-6,
     atol: float = 1e-6,
-    use_lm: bool = False,
+    solver: str = 'GaussNewton',
     store_y_hat: bool = False,
     store_gain: bool = False,
     aux_tile=None,
@@ -377,7 +418,7 @@ def invert_tile_optx(
     results = _invert_pixels_optx_jit(
         f_fit, Rrs_jax, noise, x_a_jax, S_a_inv_jax,
         max_steps=max_steps, rtol=rtol, atol=atol,
-        use_lm=use_lm, weights=weights_jax,
+        solver=solver, weights=weights_jax,
         aux_pixels=aux_jax,
     )
 
@@ -430,7 +471,7 @@ def invert_image_optx(
     max_steps: int = 100,
     rtol: float = 1e-6,
     atol: float = 1e-6,
-    use_lm: bool = False,
+    solver: str = 'GaussNewton',
     store_y_hat: bool = False,
     store_gain: bool = False,
     store_chi2_spectral: bool = False,
@@ -456,7 +497,7 @@ def invert_image_optx(
         max_steps:           solver iteration cap per pixel, default 100.
         rtol:                relative convergence tolerance, default 1e-6.
         atol:                absolute convergence tolerance, default 1e-6.
-        use_lm:              True = LevenbergMarquardt; False = GaussNewton (default).
+        solver:              optimistix solver class name, default ``'GaussNewton'``.
         store_y_hat:         include simulated spectra in output.
         store_gain:          include gain matrix G in output.
         store_chi2_spectral: include ``chi2_spectral`` — mean squared difference
@@ -526,7 +567,7 @@ def invert_image_optx(
                 jnp.asarray(Rrs_padded, dtype=jnp.float64),
                 noise, x_a_jax, Sa_inv_jax,
                 max_steps=max_steps, rtol=rtol, atol=atol,
-                use_lm=use_lm, weights=weights_jax,
+                solver=solver, weights=weights_jax,
                 aux_pixels=aux_jax,
             )
             x_hat_phys = to_physical(res.x_hat, log_mask)
@@ -546,7 +587,7 @@ def invert_image_optx(
                     jnp.asarray(Rrs_padded, dtype=jnp.float64),
                     noise, x_a_jax, Sa_inv_jax, log_mask,
                     max_steps=max_steps, rtol=rtol, atol=atol,
-                    use_lm=use_lm, weights=weights_jax,
+                    solver=solver, weights=weights_jax,
                     aux_pixels=aux_jax,
                 )
 
