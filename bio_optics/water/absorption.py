@@ -877,6 +877,8 @@ def a_total(wavelengths=np.arange(400,800),
             T_W=20,
             T_W_0=20,
             a_d_res=None,
+            a_md_res=None,
+            a_bd_res=None,
             a_md_spec_res=None,
             a_bd_spec_res=None,
             a_i_spec_res=None,
@@ -934,7 +936,10 @@ def a_total(wavelengths=np.arange(400,800),
     C_phy = np.sum([C_0, C_1, C_2, C_3, C_4, C_5, C_6, C_7])
 
     if a_d_res is None:
-        a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
+        if a_md_res is not None and a_bd_res is not None:
+            a_d_res = a_md_res + a_bd_res
+        else:
+            a_d_res = a_d(wavelengths=wavelengths, C_phy=C_phy, C_ism=C_ism, A_md=A_md, A_bd=A_bd, S_md=S_md, S_bd=S_bd, C_md=C_md, C_bd=C_bd, lambda_0_md=lambda_0_md, lambda_0_bd=lambda_0_bd, a_md_spec_res=a_md_spec_res, a_bd_spec_res=a_bd_spec_res)
     
     if a_phy_res is None:
         a_phy_res = a_phy(wavelengths=wavelengths, C_0=C_0, C_1=C_1, C_2=C_2, C_3=C_3, C_4=C_4, C_5=C_5, C_6=C_6, C_7=C_7, a_i_spec_res=a_i_spec_res)
