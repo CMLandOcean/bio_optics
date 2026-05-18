@@ -98,9 +98,11 @@ def invert_image(
         sol    = optx.least_squares(residual_fn, solver, x0_px,
                                     args=y_obs, max_steps=max_steps, throw=False)
         x_phys = to_physical(sol.value, log_mask)
-        res    = residual_fn(sol.value, y_obs)
+        res = residual_fn(x_phys, y_obs)
+        # res    = residual_fn(sol.value, y_obs)
         chi2   = jnp.sum(jnp.square(res)) / n_obs
-        return x_phys, chi2, sol.stats['num_steps']
+        y_hat  = setup.f_fit(x_phys)
+        return x_phys, chi2, sol.stats['num_steps'], y_hat
 
     @jax.jit
     def invert_tile(tile, x0_tile):
@@ -109,6 +111,7 @@ def invert_image(
     x_hat_all   = np.full((n_pixels, n_fit), np.nan)
     chi2_all    = np.full(n_pixels, np.nan)
     n_steps_all = np.full(n_pixels, -1, dtype=np.int32)
+    y_hat_all = np.full((n_pixels, n_obs), np.nan)
 
     for i, start in enumerate(range(0, n_pixels, tile_size)):
         end   = min(start + tile_size, n_pixels)
@@ -123,12 +126,13 @@ def invert_image(
             tile_padded[~valid] = tile[valid][0]
 
         x0_tile = jnp.asarray(x0_flat[start:end], dtype=jnp.float64)
-        x_tile, chi2_tile, steps_tile = invert_tile(
+        x_tile, chi2_tile, steps_tile, y_tile = invert_tile(
             jnp.asarray(tile_padded, dtype=jnp.float64), x0_tile
         )
         x_hat_all[start:end][valid]   = np.array(x_tile)[valid]
         chi2_all[start:end][valid]    = np.array(chi2_tile)[valid]
         n_steps_all[start:end][valid] = np.array(steps_tile, dtype=np.int32)[valid]
+        y_hat_all[start:end][valid] = np.array(y_tile)[valid]
 
         if (i + 1) % 10 == 0 or end == n_pixels:
             print(f'  {end}/{n_pixels} ({100*end/n_pixels:.0f}%)')
@@ -137,10 +141,12 @@ def invert_image(
         x_hat_all   = x_hat_all.reshape(n_rows, n_cols, n_fit)
         chi2_all    = chi2_all.reshape(n_rows, n_cols)
         n_steps_all = n_steps_all.reshape(n_rows, n_cols)
+        y_hat_all = y_hat_all.reshape(n_rows, n_cols, n_obs)
 
     return {
         'x_hat':     x_hat_all,
         'chi2':      chi2_all,
         'n_steps':   n_steps_all,
         'fit_names': list(setup.fit_names),
+        'y_hat':     y_hat_all
     }

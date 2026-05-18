@@ -70,4 +70,4 @@ dependencies:
       - lmfit
       - pysolar
       - spectral
-      - bio_optics         # this repo (editable install: use `pip install -e .` instead)
+      #- bio_optics         # this repo (editable install: use `pip install -e .` instead)

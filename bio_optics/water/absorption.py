@@ -670,6 +670,127 @@ def a_bd_spec(wavelengths=np.arange(400,800),
     return a_bd_spec
 
 
+def a_md_spec(wavelengths=np.arange(400,800),
+              A_md=13.4685e-3,
+              S_md=10.3845e-3,
+              C_md=12.1700e-3,
+              lambda_0=550.):
+    """
+    Mass-specific absorption coefficient of minerogenic detritus [m2/g] [1]
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+
+    Returns:
+        a_md_spec: Mass-specific absorption coefficient of minerogenic detritus [m2/g]
+    """
+    a_md_spec = a_xd_spec(wavelengths=wavelengths, A_xd=A_md, S_xd=S_md, C_xd=C_md, lambda_0=lambda_0)
+    return a_md_spec
+
+
+def a_bd_spec(wavelengths=np.arange(400,800),
+              A_bd=0.3893e-3,
+              S_bd=15.7621e-3,
+              C_bd= 0.9994e-3,
+              lambda_0=550.):
+    """
+    Chl-specific absorption coefficient of biogenic detritus [m2/mg] [1]
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_, optional): _description_. Defaults to np.arange(400,800).
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0 (_type_, optional): Reference wavelength [nm]. Defaults to 550..
+
+    Returns:
+        a_bd_spec: Chl-specific absorption coefficient of biogenic detritus [m2/mg]
+    """
+    a_bd_spec = a_xd_spec(wavelengths=wavelengths, A_xd=A_bd, S_xd=S_bd, C_xd=C_bd, lambda_0=lambda_0)
+    return a_bd_spec
+
+def a_md(wavelengths=np.arange(400,800),
+        C_ism=1.,
+        A_md=13.4685e-3,
+        S_md=10.3845e-3,
+        C_md=12.1700e-3,
+        lambda_0_md=550.,
+        a_md_spec_res=[]):
+    """
+    Absorption coefficient of mineralogenic detritus (Eq. 7 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_): _description_. Defaults to np.arange(400,800).
+        C_ism (_type_, optional): Concentration of inorganic suspended matter. Defaults to 1..
+        C_phy (_type_, optional): Concentration of chlorophyll a. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        a_d: Absorption coefficient of detritus [m-1].
+    """
+    a_md_spec_res = a_md_spec(wavelengths, A_md, S_md, C_md, lambda_0=lambda_0_md) if len(a_md_spec_res)==0 else a_md_spec_res
+
+    a_md = C_ism * a_md_spec_res
+
+    return a_md
+
+
+def a_bd(wavelengths=np.arange(400,800),
+        C_phy=1.,
+        A_bd=0.3893e-3,
+        S_bd=15.7621e-3,
+        C_bd= 0.9994e-3,
+        lambda_0_bd=550.,
+        a_bd_spec_res=[]):
+    """
+    Absorption coefficient of detritus (Eq. 7 in [1]).
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.11963529]
+
+    Args:
+        wavelengths (_type_): _description_. Defaults to np.arange(400,800).
+        C_ism (_type_, optional): Concentration of inorganic suspended matter. Defaults to 1..
+        C_phy (_type_, optional): Concentration of chlorophyll a. Defaults to 1..
+        A_md (_type_, optional): _description_. Defaults to 13.4685e-3.
+        A_bd (_type_, optional): _description_. Defaults to 0.3893e-3.
+        S_md (_type_, optional): _description_. Defaults to 10.3845e-3.
+        S_bd (_type_, optional): _description_. Defaults to 15.7621e-3.
+        C_md (_type_, optional): Constant. Defaults to 12.1700e-3.
+        C_bd (_type_, optional): Constant. Defaults to 0.9994e-3.
+        lambda_0_md (_type_, optional): _description_. Defaults to 550..
+        lambda_0_bd (_type_, optional): _description_. Defaults to 550..
+        a_md_spec_res (list, optional): _description_. Defaults to [].
+        a_bd_spec_res (list, optional): _description_. Defaults to [].
+
+    Returns:
+        a_d: Absorption coefficient of detritus [m-1].
+    """
+    a_bd_spec_res = a_bd_spec(wavelengths, A_bd, S_bd, C_bd, lambda_0=lambda_0_bd)  if len(a_bd_spec_res)==0 else a_bd_spec_res
+
+    a_bd = C_phy * a_bd_spec_res
+
+    return a_bd
+
+
 def a_d(wavelengths=np.arange(400,800), 
         C_ism=1., 
         C_phy=1.,
