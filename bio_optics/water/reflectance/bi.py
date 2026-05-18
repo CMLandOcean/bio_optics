@@ -107,7 +107,7 @@ def forward(parameters,
 
     # it makes sense to precompute some coefficients outside of a() and bb() because they are used in both functions
     if bb_w_res is None:
-        bb_w_res = resampling.resample_bb_w(wavelengths=wavelengths)
+        bb_w_res = resampling.resample_bb_w(wavelengths=wavelengths, fresh=parameters["fresh"].value)
 
     # if a_d_res is None:
     #     a_d_res = absorption.a_d(wavelengths=wavelengths,
@@ -199,7 +199,7 @@ def forward(parameters,
                                   x1=parameters["x1"],
                                   x2=parameters["x2"],
                                   omega_d_lambda_0_res=omega_d_lambda_0_res,
-                                  a_bd_lambda_0_res = a_d_lambda_0_res)
+                                  a_bd_lambda_0_res = a_bd_lambda_0_res)
 
     c_bd_lambda_0_res = np.interp(parameters["lambda_0_c_d"].value, wavelengths, c_bd_res) if parameters[
         "interpolate"].value else c_bd_res[utils.find_closest(wavelengths, parameters["lambda_0_c_d"])[1]]
