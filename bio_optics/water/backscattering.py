@@ -67,7 +67,7 @@ def morel(wavelengths: np.array = np.arange(400,800),
 
 def bb_w(wavelengths: np.array = np.arange(400,800), 
          fresh: bool = True,
-         bb_w_res = []):
+         bb_w_res = None):
     """
     Spectral backscattering coefficient of pure water according to Morel (1974) [1].
     
