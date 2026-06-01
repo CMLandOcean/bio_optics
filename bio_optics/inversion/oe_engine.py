@@ -1154,12 +1154,22 @@ def invert_image(
         aux_image:           per-spectra auxiliary data (array or dict of arrays)
                              forwarded to ``f_fit(x, aux)``.
         **kwargs:            silently absorbed (keeps interface compatible with
-                             non-OE invert_fn callers).
+                             non-OE invert_fn callers).  Pass ``bounds_image``
+                             only to ``lmfit_engine``; a UserWarning is emitted
+                             here if it is present.
 
     Returns:
         dict with keys: x_hat, sigma, A_diag, chi2, H_info, fit_names,
         and optionally y_hat, G, chi2_spectral.
     """
+    if kwargs.get('bounds_image') is not None:
+        import warnings
+        warnings.warn(
+            "oe_engine.invert_image does not support bounds_image; "
+            "use S_a_inv_image for per-pixel constraints in OE, "
+            "or switch to lmfit_engine.",
+            UserWarning, stacklevel=2,
+        )
     Rrs_jax     = jnp.asarray(spectra,      dtype=jnp.float64)
     x_a_jax     = jnp.asarray(x_a_image     if x_a_image     is not None else setup.x_a,     dtype=jnp.float64)
     Sa_inv_jax  = jnp.asarray(S_a_inv_image if S_a_inv_image is not None else setup.S_a_inv,  dtype=jnp.float64)

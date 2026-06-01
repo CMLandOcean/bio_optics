@@ -70,6 +70,13 @@ def invert_image(
         fit_names       list[str]
         chi2_spectral   (n_rows, n_cols)          only when store_chi2_spectral=True
     """
+    if kwargs.get('bounds_image') is not None:
+        import warnings
+        warnings.warn(
+            "lsq_engine_optx.invert_image does not support bounds_image; "
+            "switch to lmfit_engine for per-pixel parameter bounds.",
+            UserWarning, stacklevel=2,
+        )
     Rrs_arr = np.asarray(Rrs)
     if Rrs_arr.ndim == 3:
         n_rows, n_cols, n_obs = Rrs_arr.shape

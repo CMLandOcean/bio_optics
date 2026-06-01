@@ -174,7 +174,8 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
     n_nfev    = np.full(n_spectra, -1, dtype=np.int32)
     chi2_sp   = np.full(n_spectra, np.nan) if store_chi2_spectral else None
 
-    x0 = kwargs.get('x_a_image')   # (n_spectra, n_fit) or None
+    x0     = kwargs.get('x_a_image')    # (n_spectra, n_fit) or None
+    bounds = kwargs.get('bounds_image') # dict[str, {'min': ndarray, 'max': ndarray}] or None
 
     for i, spectrum in enumerate(spectra):
         if not np.isfinite(spectrum).all():
@@ -183,6 +184,16 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
         if x0 is not None and np.isfinite(x0[i]).all():
             for j, name in enumerate(setup.fit_names):
                 p[name].value = x0[i, j]
+        if bounds is not None:
+            for name, bd in bounds.items():
+                if 'min' in bd:
+                    v = float(bd['min'][i])
+                    if np.isfinite(v):
+                        p[name].min = v
+                if 'max' in bd:
+                    v = float(bd['max'][i])
+                    if np.isfinite(v):
+                        p[name].max = v
         result = invert(
             p, spectrum, setup.wavelengths, setup.forward_func,
             weights=setup.weights, method=setup.method, max_nfev=setup.max_nfev,
