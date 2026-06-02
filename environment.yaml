@@ -18,10 +18,12 @@ dependencies:
   - distributed
 
   # --- JAX (CPU; for GPU replace jaxlib with jaxlib=*=*cuda* or use pip) -----
-  - jax=0.4.35        # equinox 0.13.0 not compatible with JAX 0.7.x; pip workaround breaks conda-lock
-  - jaxlib=0.4.35
-  - equinox
-  - optimistix
+  # Pinned to last known-good set (JAX 0.9.x causes silent kernel crashes in vmapped OE loops)
+  - jax=0.6.2
+  - jaxlib=0.6.2
+  - equinox=0.13.7
+  - optimistix=0.0.11
+  - optax=0.2.8
 
   # --- geospatial (pip builds are unreliable on Windows) ---------------------
   - gdal
