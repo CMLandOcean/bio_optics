@@ -51,6 +51,7 @@ def invert_image(
     x_a_image=None,
     S_a_inv_image=None,
     aux_image=None,
+    bounds_image=None,
     **invert_kwargs,
 ) -> Dict[str, object]:
     """
@@ -96,6 +97,15 @@ def invert_image(
                        Every leaf must share the leading spatial shape of
                        ``Rrs``.  Sliced per tile and forwarded as
                        ``aux_image``.
+        bounds_image:  per-pixel parameter bounds dict, forwarded to
+                       ``invert_fn`` as ``bounds_image``.  Structure::
+
+                           {'param_name': {'min': ndarray, 'max': ndarray}, …}
+
+                       Each array must be broadcastable to the image spatial
+                       shape.  Sliced per tile.  Only consumed by
+                       ``lmfit_engine.invert_image``; other engines emit a
+                       UserWarning and ignore it.
         **invert_kwargs: forwarded unchanged to every ``invert_fn`` tile call
                        (e.g. ``n_iter``, ``lm_damping``, ``store_y_hat``).
 
@@ -167,6 +177,13 @@ def invert_image(
         else:
             aux_flat = _flatten_leaf(aux_image)
 
+    bounds_flat = None
+    if bounds_image is not None:
+        bounds_flat = {
+            name: {side: np.asarray(arr).ravel() for side, arr in bd.items()}
+            for name, bd in bounds_image.items()
+        }
+
     # Build one Dask delayed task per tile
     delayed_tasks = []
     for start in range(0, n_pixels, tile_size):
@@ -182,11 +199,19 @@ def invert_image(
         else:
             tile_aux = None
 
+        tile_bounds = None
+        if bounds_flat is not None:
+            tile_bounds = {
+                name: {side: arr[start:end] for side, arr in bd.items()}
+                for name, bd in bounds_flat.items()
+            }
+
         task = dask.delayed(invert_fn)(
             tile, setup, noise,
             x_a_image=tile_x_a,
             S_a_inv_image=tile_Sa_inv,
             aux_image=tile_aux,
+            bounds_image=tile_bounds,
             **invert_kwargs,
         )
         delayed_tasks.append(task)

@@ -315,6 +315,7 @@ def invert_image_superpixel(
     store_sp_results: bool = False,
     invert_fn=None,
     x0_image: Optional[np.ndarray] = None,
+    bounds_image: Optional[dict] = None,
     **invert_kwargs,
 ) -> dict:
     """SLIC superpixel inversion with PCA+kNN back-interpolation.
@@ -358,6 +359,17 @@ def invert_image_superpixel(
                   engine.  Ignored by LSQ engines (which have no prior term).
                   Typical use: set x0_image[..., zB_idx] = np.log(bathy_map) to
                   provide a spatially varying bathymetry prior.
+    bounds_image: dict mapping parameter name → {'min': ndarray, 'max': ndarray},
+                  where each array has spatial shape (n_rows, n_cols) or is
+                  broadcastable to it.  Per-pixel bounds are aggregated to
+                  per-superpixel bounds using union semantics (nanmin for the
+                  min-side, nanmax for the max-side) so the superpixel bound is
+                  never tighter than any constituent pixel's bound.  Forwarded
+                  as `bounds_image` to `invert_fn`.  Only consumed by
+                  lmfit_engine; OE/LSQ engines will emit a UserWarning and
+                  ignore them.
+                  Example::
+                      bounds_image = {'zB': {'min': depth - 2, 'max': depth + 2}}
     **invert_kwargs  : forwarded to invert_fn (n_iter, tile_size, max_steps, …)
     """
     if Rrs.ndim != 3:
@@ -393,6 +405,28 @@ def invert_image_superpixel(
             if valid.any():
                 x0_sp[i] = px[valid].mean(axis=0)
         invert_kwargs = {**invert_kwargs, 'x_a_image': x0_sp}
+
+    # 2c. Aggregate bounds_image to per-superpixel bounds and inject.
+    #     Union semantics: min-side takes nanmin, max-side takes nanmax so that
+    #     the superpixel bound is never tighter than any constituent pixel's
+    #     bound.  NaN pixels (e.g. missing bathymetry) are excluded.
+    if bounds_image is not None:
+        _agg_fn = {'min': np.min, 'max': np.max}
+        bounds_sp = {}
+        for name, bd in bounds_image.items():
+            bounds_sp[name] = {}
+            for side in ('min', 'max'):
+                if side not in bd:
+                    continue
+                flat = np.asarray(bd[side]).ravel()        # (n_pixels,)
+                agg  = np.full(n_segs, np.nan)
+                for idx, sid in enumerate(seg_ids):
+                    px    = flat[labels_flat == sid]
+                    valid = np.isfinite(px)
+                    if valid.any():
+                        agg[idx] = _agg_fn[side](px[valid])
+                bounds_sp[name][side] = agg                # (n_segs,)
+        invert_kwargs = {**invert_kwargs, 'bounds_image': bounds_sp}
 
     # 3. Invert superpixel mean spectra
     sp_results = invert_superpixels(

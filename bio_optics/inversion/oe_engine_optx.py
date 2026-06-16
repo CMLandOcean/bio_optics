@@ -519,12 +519,22 @@ def invert_image_optx(
         S_a_inv_image:       per-spectra S_a_inv override.
         aux_image:           per-spectra auxiliary pytree.
         **kwargs:            silently absorbed (e.g. ``tile_size``, ``scheduler``).
+                             Pass ``bounds_image`` only to ``lmfit_engine``; a
+                             UserWarning is emitted here if it is present.
 
     Returns:
         dict with keys ``x_hat``, ``sigma``, ``A_diag``, ``chi2``, ``n_steps``,
         ``H_info``, ``fit_names``, and optionally ``y_hat``, ``G``,
         ``chi2_spectral``.
     """
+    if kwargs.get('bounds_image') is not None:
+        import warnings
+        warnings.warn(
+            "oe_engine_optx.invert_image_optx does not support bounds_image; "
+            "use S_a_inv_image for per-pixel constraints in OE, "
+            "or switch to lmfit_engine.",
+            UserWarning, stacklevel=2,
+        )
     spectra_arr   = np.asarray(spectra)
     spatial_shape = None
 
