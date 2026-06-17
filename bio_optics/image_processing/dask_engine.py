@@ -6,8 +6,9 @@ delayed task calling a pluggable Layer-1 invert_fn, and reassembles the
 per-tile outputs into full image-shaped NumPy arrays.
 
 ``Rrs`` may be a plain NumPy array or a dask-backed array (e.g. opened from
-a zarr store).  Data is materialised one tile at a time so only
-``tile_size`` pixels are in RAM simultaneously.
+a zarr store).  For dask-backed inputs, each tile is materialised inside its
+delayed task so that only ``tile_size`` pixels are in RAM at a time.  For
+plain NumPy arrays the extra ``np.asarray()`` call is a no-op.
 
 Architecture
 ------------
@@ -43,6 +44,15 @@ from typing import Callable, Dict, Optional
 
 import numpy as np
 import dask
+
+
+def _tile_task(invert_fn, Rrs_slice, setup, noise, **kwargs):
+    """Materialise one tile slice and run invert_fn.
+
+    Module-level (not a closure) so it is picklable when
+    scheduler='processes' is used on Windows.
+    """
+    return invert_fn(np.asarray(Rrs_slice), setup, noise, **kwargs)
 
 
 def invert_image(
@@ -191,12 +201,12 @@ def invert_image(
         }
 
     # Build one Dask delayed task per tile.
-    # np.asarray() here is the only point where data is read from disk/memory —
-    # for dask-backed inputs each slice triggers a minimal compute() for that tile.
+    # Rrs_flat[start:end] is passed as a raw slice (numpy view or dask slice) —
+    # np.asarray() is deferred to inside _tile_task so that dask-backed zarr
+    # inputs are only read from disk when the task actually executes, not here.
     delayed_tasks = []
     for start in range(0, n_pixels, tile_size):
         end  = min(start + tile_size, n_pixels)
-        tile = np.asarray(Rrs_flat[start:end])
 
         tile_x_a    = x_a_flat[start:end]   if x_a_flat    is not None else None
         tile_Sa_inv = Sa_inv_flat[start:end] if Sa_inv_flat is not None else None
@@ -214,8 +224,8 @@ def invert_image(
                 for name, bd in bounds_flat.items()
             }
 
-        task = dask.delayed(invert_fn)(
-            tile, setup, noise,
+        task = dask.delayed(_tile_task)(
+            invert_fn, Rrs_flat[start:end], setup, noise,
             x_a_image=tile_x_a,
             S_a_inv_image=tile_Sa_inv,
             aux_image=tile_aux,
