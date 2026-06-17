@@ -5,6 +5,10 @@ Splits a full EO image into pixel tiles, dispatches each tile as a Dask
 delayed task calling a pluggable Layer-1 invert_fn, and reassembles the
 per-tile outputs into full image-shaped NumPy arrays.
 
+``Rrs`` may be a plain NumPy array or a dask-backed array (e.g. opened from
+a zarr store).  Data is materialised one tile at a time so only
+``tile_size`` pixels are in RAM simultaneously.
+
 Architecture
 ------------
 ::
@@ -141,20 +145,22 @@ def invert_image(
         from bio_optics.inversion import oe_engine
         invert_fn = oe_engine.invert_image
 
-    Rrs_arr = np.asarray(Rrs)
+    # Keep Rrs as-is (numpy or dask) — do NOT materialise the whole array here.
+    # np.asarray() is deferred to each tile slice in the loop below so that
+    # dask-backed zarr inputs are read one tile at a time.
     spatial_shape = None
 
-    if Rrs_arr.ndim == 3:
-        n_rows, n_cols, n_obs = Rrs_arr.shape
+    if Rrs.ndim == 3:
+        n_rows, n_cols, n_obs = Rrs.shape
         spatial_shape = (n_rows, n_cols)
-        Rrs_flat = Rrs_arr.reshape(-1, n_obs)
-    elif Rrs_arr.ndim == 2:
-        Rrs_flat = Rrs_arr
+        Rrs_flat = Rrs.reshape(-1, n_obs)
+    elif Rrs.ndim == 2:
+        Rrs_flat = Rrs
         n_obs    = Rrs_flat.shape[1]
     else:
         raise ValueError(
             f"Rrs must be 2-D (n_pixels, n_obs) or 3-D (n_rows, n_cols, n_obs), "
-            f"got shape {Rrs_arr.shape}"
+            f"got shape {Rrs.shape}"
         )
 
     n_pixels  = Rrs_flat.shape[0]
@@ -184,11 +190,13 @@ def invert_image(
             for name, bd in bounds_image.items()
         }
 
-    # Build one Dask delayed task per tile
+    # Build one Dask delayed task per tile.
+    # np.asarray() here is the only point where data is read from disk/memory —
+    # for dask-backed inputs each slice triggers a minimal compute() for that tile.
     delayed_tasks = []
     for start in range(0, n_pixels, tile_size):
         end  = min(start + tile_size, n_pixels)
-        tile = Rrs_flat[start:end]
+        tile = np.asarray(Rrs_flat[start:end])
 
         tile_x_a    = x_a_flat[start:end]   if x_a_flat    is not None else None
         tile_Sa_inv = Sa_inv_flat[start:end] if Sa_inv_flat is not None else None
