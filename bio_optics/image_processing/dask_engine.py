@@ -1,14 +1,21 @@
 """
 Dask-tiled image inversion engine.
 
-Splits a full EO image into pixel tiles, dispatches each tile as a Dask
-delayed task calling a pluggable Layer-1 invert_fn, and reassembles the
-per-tile outputs into full image-shaped NumPy arrays.
+Splits a full EO image into tiles, dispatches each tile as a Dask delayed
+task calling a pluggable Layer-1 invert_fn, and reassembles the per-tile
+outputs into full image-shaped NumPy arrays.
 
-``Rrs`` may be a plain NumPy array or a dask-backed array (e.g. opened from
-a zarr store).  For dask-backed inputs, each tile is materialised inside its
-delayed task so that only ``tile_size`` pixels are in RAM at a time.  For
-plain NumPy arrays the extra ``np.asarray()`` call is a no-op.
+Two tiling strategies are used depending on the input type:
+
+* **Block path** (3-D dask-backed input, e.g. zarr on S3): iterates over the
+  array's native spatial chunks via ``Rrs[y0:y1, x0:x1, :]``.  Each zarr
+  chunk maps to exactly one S3 GET and is read exactly once — no cross-chunk
+  re-reads.  ``tile_size`` is not used; block shape comes from the dask chunks.
+* **Flat tile path** (plain NumPy array or 2-D input): flattens to
+  ``(n_pixels, n_obs)`` and tiles by flat pixel index using ``tile_size``.
+  For dask-backed zarr inputs, each tile is materialised inside its delayed
+  task so that only ``tile_size`` pixels are in RAM at a time.  For plain
+  NumPy arrays the extra ``np.asarray()`` call is a no-op.
 
 Architecture
 ------------
@@ -16,8 +23,9 @@ Architecture
 
     dask_engine.invert_image(Rrs, setup, noise, invert_fn=oe_engine.invert_image)
       ↓
-    Tiles image into pixel chunks (default 65 536 pixels = 256×256)
-      ↓
+    Block path (3-D dask)          Flat tile path (numpy / 2-D)
+    Iterate zarr spatial blocks    Tile by flat pixel index
+      ↓                              ↓
     For each tile → dask.delayed(invert_fn)(tile, setup, noise, **per_tile_kwargs)
       ↓
     invert_fn can be any Layer-1 engine:
@@ -44,6 +52,7 @@ from typing import Callable, Dict, Optional
 
 import numpy as np
 import dask
+import dask.array as da
 
 
 def _tile_task(invert_fn, Rrs_slice, setup, noise, **kwargs):
@@ -53,6 +62,162 @@ def _tile_task(invert_fn, Rrs_slice, setup, noise, **kwargs):
     scheduler='processes' is used on Windows.
     """
     return invert_fn(np.asarray(Rrs_slice), setup, noise, **kwargs)
+
+
+def _assemble_blocks(tile_results, block_shapes, n_y_blocks, n_x_blocks):
+    """Assemble per-block result dicts into a (n_rows, n_cols, ...) array dict."""
+    all_keys = set().union(*(r.keys() for r in tile_results))
+    out: Dict[str, object] = {}
+    for key in all_keys:
+        first_val = next(r[key] for r in tile_results if key in r)
+        if isinstance(first_val, list):
+            out[key] = first_val
+            continue
+        if np.issubdtype(first_val.dtype, np.floating):
+            fill = np.nan
+        elif first_val.dtype == np.bool_:
+            fill = False
+        else:
+            fill = -1
+
+        rows = []
+        idx  = 0
+        for _iy in range(n_y_blocks):
+            row = []
+            for _ix in range(n_x_blocks):
+                by, bx = block_shapes[idx]
+                r = tile_results[idx]
+                if key in r:
+                    val = r[key]
+                    tile = (val.reshape(by, bx)
+                            if val.ndim == 1
+                            else val.reshape(by, bx, *val.shape[1:]))
+                else:
+                    shape = ((by, bx) if first_val.ndim == 1
+                             else (by, bx, *first_val.shape[1:]))
+                    tile = np.full(shape, fill, dtype=first_val.dtype)
+                row.append(tile)
+                idx += 1
+            rows.append(np.concatenate(row, axis=1))
+        out[key] = np.concatenate(rows, axis=0)
+    return out
+
+
+def _assemble_flat(tile_results, tile_sizes):
+    """Assemble per-tile result dicts into a (n_pixels, ...) array dict."""
+    all_keys = set().union(*(r.keys() for r in tile_results))
+    out: Dict[str, object] = {}
+    for key in all_keys:
+        first_val = next(r[key] for r in tile_results if key in r)
+        if isinstance(first_val, list):
+            out[key] = first_val
+            continue
+        if np.issubdtype(first_val.dtype, np.floating):
+            fill = np.nan
+        elif first_val.dtype == np.bool_:
+            fill = False
+        else:
+            fill = -1
+        vals = []
+        for r, sz in zip(tile_results, tile_sizes):
+            if key in r:
+                vals.append(r[key])
+            else:
+                shape = (sz, *first_val.shape[1:]) if first_val.ndim > 1 else (sz,)
+                vals.append(np.full(shape, fill, dtype=first_val.dtype))
+        out[key] = np.concatenate(vals, axis=0)
+    return out
+
+
+def _invert_blocks(Rrs, n_rows, n_cols, n_obs, setup, noise, invert_fn, scheduler,
+                   x_a_image, S_a_inv_image, aux_image, bounds_image, **invert_kwargs):
+    """Block-aligned inversion for 3-D dask inputs.
+
+    Iterates over native dask spatial blocks (one per zarr chunk) instead of
+    flat pixel ranges.  Each S3 GET reads exactly one zarr chunk; no
+    cross-chunk re-reads occur.
+    """
+    n_fit = len(setup.fit_names)
+
+    # Convert per-pixel maps to (n_rows, n_cols, ...) for block slicing.
+    # Flat (n_pixels, ...) inputs are also handled: n_pixels == n_rows * n_cols.
+    xa_sp = (np.asarray(x_a_image).reshape(n_rows, n_cols, -1)
+             if x_a_image is not None else None)
+    sa_sp = (np.asarray(S_a_inv_image).reshape(n_rows, n_cols, n_fit, n_fit)
+             if S_a_inv_image is not None else None)
+
+    aux_sp = None
+    if aux_image is not None:
+        if isinstance(aux_image, dict):
+            aux_sp = {}
+            for k, v in aux_image.items():
+                a = np.asarray(v)
+                aux_sp[k] = a.reshape(n_rows, n_cols, *a.shape[2:])
+        else:
+            a = np.asarray(aux_image)
+            aux_sp = a.reshape(n_rows, n_cols, *a.shape[2:])
+
+    bnd_sp = None
+    if bounds_image is not None:
+        bnd_sp = {
+            name: {side: np.asarray(arr).reshape(n_rows, n_cols)
+                   for side, arr in bd.items()}
+            for name, bd in bounds_image.items()
+        }
+
+    # Spatial chunk offsets (cumulative sum of chunk sizes along each axis).
+    y_offsets  = [0] + list(np.cumsum(Rrs.chunks[0]))
+    x_offsets  = [0] + list(np.cumsum(Rrs.chunks[1]))
+    n_y_blocks = len(Rrs.chunks[0])
+    n_x_blocks = len(Rrs.chunks[1])
+
+    delayed_tasks = []
+    block_shapes  = []
+
+    for iy in range(n_y_blocks):
+        y0, y1 = y_offsets[iy], y_offsets[iy + 1]
+        for ix in range(n_x_blocks):
+            x0, x1 = x_offsets[ix], x_offsets[ix + 1]
+            by, bx = y1 - y0, x1 - x0
+            block_shapes.append((by, bx))
+
+            # Spatial dask slice — not yet materialised; _tile_task calls np.asarray()
+            Rrs_block = Rrs[y0:y1, x0:x1, :].reshape(-1, n_obs)
+
+            tile_xa = (xa_sp[y0:y1, x0:x1].reshape(-1, xa_sp.shape[-1])
+                       if xa_sp is not None else None)
+            tile_sa = (sa_sp[y0:y1, x0:x1].reshape(-1, n_fit, n_fit)
+                       if sa_sp is not None else None)
+
+            if aux_sp is not None:
+                if isinstance(aux_sp, dict):
+                    tile_aux = {k: v[y0:y1, x0:x1].reshape(by * bx, *v.shape[2:])
+                                for k, v in aux_sp.items()}
+                else:
+                    tile_aux = aux_sp[y0:y1, x0:x1].reshape(by * bx, *aux_sp.shape[2:])
+            else:
+                tile_aux = None
+
+            tile_bounds = None
+            if bnd_sp is not None:
+                tile_bounds = {
+                    name: {side: arr[y0:y1, x0:x1].ravel()
+                           for side, arr in bd.items()}
+                    for name, bd in bnd_sp.items()
+                }
+
+            task = dask.delayed(_tile_task)(
+                invert_fn, Rrs_block, setup, noise,
+                x_a_image=tile_xa,
+                S_a_inv_image=tile_sa,
+                aux_image=tile_aux,
+                bounds_image=tile_bounds,
+                **invert_kwargs,
+            )
+            delayed_tasks.append(task)
+
+    tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
+    return _assemble_blocks(tile_results, block_shapes, n_y_blocks, n_x_blocks)
 
 
 def invert_image(
@@ -71,9 +236,13 @@ def invert_image(
     """
     Tile-parallel image inversion using Dask.
 
-    Splits the image into pixel tiles, dispatches each tile as a Dask task
-    calling ``invert_fn``, and assembles the per-tile dicts into full-image
-    NumPy arrays.
+    Splits the image into tiles, dispatches each tile as a Dask task calling
+    ``invert_fn``, and assembles the per-tile dicts into full-image NumPy arrays.
+
+    For 3-D dask-backed inputs (e.g. zarr on S3) the **block path** is used:
+    each native spatial chunk becomes one tile, so every zarr chunk is read
+    exactly once.  For plain NumPy arrays or 2-D inputs the **flat tile path**
+    is used, tiling by flat pixel index with ``tile_size``.
 
     Args:
         Rrs:           image of observed spectra.  Accepted shapes:
@@ -93,7 +262,9 @@ def invert_image(
 
                        Defaults to ``oe_engine.invert_image`` (JAX vmap OE).
                        Pass any engine's ``invert_image`` to switch solver.
-        tile_size:     pixels per Dask task, default 65 536 (≈ 256×256).
+        tile_size:     pixels per Dask task for the flat tile path (numpy /
+                       2-D inputs), default 65 536 (≈ 256×256).  Not used for
+                       3-D dask inputs — block shape comes from dask chunks.
         scheduler:     Dask scheduler — ``'synchronous'`` (default),
                        ``'threads'``, or ``'distributed'``.
         x_a_image:     per-pixel prior mean in retrieval space.  Accepted
@@ -155,32 +326,37 @@ def invert_image(
         from bio_optics.inversion import oe_engine
         invert_fn = oe_engine.invert_image
 
-    # Keep Rrs as-is (numpy or dask) — do NOT materialise the whole array here.
-    # np.asarray() is deferred to each tile slice in the loop below so that
-    # dask-backed zarr inputs are read one tile at a time.
     spatial_shape = None
-
     if Rrs.ndim == 3:
         n_rows, n_cols, n_obs = Rrs.shape
         spatial_shape = (n_rows, n_cols)
-        Rrs_flat = Rrs.reshape(-1, n_obs)
     elif Rrs.ndim == 2:
-        Rrs_flat = Rrs
-        n_obs    = Rrs_flat.shape[1]
+        n_obs = Rrs.shape[1]
     else:
         raise ValueError(
             f"Rrs must be 2-D (n_pixels, n_obs) or 3-D (n_rows, n_cols, n_obs), "
             f"got shape {Rrs.shape}"
         )
 
+    # Block path: 3-D dask inputs iterate over native spatial chunks so each
+    # zarr chunk (S3 object) is read exactly once — no cross-chunk re-reads.
+    if spatial_shape is not None and isinstance(Rrs, da.Array):
+        return _invert_blocks(
+            Rrs, n_rows, n_cols, n_obs, setup, noise, invert_fn, scheduler,
+            x_a_image, S_a_inv_image, aux_image, bounds_image, **invert_kwargs,
+        )
+
+    # --- Flat tile path (numpy or 2-D input) ---------------------------------
+    # Keep Rrs as-is; np.asarray() is deferred to each _tile_task call so that
+    # any dask-backed 2-D inputs are materialised one tile at a time.
+    Rrs_flat = Rrs.reshape(-1, n_obs) if spatial_shape is not None else Rrs
     n_pixels  = Rrs_flat.shape[0]
     n_spatial = len(spatial_shape) if spatial_shape is not None else 0
+    n_fit     = len(setup.fit_names)
 
-    # Flatten optional per-pixel maps to (n_pixels, ...) for slicing
-    x_a_flat     = np.asarray(x_a_image).reshape(n_pixels, -1) if x_a_image is not None else None
-    n_fit        = len(setup.fit_names)
-    Sa_inv_flat  = (np.asarray(S_a_inv_image).reshape(n_pixels, n_fit, n_fit)
-                    if S_a_inv_image is not None else None)
+    x_a_flat    = np.asarray(x_a_image).reshape(n_pixels, -1) if x_a_image is not None else None
+    Sa_inv_flat = (np.asarray(S_a_inv_image).reshape(n_pixels, n_fit, n_fit)
+                   if S_a_inv_image is not None else None)
 
     def _flatten_leaf(a):
         a = np.asarray(a)
@@ -200,18 +376,14 @@ def invert_image(
             for name, bd in bounds_image.items()
         }
 
-    # Build one Dask delayed task per tile.
-    # Rrs_flat[start:end] is passed as a raw slice (numpy view or dask slice) —
-    # np.asarray() is deferred to inside _tile_task so that dask-backed zarr
-    # inputs are only read from disk when the task actually executes, not here.
     delayed_tasks = []
-    tile_sizes    = []   # actual pixel count per tile (last tile may be smaller)
+    tile_sizes    = []
     for start in range(0, n_pixels, tile_size):
-        end  = min(start + tile_size, n_pixels)
+        end = min(start + tile_size, n_pixels)
         tile_sizes.append(end - start)
 
-        tile_x_a    = x_a_flat[start:end]   if x_a_flat    is not None else None
-        tile_Sa_inv = Sa_inv_flat[start:end] if Sa_inv_flat is not None else None
+        tile_x_a    = x_a_flat[start:end]    if x_a_flat    is not None else None
+        tile_Sa_inv = Sa_inv_flat[start:end]  if Sa_inv_flat is not None else None
 
         if aux_flat is not None:
             tile_aux = ({k: v[start:end] for k, v in aux_flat.items()}
@@ -237,43 +409,16 @@ def invert_image(
         delayed_tasks.append(task)
 
     tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
-
-    # Assemble tile dicts using the UNION of keys across all tiles.
-    # Some keys are conditionally produced by invert_fn (e.g. y_hat, chi2_spectral
-    # are absent when a tile has no valid pixels).  Iterating only tile_results[0]
-    # would silently drop those keys when the first tile is all-NaN.
-    # Tiles that lack a key are filled with NaN / False / -1 to preserve spatial shape.
-    all_keys = set().union(*(r.keys() for r in tile_results))
-    out: Dict[str, object] = {}
-    for key in all_keys:
-        first_val = next(r[key] for r in tile_results if key in r)
-        if isinstance(first_val, list):
-            out[key] = first_val
-            continue
-        if np.issubdtype(first_val.dtype, np.floating):
-            fill = np.nan
-        elif first_val.dtype == np.bool_:
-            fill = False
-        else:  # integers — match the "skipped pixel" sentinel used by invert engines
-            fill = -1
-        vals = []
-        for r, sz in zip(tile_results, tile_sizes):
-            if key in r:
-                vals.append(r[key])
-            else:
-                shape = (sz, *first_val.shape[1:]) if first_val.ndim > 1 else (sz,)
-                vals.append(np.full(shape, fill, dtype=first_val.dtype))
-        out[key] = np.concatenate(vals, axis=0)
+    out = _assemble_flat(tile_results, tile_sizes)
 
     # Reshape to spatial dimensions when input was 3-D
     if spatial_shape is not None:
         for key, val in out.items():
             if isinstance(val, list):
                 continue
-            if val.ndim == 1:
-                out[key] = val.reshape(*spatial_shape)
-            else:
-                out[key] = val.reshape(*spatial_shape, *val.shape[1:])
+            out[key] = (val.reshape(*spatial_shape)
+                        if val.ndim == 1
+                        else val.reshape(*spatial_shape, *val.shape[1:]))
 
     return out
 
@@ -317,8 +462,8 @@ def to_dataset(
     """
     import xarray as xr
 
-    fit_names   = results['fit_names']
-    base_coords = dict(coords or {})
+    fit_names    = results['fit_names']
+    base_coords  = dict(coords or {})
     param_coords = {**base_coords, 'param': fit_names}
 
     def _da(arr, dims, da_coords):
