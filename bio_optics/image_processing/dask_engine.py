@@ -205,8 +205,10 @@ def invert_image(
     # np.asarray() is deferred to inside _tile_task so that dask-backed zarr
     # inputs are only read from disk when the task actually executes, not here.
     delayed_tasks = []
+    tile_sizes    = []   # actual pixel count per tile (last tile may be smaller)
     for start in range(0, n_pixels, tile_size):
         end  = min(start + tile_size, n_pixels)
+        tile_sizes.append(end - start)
 
         tile_x_a    = x_a_flat[start:end]   if x_a_flat    is not None else None
         tile_Sa_inv = Sa_inv_flat[start:end] if Sa_inv_flat is not None else None
@@ -236,15 +238,32 @@ def invert_image(
 
     tile_results = dask.compute(*delayed_tasks, scheduler=scheduler)
 
-    # Concatenate tile dicts — every key that is a numpy array gets concatenated;
-    # list keys (fit_names) are taken from the first tile unchanged.
+    # Assemble tile dicts using the UNION of keys across all tiles.
+    # Some keys are conditionally produced by invert_fn (e.g. y_hat, chi2_spectral
+    # are absent when a tile has no valid pixels).  Iterating only tile_results[0]
+    # would silently drop those keys when the first tile is all-NaN.
+    # Tiles that lack a key are filled with NaN / False / -1 to preserve spatial shape.
+    all_keys = set().union(*(r.keys() for r in tile_results))
     out: Dict[str, object] = {}
-    for key in tile_results[0]:
-        vals = [r[key] for r in tile_results]
-        if isinstance(vals[0], list):
-            out[key] = vals[0]
-        else:
-            out[key] = np.concatenate(vals, axis=0)
+    for key in all_keys:
+        first_val = next(r[key] for r in tile_results if key in r)
+        if isinstance(first_val, list):
+            out[key] = first_val
+            continue
+        if np.issubdtype(first_val.dtype, np.floating):
+            fill = np.nan
+        elif first_val.dtype == np.bool_:
+            fill = False
+        else:  # integers — match the "skipped pixel" sentinel used by invert engines
+            fill = -1
+        vals = []
+        for r, sz in zip(tile_results, tile_sizes):
+            if key in r:
+                vals.append(r[key])
+            else:
+                shape = (sz, *first_val.shape[1:]) if first_val.ndim > 1 else (sz,)
+                vals.append(np.full(shape, fill, dtype=first_val.dtype))
+        out[key] = np.concatenate(vals, axis=0)
 
     # Reshape to spatial dimensions when input was 3-D
     if spatial_shape is not None:
