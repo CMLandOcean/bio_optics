@@ -1170,7 +1170,51 @@ def invert_image(
             "or switch to lmfit_engine.",
             UserWarning, stacklevel=2,
         )
-    Rrs_jax     = jnp.asarray(spectra,      dtype=jnp.float64)
+    # Flatten to 2-D so the valid mask and NaN padding work uniformly.
+    spectra_np    = np.asarray(spectra)
+    spatial_shape = None
+    if spectra_np.ndim == 3:
+        n_rows, n_cols, n_obs = spectra_np.shape
+        spatial_shape = (n_rows, n_cols)
+        Rrs_flat = spectra_np.reshape(-1, n_obs)
+    else:
+        Rrs_flat = spectra_np
+        n_obs    = Rrs_flat.shape[1]
+
+    n_pixels    = Rrs_flat.shape[0]
+    n_fit       = len(setup.fit_names)
+    valid       = np.isfinite(Rrs_flat).all(axis=-1)
+    has_invalid = not valid.all()
+
+    x_hat_np  = np.full((n_pixels, n_fit), np.nan)
+    sigma_np  = np.full((n_pixels, n_fit), np.nan)
+    A_diag_np = np.full((n_pixels, n_fit), np.nan)
+    chi2_np   = np.full(n_pixels, np.nan)
+    H_info_np = np.full(n_pixels, np.nan)
+
+    def _reshape(a):
+        if spatial_shape is None:
+            return a
+        return a.reshape(*spatial_shape, *a.shape[1:]) if a.ndim > 1 else a.reshape(spatial_shape)
+
+    if not valid.any():
+        out = {
+            'x_hat': _reshape(x_hat_np), 'sigma': _reshape(sigma_np),
+            'A_diag': _reshape(A_diag_np), 'chi2': _reshape(chi2_np),
+            'H_info': _reshape(H_info_np), 'fit_names': list(setup.fit_names),
+        }
+        if store_y_hat:
+            out['y_hat'] = _reshape(np.full((n_pixels, n_obs), np.nan))
+        if store_gain:
+            out['G'] = _reshape(np.full((n_pixels, n_fit, n_obs), np.nan))
+        if store_chi2_spectral:
+            out['chi2_spectral'] = _reshape(np.full(n_pixels, np.nan))
+        return out
+
+    Rrs_padded = Rrs_flat.copy()
+    if has_invalid:
+        Rrs_padded[~valid] = Rrs_flat[valid][0]
+
     x_a_jax     = jnp.asarray(x_a_image     if x_a_image     is not None else setup.x_a,     dtype=jnp.float64)
     Sa_inv_jax  = jnp.asarray(S_a_inv_image if S_a_inv_image is not None else setup.S_a_inv,  dtype=jnp.float64)
     log_mask    = jnp.asarray(setup.log_mask, dtype=jnp.float64)
@@ -1185,7 +1229,8 @@ def invert_image(
         aux_jax = None
 
     res = _invert_pixels_jit(
-        setup.f_fit, Rrs_jax, noise, x_a_jax, Sa_inv_jax,
+        setup.f_fit, jnp.asarray(Rrs_padded, dtype=jnp.float64),
+        noise, x_a_jax, Sa_inv_jax,
         n_iter=n_iter, lm_damping=lm_damping,
         weights=weights_jax, aux_pixels=aux_jax,
     )
@@ -1194,20 +1239,32 @@ def invert_image(
     sigma_phys = posterior_sigma_physical(res.S_hat, x_hat_phys, log_mask)
     A_diag     = jnp.diagonal(res.A, axis1=-2, axis2=-1)
 
+    x_hat_np[valid]  = np.array(x_hat_phys)[valid]
+    sigma_np[valid]  = np.array(sigma_phys)[valid]
+    A_diag_np[valid] = np.array(A_diag)[valid]
+    chi2_np[valid]   = np.array(res.chi2)[valid]
+    H_info_np[valid] = np.array(res.H_info)[valid]
+
     out = {
-        'x_hat':     np.array(x_hat_phys),
-        'sigma':     np.array(sigma_phys),
-        'A_diag':    np.array(A_diag),
-        'chi2':      np.array(res.chi2),
-        'H_info':    np.array(res.H_info),
+        'x_hat':     _reshape(x_hat_np),
+        'sigma':     _reshape(sigma_np),
+        'A_diag':    _reshape(A_diag_np),
+        'chi2':      _reshape(chi2_np),
+        'H_info':    _reshape(H_info_np),
         'fit_names': list(setup.fit_names),
     }
     if store_y_hat:
-        out['y_hat'] = np.array(res.y_hat)
+        y_hat_np = np.full((n_pixels, n_obs), np.nan)
+        y_hat_np[valid] = np.array(res.y_hat)[valid]
+        out['y_hat'] = _reshape(y_hat_np)
     if store_gain:
-        out['G'] = np.array(res.G)
+        G_np = np.full((n_pixels, n_fit, n_obs), np.nan)
+        G_np[valid] = np.array(res.G)[valid]
+        out['G'] = _reshape(G_np)
     if store_chi2_spectral:
-        out['chi2_spectral'] = np.mean(
-            np.square(np.asarray(spectra) - np.array(res.y_hat)), axis=-1
+        chi2_sp_np = np.full(n_pixels, np.nan)
+        chi2_sp_np[valid] = np.mean(
+            np.square(Rrs_flat[valid] - np.array(res.y_hat)[valid]), axis=-1
         )
+        out['chi2_spectral'] = _reshape(chi2_sp_np)
     return out
