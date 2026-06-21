@@ -60,8 +60,17 @@ def _tile_task(invert_fn, Rrs_slice, setup, noise, **kwargs):
 
     Module-level (not a closure) so it is picklable when
     scheduler='processes' is used on Windows.
+
+    Dask-backed slices are materialised with ``scheduler='threads'`` so that
+    multiple zarr variables (e.g. reflectance + cloud + cirrus + haze) that
+    contribute to one spatial block are read concurrently from S3/disk.
+    Plain numpy slices fall through to a zero-copy ``np.asarray``.
     """
-    return invert_fn(np.asarray(Rrs_slice), setup, noise, **kwargs)
+    if isinstance(Rrs_slice, da.Array):
+        data = Rrs_slice.compute(scheduler='threads')
+    else:
+        data = np.asarray(Rrs_slice)
+    return invert_fn(data, setup, noise, **kwargs)
 
 
 def _assemble_blocks(tile_results, block_shapes, n_y_blocks, n_x_blocks):
