@@ -22,6 +22,10 @@ from typing import Callable, List, NamedTuple, Optional
 
 import numpy as np
 from lmfit import minimize
+try:
+    from lmfit.minimizer import AbortFitException
+except ImportError:
+    AbortFitException = RuntimeError  # lmfit version without explicit export
 from ..helper import utils
 
 
@@ -194,10 +198,19 @@ def invert_image(spectra, setup, noise, store_chi2_spectral: bool = False, **kwa
                     v = float(bd['max'][i])
                     if np.isfinite(v):
                         p[name].max = v
-        result = invert(
-            p, spectrum, setup.wavelengths, setup.forward_func,
-            weights=setup.weights, method=setup.method, max_nfev=setup.max_nfev,
-        )
+        try:
+            result = invert(
+                p, spectrum, setup.wavelengths, setup.forward_func,
+                weights=setup.weights, method=setup.method, max_nfev=setup.max_nfev,
+            )
+        except AbortFitException:
+            # Can propagate if method is misspelled and falls back to a scalar
+            # minimizer (e.g. 'least-squares' with hyphen → Nelder-Mead), or
+            # if the post-abort residual call re-exceeds max_nfev. Use initial
+            # param values as best-available and mark as not converged.
+            x_hat[i]  = [p[n].value for n in setup.fit_names]
+            n_nfev[i] = setup.max_nfev
+            continue
         # Always store best-found parameters — result.success=False only means
         # the convergence criterion was not met (e.g. max_nfev reached), not
         # that the result is unusable.
