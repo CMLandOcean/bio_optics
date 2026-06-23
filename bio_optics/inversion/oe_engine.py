@@ -2,7 +2,7 @@
 Optimal Estimation inversion engine for JAX forward models.
 
 Implements the Gauss-Newton OE solver of Rodgers (2000, Ch. 5) with exact
-Jacobians via jax.jacobian.  The core function solve() is pure JAX and can be
+Jacobians via jax.jacfwd (forward-mode, since n_obs ≥ n_fit).  The core function solve() is pure JAX and can be
 JIT-compiled or vmapped over a pixel batch.  The convenience wrapper invert()
 and the batch-setup function build_inversion() bridge the lmfit-Parameters
 convention used by the rest of bio_optics.
@@ -542,7 +542,7 @@ def solve(f_vec: Callable,
 
     Args:
         f_vec:      forward model f(x) -> y; x shape (n_fit,), y shape (n_obs,).
-                    Must be differentiable with jax.jacobian.
+                    Must be differentiable with jax.jacfwd.
                     Typically the projected function from build_inversion() /
                     invert(), which handles fixed-param insertion and the
                     log → physical conversion internally.
@@ -596,7 +596,7 @@ def solve(f_vec: Callable,
     x = x0
     for _ in range(n_iter):
         y_i = f(x)
-        J   = jax.jacobian(f)(x)                              # (n_obs, n_fit)
+        J   = jax.jacfwd(f)(x)                              # (n_obs, n_fit)
 
         H = J.T @ S_eps_inv @ J + S_a_inv
         if lm_damping > 0.0:
@@ -608,7 +608,7 @@ def solve(f_vec: Callable,
 
     # Diagnostics at solution
     y_hat = f(x)
-    J     = jax.jacobian(f)(x)
+    J     = jax.jacfwd(f)(x)
     H     = J.T @ S_eps_inv @ J + S_a_inv
     if lm_damping > 0.0:
         H = H + lm_damping * jnp.diag(jnp.diag(H))
