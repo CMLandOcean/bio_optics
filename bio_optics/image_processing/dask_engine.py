@@ -432,6 +432,106 @@ def invert_image(
     return out
 
 
+def calibrate_noise(
+    Rrs,
+    ocean_mask,
+    setup,
+    noise_init: float,
+    invert_fn: Callable,
+    tile_size: int = 65536,
+    tol: float = 0.05,
+    max_iter: int = 5,
+    verbose: bool = True,
+    **invert_kwargs,
+) -> float:
+    """Find a noise scalar so that median chi² ≈ 1 over the most water-covered tile.
+
+    Locates the tile with the highest ocean pixel count (using ``ocean_mask`` as
+    a cheap proxy), materialises only that tile, and iterates::
+
+        noise = noise * sqrt(median_chi2)
+
+    until ``|median_chi2 - 1| < tol`` or ``max_iter`` is exhausted.  This
+    formula is exact for linear forward models and converges in 2–3 iterations
+    for weakly nonlinear OE problems.  The returned noise can be passed directly
+    to ``invert_image()``.
+
+    JAX must be warmed up for ``tile_size`` before calling this function — use
+    the same warmup step as for the full inversion.
+
+    Args:
+        Rrs:           image of observed spectra, shape ``(n_rows, n_cols,
+                       n_obs)``.  May be a numpy array or a dask array; only the
+                       calibration tile is materialised.
+        ocean_mask:    boolean array ``(n_rows, n_cols)`` — proxy for water
+                       coverage used to select the calibration tile.
+        setup:         engine setup from ``build_inversion()``.
+        noise_init:    initial noise guess [sr⁻¹].
+        invert_fn:     Layer-1 inversion callable with the same signature as
+                       ``invert_image`` (e.g. ``oe_engine_optx.invert_image``).
+        tile_size:     pixels per calibration tile.  Must match the value used
+                       in ``invert_image()`` so the JIT-compiled kernel shape
+                       is reused without recompilation.
+        tol:           convergence tolerance on ``|median_chi2 - 1|``.
+        max_iter:      maximum number of calibration iterations.
+        verbose:       if True, print noise and median chi² per iteration.
+        **invert_kwargs: forwarded to ``invert_fn`` (e.g. ``solver``,
+                       ``max_steps``).  ``store_y_hat`` is forced to ``False``
+                       to save memory during calibration.
+
+    Returns:
+        Calibrated noise as a Python float.
+
+    Example::
+
+        print('Calibrating NOISE from best tile ...')
+        NOISE = dask_engine.calibrate_noise(
+            Rrs_arr, ocean_mask.values, setup, NOISE,
+            invert_fn=oe_engine_optx.invert_image,
+            tile_size=TILE_SIZE, solver=SOLVER, max_steps=MAX_STEPS,
+        )
+        # → calibrated noise = 0.00060 sr⁻¹
+    """
+    n_rows, n_cols, n_obs = Rrs.shape
+    n_pixels  = n_rows * n_cols
+    mask_flat = np.asarray(ocean_mask).ravel()
+
+    # Pick the tile with the most ocean pixels.
+    starts = list(range(0, n_pixels, tile_size))
+    counts = [int(mask_flat[s:min(s + tile_size, n_pixels)].sum()) for s in starts]
+    best_s = starts[int(np.argmax(counts))]
+    best_e = min(best_s + tile_size, n_pixels)
+
+    # Materialise only the calibration tile (not the full scene).
+    Rrs_flat = Rrs.reshape(n_pixels, n_obs)
+    if isinstance(Rrs_flat, da.Array):
+        tile = Rrs_flat[best_s:best_e].compute(scheduler='synchronous')
+    else:
+        tile = np.asarray(Rrs_flat[best_s:best_e])
+
+    # Never store y_hat during calibration — wastes memory with no benefit.
+    kwargs = {**invert_kwargs, 'store_y_hat': False}
+
+    noise = float(noise_init)
+    for i in range(max_iter):
+        res    = invert_fn(tile, setup, noise, **kwargs)
+        chi2   = res['chi2']
+        valid  = chi2[np.isfinite(chi2)]
+        if len(valid) == 0:
+            break
+        med   = float(np.median(valid))
+        noise = noise * float(np.sqrt(med))
+        if verbose:
+            print(f'  iter {i + 1}: noise={noise / float(np.sqrt(med)):.5f}  '
+                  f'median chi²={med:.3f}  → noise={noise:.5f} sr⁻¹')
+        if abs(med - 1.0) < tol:
+            break
+
+    if verbose:
+        print(f'Calibrated NOISE = {noise:.5f} sr⁻¹')
+    return noise
+
+
 def to_dataset(
     results: Dict[str, object],
     spatial_dims=('y', 'x'),
