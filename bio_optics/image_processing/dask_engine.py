@@ -558,7 +558,7 @@ def to_dataset(
 
     Returns:
         xr.Dataset with variables x_hat, sigma, A_diag, chi2, H_info,
-        and optionally y_hat, chi2_spectral.
+        and optionally y_hat, chi2_spectral, n_steps.
 
     Example::
 
@@ -589,6 +589,9 @@ def to_dataset(
 
     if 'chi2_spectral' in results:
         ds_vars['chi2_spectral'] = _da(results['chi2_spectral'], spatial_dims, base_coords)
+
+    if 'n_steps' in results:
+        ds_vars['n_steps'] = _da(results['n_steps'], spatial_dims, base_coords)
 
     if 'y_hat' in results:
         if wavelengths is not None:
