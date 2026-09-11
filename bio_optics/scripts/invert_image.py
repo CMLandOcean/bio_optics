@@ -190,7 +190,7 @@ def main():
     profile['interleave'] = args.interleave
     profile['dtype'] = args.dtype
 
-    # Create empty arrays for each output to write data in and 
+    # Create empty arrays for each output to write data in and
     # prepare individual profiles for each of the outputs
     out_params = np.zeros((len(np.array(params)), img.shape[2])) * np.nan
     params_profile = profile.copy()

@@ -205,6 +205,33 @@ def resample_a_i_spec_EnSAD_SummerBloomsv3(wavelengths=np.arange(400, 720)):
 
     return a_i_spec
 
+def resample_a_i_spec_EnSADandGold(wavelengths=np.arange(400,720)):
+    """
+        Specific absorption coefficients [m2 mg-1] of eight phytoplankton types from the supplemental data of [1] and WASI [2].
+
+        1. Brown group
+        2. Green group
+        3. Cryptophyte
+        4. Cyanobacteria blue
+        5. Cyanobacteria red
+        6. Goldalgae (instead of Coccolithophore) from [3]
+        7. Dinoflagellates from [2]
+        8. Phytoplankton Case 1
+
+        [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
+        [2] Gege (2021): The Water Colour Simulator WASI. User manual for WASI version 6.
+        [3]
+
+        :param wavelengths: wavelengths to resample the specific absorption coefficients to
+        :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+        """
+    # read file
+    a_phyto_db = pd.read_csv(os.path.join(data_dir, 'a_phy_spec_EnSADgold.txt'), skiprows=11, sep=",")
+    # resample to sensor bands
+    band_resampler = BandResampler(a_phyto_db.wavelength_nm.values, wavelengths)
+    a_i_spec = band_resampler(np.asarray(a_phyto_db)[:, 1:])
+
+    return a_i_spec
 
 def resample_b_i_spec_EnSAD(wavelengths = np.arange(400,720)):
     """
@@ -291,6 +318,34 @@ def resample_b_i_spec_EnSAD_SummerBloomsv3(wavelengths=np.arange(400, 720)):
     """
     # read file
     b_phyto_db = pd.read_csv(os.path.join(data_dir, 'b_phy_spec_EnSAD_NSSummerBloomsv3.txt'), skiprows=18, sep=",")
+    # resample to sensor bands
+    band_resampler = BandResampler(b_phyto_db.wavelength_nm.values, wavelengths)
+    b_i_spec = band_resampler(np.asarray(b_phyto_db)[:, 1:])
+
+    return b_i_spec
+
+
+def resample_b_i_spec_EnSADandGold(wavelengths=np.arange(400, 720)):
+    """
+    Specific scattering coefficients [m2 mg-1] of seven phytoplankton types from the supplemental data of [1].
+
+    1. Brown group
+    2. Green group
+    3. Cryptophyte
+    4. Cyanobacteria blue
+    5. Cyanobacteria red
+    6. Goldalgae (instead of Coccolithophores): duplicate brown spectrum specific backscattering
+    7. Dinoflagellates (identical to Brown group)
+    8. Phytoplankton Case-1
+
+    [1] Bi et al. (2023): Bio-geo-optical modelling of natural waters [10.3389/fmars.2023.1196352]
+
+    :param wavelengths: wavelengths to resample the specific absorption coefficients to
+    :return: specific absorption coefficients of seven phytoplankton types resampled to input wavelengths
+    """
+    # read file
+    b_phyto_db = pd.read_csv(os.path.join(data_dir, 'b_phy_spec_EnSADgold.txt'), skiprows=5, sep=",")
+    print(b_phyto_db.columns.values)
     # resample to sensor bands
     band_resampler = BandResampler(b_phyto_db.wavelength_nm.values, wavelengths)
     b_i_spec = band_resampler(np.asarray(b_phyto_db)[:, 1:])

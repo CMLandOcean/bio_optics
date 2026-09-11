@@ -37,22 +37,22 @@ def set_default_parameters(AlgaeGroupType='Standardv3'):
     params.add('L_fl_lambda0', value=0, min=0, max=0.2, vary=False)
     params.add('L_fl_phycocyanin', value=0, min=0, max=0.2, vary=False)
     params.add('L_fl_phycoerythrin', value=0, min=0, max=0.2, vary=False)
-    params.add('b_ratio_C_0', value=0.0058, vary=False)  # Diatoms
-    params.add('b_ratio_C_1', value=0.007, vary=False)  # green
-    params.add('b_ratio_C_2', value=0.0042, vary=False)  # cryptophyte
-    params.add('b_ratio_C_3', value=0.0082, vary=False)  # cyano blue
-    params.add('b_ratio_C_4', value=0.001, vary=False)  # cyano red
+    params.add('b_ratio_C_0', value=0.002, vary=False)  # Diatoms 0.0058; HEREONweb: 0.002
+    params.add('b_ratio_C_1', value=0.007, vary=False)  # green 0.007, HEREONweb: 0.007
+    params.add('b_ratio_C_2', value=0.002, vary=False)  # cryptophyte 0.0042, HEREONweb: 0.002
+    params.add('b_ratio_C_3', value=0.003, vary=False)  # cyano blue 0.0082, HEREONweb: 0.003
+    params.add('b_ratio_C_4', value=0.003, vary=False)  # cyano red 0.001, HEREONweb: 0.003
     # if AlgaeGroupType == 'NSSummerBloomsv3':
     if AlgaeGroupType == 'Summer':
         params.add('b_ratio_C_5', value=0.0034, vary=False)  # Phaeocystis: change to 0.0034
     else:
-        params.add('b_ratio_C_5', value=0.0129, vary=False)  # coccolithophores , Phaeocystis: change to 0.0034
-    params.add('b_ratio_C_6', value=0.0209, vary=False)  # dinoflagellates
+        params.add('b_ratio_C_5', value=0.0129, vary=False)  # coccolithophores 0.0129, , HEREONweb: 0.007, Phaeocystis: change to 0.0034
+    params.add('b_ratio_C_6', value=0.0209, vary=False)  # dinoflagellates 0.0209, HEREONweb: not available
     # if AlgaeGroupType == 'NSSummerBloomsv3':
     if AlgaeGroupType == 'Summer':
         params.add('b_ratio_C_7', value=0.0209, vary=False)  # Noctiluca: change to 0.0209
     else:
-        params.add('b_ratio_C_7', value=0.0109, vary=False)  # case-1 , Noctiluca: change to 0.0209
+        params.add('b_ratio_C_7', value=0.007, vary=False)  # case-1 0.0109, HEREONweb: 0.007, Noctiluca: change to 0.0209
     params.add('b_ratio_md', value=0.0216, min=0.021, max=0.3756, vary=True)  # max=0.0756
     params.add('b_ratio_bd', value=0.0216, min=0.021, max=0.3756, vary=True)  # max=0.0756
     # params.add('b_ratio_d', value=0.0216, min=0.021, max=0.3756, vary=True)

@@ -49,7 +49,7 @@ def li(R_rs, wavelengths, lambda1=466, lambda2=536, lambda3=652, chl_a=None, n=1
     :param wavelengths: corresponding wavelengths [nm]
     :param lambda1: wavelength [nm] of blue band used for light attenuation index (omega) and depth estimation (default: 466 for GAO data)
     :param lambda2: wavelength [nm] of green band used for light attenuation index (omega) and depth estimation (default: 536 for GAO data)
-    :param lambda3: wavelength [nm] of red band used for light attenuation index (omega) (default: 652 for GAO data) 
+    :param lambda3: wavelength [nm] of red band used for light attenuation index (omega) (default: 652 for GAO data)
     :param chl_a: concentration of chl-a [mg m-3] (default: None, computed from r_rs)
     :param n: factor in stumpf() (default: 1000, according to [1]])
     :param normalied: boolean to decide if output should be normalized to the range 0..1 (default: False).

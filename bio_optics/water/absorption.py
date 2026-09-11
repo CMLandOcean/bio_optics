@@ -781,7 +781,15 @@ def a_phy(C_0 = 0,
     
     a_phy = 0
     # shape-1 because there are 7 classes in the sli
-    for i in range(a_i_spec.shape[1]): a_phy += C_i[i] * a_i_spec[:, i]
+    # for i in range(a_i_spec.shape[1]): a_phy += C_i[i] * a_i_spec[:, i]
+    ## web-Version:
+    C_sum = np.sum(C_i)
+    frac_C = np.zeros(len(C_i))
+    if C_sum > 0:
+        frac_C = C_i / C_sum
+    a_phy_sum = 0
+    for i in range(a_i_spec.shape[1]): a_phy_sum += frac_C[i] * a_i_spec[:, i]
+    a_phy = C_sum * a_phy_sum
     
     return a_phy
 

@@ -26,8 +26,8 @@ from . utils import find_closest
 from . indices import ndi
 
 
-# get absolute path to data folder
-data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+# get absolute path to data_OWT_Bi folder
+data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_OWT_Bi')
 
 
 def avw(R_rs, wavelengths):

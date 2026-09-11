@@ -67,6 +67,18 @@ def set_wavelengths_bySensor(sensor, versionAC, maxWL=None):
         wl = np.asarray([int(a) for a in np.arange(400, 955, 5)])
         wlstr = [str(a) for a in wl]
 
+    if sensor == 'CHIME_Center':
+        ## CHIME central wavelengths
+        wl = np.array((404.2, 412.6, 421. , 429.4, 437.8, 446.2, 454.6, 463. , 471.4,
+               479.8, 488.2, 496.6, 505. , 513.4, 521.8, 530.2, 538.6, 547. ,
+               555.4, 563.8, 572.2, 580.6, 589. , 597.4, 605.8, 614.2, 622.6,
+               631. , 639.4, 647.8, 656.2, 664.6, 673. , 681.4, 689.8, 698.2,
+               706.6, 715. , 723.4, 731.8, 740.2, 748.6, 757. , 765.4, 773.8,
+               782.2, 790.6, 799. , 807.4, 815.8, 824.2, 832.6, 841. , 849.4,
+               857.8, 866.2, 874.6, 883. , 891.4, 899.8, 908.2, 916.6, 925. ,
+               933.4, 941.8, 950.2, 958.6, 967. , 975.4, 983.8, 992.2))
+        wlstr = [str(a) for a in wl]
+
     wavelength = np.asarray([float(a) for a in wlstr])
     if not maxWL is None:
         ID = wavelength <maxWL

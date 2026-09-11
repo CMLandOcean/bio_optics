@@ -116,7 +116,7 @@ def estimate_S_dg(R_rs, wavelengths, lambda1=443., lambda2=555., a=0.015, b=0.00
 
 def compute_residual(y_true, y_pred, method=2, weights=[]):
     """
-    Residual computation for comparison of measured and simulated data.
+    Residual computation for comparison of measured and simulated data_OWT_Bi.
 
     Args:
         y_true (_type_): array of true values

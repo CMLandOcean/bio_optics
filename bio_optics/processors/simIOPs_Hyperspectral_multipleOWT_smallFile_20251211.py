@@ -131,10 +131,9 @@ def set_parameters_byDict(pDict, params):
 ## Exchange columns with input
 ## Exchange columns with input and order them like inversion results by OWT!
 # OWTList = [ '1', '2', '3a_g', '3a_y', '3b', '4a_g', '4a_y', '4b', '5a', '5b', '6', '7']
-regionName = 'Mueggelsee' #'EnMAPSuperpixel' #'Helsinki_FM' #'Helsinki_SS' #'uto' #'malaren' #'pyhajarvi' #'dalaro-2'
-# #'elbe_bunthaus' #'elbe_seemannshöft' #'oder_hohenwutzen' #'Helsinki_FM' # 'Mueggelsee', 'vortsjarv' # 'oder_frankfurt' #
+regionName = 'Mueggelsee' #'Helsinki_SS' #'uto' #'malaren' #'pyhajarvi' #'dalaro-2' #'elbe_bunthaus' #'elbe_seemannshöft' #'oder_hohenwutzen' #'Helsinki_FM' # 'Mueggelsee', 'vortsjarv' # 'oder_frankfurt' #
 print(regionName)
-angleDependency = True
+angleDependency = False
 theta_view=0.
 
 metaDict = {
@@ -264,13 +263,7 @@ metaDict = {
         'lon': 13.6474,
         'specNAP_variable': False,
         'PhytoGroupSet' : 'HEREONgold'
-        },
-    'EnMAPSuperpixel':{
-        'project': 'EnMAPSuperpixel',
-        'PhytoGroupSet': 'HEREON',
-        'iop_path': None,
-        'specNAP_variable': False
-    }
+        }
 }
 
 
@@ -340,18 +333,14 @@ else:
         outpath = "Z:\projects\\ongoing\HEATWISE\\sharepoint\WP2_workspace\Water Quality\FullInversion\\bio-optics_forward\\"
     elif projectName == 'AQUATIME':
         outpath ="Z:\projects\\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\RTM_simulations\FullInversion\\bio-optics_forward\\"
-    elif projectName == 'EnMAPSuperpixel':
-        outpath = "D:\Documents\projects\EnsAD\EnMAP\dask_oe_processor_2026\FullInversion\\"
 
 if projectName == 'HEATWISE':
     path = "Z:\projects\\ongoing\HEATWISE\\sharepoint\WP2_workspace\Water Quality\FullInversion\\"
 elif projectName == 'AQUATIME':
     path = "Z:\projects\\ongoing\AQUATIME\sharepoint\WP2 Representative Dataset\RTM_simulations\FullInversion\\"
-elif projectName == 'EnMAPSuperpixel':
-    path = "D:\Documents\projects\EnsAD\EnMAP\dask_oe_processor_2026\FullInversion\\"
 
 # location = 'mueggelsee' # 'mueggelsee', 'helsinki' #'Helsinki'
-versionInv = 'Inv0.1c' # helsinki_ss: ['Inv0.2b', 'Inv0.2c', 'Inv0.2d', 'Inv0.3', 'Inv0.4'] , Mueggelsee: Inv0.4
+versionInv = 'Inv0.1' # helsinki_ss: ['Inv0.2b', 'Inv0.2c', 'Inv0.2d', 'Inv0.3', 'Inv0.4'] , Mueggelsee: Inv0.4
 
 
 ## AQUATIME
@@ -364,14 +353,11 @@ versionInv = 'Inv0.1c' # helsinki_ss: ['Inv0.2b', 'Inv0.2c', 'Inv0.2d', 'Inv0.3'
 fnames = os.listdir(path)
 # iopFnames = [fn for fn in fnames if fn.startswith('inverted_IOP') and fn.endswith('allOWTs.txt') and location in fn]
 ##inverted_IOP_bio_optics_HEREONfull_CHIME_sim_HEATWISE_helsinki_ss_allOWTs_Inv0.2c
-iopFnames = [fn for fn in fnames if fn.startswith('inverted_IOP')]
-# iopFnames = [fn for fn in fnames if fn.startswith('inverted_IOP') and fn.endswith('allOWTs_'+versionInv+'.txt') ] #and location in fn
-iopFnames = iopFnames[0]
-print(iopFnames)
-
+iopFnames = [fn for fn in fnames if fn.startswith('inverted_IOP') and fn.endswith('allOWTs_'+versionInv+'.txt') ] #and location in fn
+# print(iopFnames)
 
 # paramDF = pd.read_csv(path + iopFnames[0], header=0, sep='\t')
-paramDF = pd.read_csv(path + iopFnames, header=0)
+paramDF = pd.read_csv(path + iopFnames[0], header=0)
 if 'date' in paramDF.columns.values:
     paramDF = paramDF.drop('date', axis=1)
 # print(paramDF.iloc[0,:])
@@ -392,118 +378,113 @@ paramDF.drop(columns = ['C_phy'], inplace=True)
 # path = metaDict[regionName]['path']
 specNAP_variable = metaDict[regionName]['specNAP_variable']  # Vortsjarv: True, Mueggelsee: False
 
-if not metaDict[regionName]['iop_path'] is None:
 ### Read Insitu IOPs
-    iop_path = metaDict[regionName]['iop_path']
-    datasetNameIOP = metaDict[regionName]['datasetNameIOP']
+iop_path = metaDict[regionName]['iop_path']
+datasetNameIOP = metaDict[regionName]['datasetNameIOP']
 
-    fname = os.listdir(iop_path)
-    iop_insitu_fname = [fn for fn in fname if fn.startswith(datasetNameIOP) and 'v0.3' in fn][0] # Silja Serenade v0.2 # Helsinki: 'IOP' in fn and ... 'v0.2'
-    iop_insitu = pd.read_csv(iop_path+ iop_insitu_fname, sep=',')
-    outFname = iop_insitu_fname
+fname = os.listdir(iop_path)
+iop_insitu_fname = [fn for fn in fname if fn.startswith(datasetNameIOP) and 'v0.3' in fn][0] # Silja Serenade v0.2 # Helsinki: 'IOP' in fn and ... 'v0.2'
+iop_insitu = pd.read_csv(iop_path+ iop_insitu_fname, sep=',')
 
-    if angleDependency:
-        glist = ['G0w', 'G1w', 'G0p', 'G1p']
-        IDcol = [a for a in glist if a in iop_insitu.columns.values]
-        if len(IDcol) <= len(glist):
-            dateCol = [a for a in iop_insitu.columns.values if 'date' in a or 'time' in a]
-            if regionName == 'Helsinki_SS' and 'v0.2' in iop_insitu_fname:
-                # iop_insitu['datetime'] = pd.to_datetime(iop_insitu['datetime_station']) # v0.1
-                dateStr = np.asarray([str(t)+'T12:00:00' for t in iop_insitu[dateCol[0]]])
-                iop_insitu['datetime'] = pd.to_datetime(dateStr)
-            else:
-                iop_insitu['datetime'] = pd.to_datetime(iop_insitu[dateCol[0]])
-            print(dateCol)
-            print(iop_insitu[dateCol].iloc[0])
-            G_df, solz, senz, phi = lee.read_G_LUT()
-            xG0w = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G0w')
-            xG1w = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G1w')
-            xG0p = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G0p')
-            xG1p = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G1p')
-            sun_dict = get_position(iop_insitu.datetime, lng=metaDict[regionName]['lon'], lat=metaDict[regionName]['lat'])
-            sun_dict['zenith'] = (np.pi / 2. - sun_dict['altitude']) * 180. / np.pi
-            G = np.zeros((iop_insitu.shape[0], 4))
-            senz, phi = (0.,180.) # (50., 135.)  # (30., 135.) # (0,0) # for consistency with Pitarch et al 2025, the azimuth difference has to be transformed!
-            G[:, 0] = xG0w.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
-            G[:, 1] = xG1w.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
-            G[:, 2] = xG0p.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
-            G[:, 3] = xG1p.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
-            iop_insitu['G0w'] = G[:, 0]
-            iop_insitu['G1w'] = G[:, 1]
-            iop_insitu['G0p'] = G[:, 2]
-            iop_insitu['G1p'] = G[:, 3]
-            iop_insitu['SZA'] = sun_dict['zenith']
-            iop_insitu['OZA'] = senz
-            iop_insitu['dAA'] = phi
-
-    ## Vortsjarv: no inversion yet, shorten paramDF
-    ## Muggelsee: expand the paramDF to fit the daily data!
-    if iop_insitu.shape[0] < paramDF.shape[0]:
-        paramDF = paramDF.iloc[0:iop_insitu.shape[0],:]
-    if iop_insitu.shape[0] > paramDF.shape[0]:
-        N1 = iop_insitu.shape[0] // paramDF.shape[0]
-        N = iop_insitu.shape[0] % paramDF.shape[0]
-        print(N1, N, iop_insitu.shape[0], paramDF.shape[0] )
-        paramDF_ = paramDF.copy()
-        for i in range(N1-1):
-            paramDF = pd.concat([paramDF, paramDF_])
-        if N > 0:
-            paramDF = pd.concat([paramDF, paramDF_.iloc[:N,:]])
-        print(paramDF.shape)
-
-    ## for replacement:
-    IOPDict = {
-        'C_0': 'Ckie [µg/l]',
-        'C_1': 'Cgr [µg/l]',
-        'C_2': 'Ccry [µg/l]',
-        'C_3': 'Cbl [µg/l]',
-        # 'C_4': 'Cbl2 [µg/l]',
-        'C_5': 'Cgold [µg/l]',
-        'C_6': 'Cdino [µg/l]',
-        'C_Y': 'ag(440) [1/m]',
-        'C_ism': 'NAP [mg/l]',
-        'S_md': 'Snap [1/nm]',
-        'S_cdom' : 'Sg [1/nm]',
-        'L_fl_lambda0' : None,  # remove fluoresence
-        'L_fl_phycocyanin': None # remove fluoresence
-    }
-    if angleDependency:
-        angleDict = {'Gw0' : 'G0w',
-        'Gw1' : 'G1w',
-        'Gp0' : 'G0p',
-        'Gp1' : 'G1p',
-        'theta_sun': 'SZA',
-        'theta_view': 'OZA'}
-        for key in angleDict.keys():
-            IOPDict[key] = angleDict[key]
-
-    for key in IOPDict.keys():
-        if IOPDict[key] is None:
-            paramDF[key] = 0.
+if angleDependency:
+    glist = ['G0w', 'G1w', 'G0p', 'G1p']
+    IDcol = [a for a in glist if a in iop_insitu.columns.values]
+    if len(IDcol) <= len(glist):
+        dateCol = [a for a in iop_insitu.columns.values if 'date' in a or 'time' in a]
+        if regionName == 'Helsinki_SS' and 'v0.2' in iop_insitu_fname:
+            # iop_insitu['datetime'] = pd.to_datetime(iop_insitu['datetime_station']) # v0.1
+            dateStr = np.asarray([str(t)+'T12:00:00' for t in iop_insitu[dateCol[0]]])
+            iop_insitu['datetime'] = pd.to_datetime(dateStr)
         else:
-            y = iop_insitu[IOPDict[key]].values
-            ID = np.isnan(y)
-            if np.sum(ID)>0:
-                y[ID] =  0.
-            # print(key, y.shape)
-            paramDF[key] = y
+            iop_insitu['datetime'] = pd.to_datetime(iop_insitu[dateCol[0]])
+        print(dateCol)
+        print(iop_insitu[dateCol].iloc[0])
+        G_df, solz, senz, phi = lee.read_G_LUT()
+        xG0w = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G0w')
+        xG1w = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G1w')
+        xG0p = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G0p')
+        xG1p = lee.setup_xarray_Gx(G_df, solz, senz, phi, varname='G1p')
+        sun_dict = get_position(iop_insitu.datetime, lng=metaDict[regionName]['lon'], lat=metaDict[regionName]['lat'])
+        sun_dict['zenith'] = (np.pi / 2. - sun_dict['altitude']) * 180. / np.pi
+        G = np.zeros((iop_insitu.shape[0], 4))
+        senz, phi = (0.,180.) # (50., 135.)  # (30., 135.) # (0,0) # for consistency with Pitarch et al 2025, the azimuth difference has to be transformed!
+        G[:, 0] = xG0w.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
+        G[:, 1] = xG1w.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
+        G[:, 2] = xG0p.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
+        G[:, 3] = xG1p.interp(solz=sun_dict['zenith'], senz=senz, phi=180.-phi, method="linear").values.flatten()
+        iop_insitu['G0w'] = G[:, 0]
+        iop_insitu['G1w'] = G[:, 1]
+        iop_insitu['G0p'] = G[:, 2]
+        iop_insitu['G1p'] = G[:, 3]
+        iop_insitu['SZA'] = sun_dict['zenith']
+        iop_insitu['OZA'] = senz
+        iop_insitu['dAA'] = phi
 
-    ## NAP: single specific absorption
-    if not specNAP_variable:
-        anap_spec440 = np.unique(np.round(iop_insitu['anap_spec(440) [m2 g-1]'].values, 5))
-        S_xd = np.unique(np.round(iop_insitu['Snap [1/nm]'].values, 5))
-        offset_xd = 0.01231 # Bi & Hieronymi uses offset!
-        if len(anap_spec440)==1:
-            print('set NAP specific absorption')
-            a_md_spec_res = absorption.a_xd_spec(wavelengths, anap_spec440, S_xd, C_xd=offset_xd, lambda_0=440.)
+## Vortsjarv: no inversion yet, shorten paramDF
+## Muggelsee: expand the paramDF to fit the daily data!
+if iop_insitu.shape[0] < paramDF.shape[0]:
+    paramDF = paramDF.iloc[0:iop_insitu.shape[0],:]
+if iop_insitu.shape[0] > paramDF.shape[0]:
+    N1 = iop_insitu.shape[0] // paramDF.shape[0]
+    N = iop_insitu.shape[0] % paramDF.shape[0]
+    print(N1, N, iop_insitu.shape[0], paramDF.shape[0] )
+    paramDF_ = paramDF.copy()
+    for i in range(N1-1):
+        paramDF = pd.concat([paramDF, paramDF_])
+    if N > 0:
+        paramDF = pd.concat([paramDF, paramDF_.iloc[:N,:]])
+    print(paramDF.shape)
+
+## for replacement:
+IOPDict = {
+    'C_0': 'Ckie [µg/l]',
+    'C_1': 'Cgr [µg/l]',
+    'C_2': 'Ccry [µg/l]',
+    'C_3': 'Cbl [µg/l]',
+    'C_4': 'Cbl2 [µg/l]',
+    'C_5': 'Cgold [µg/l]',
+    'C_6': 'Cdino [µg/l]',
+    'C_Y': 'ag(440) [1/m]',
+    'C_ism': 'NAP [mg/l]',
+    'S_md': 'Snap [1/nm]',
+    'S_cdom' : 'Sg [1/nm]',
+    'L_fl_lambda0' : None,  # remove fluoresence
+    'L_fl_phycocyanin': None # remove fluoresence
+}
+if angleDependency:
+    angleDict = {'Gw0' : 'G0w',
+    'Gw1' : 'G1w',
+    'Gp0' : 'G0p',
+    'Gp1' : 'G1p',
+    'theta_sun': 'SZA',
+    'theta_view': 'OZA'}
+    for key in angleDict.keys():
+        IOPDict[key] = angleDict[key]
+
+for key in IOPDict.keys():
+    if IOPDict[key] is None:
+        paramDF[key] = 0.
     else:
-        paramDF['anap_spec(440) [m2 g-1]'] = iop_insitu['anap_spec(440) [m2 g-1]'].values
-        paramDF['Snap [1/nm]'] = iop_insitu['Snap [1/nm]'].values
+        y = iop_insitu[IOPDict[key]].values
+        ID = np.isnan(y)
+        if np.sum(ID)>0:
+            y[ID] =  0.
+        # print(key, y.shape)
+        paramDF[key] = y
 
+## NAP: single specific absorption
+if not specNAP_variable:
+    anap_spec440 = np.unique(np.round(iop_insitu['anap_spec(440) [m2 g-1]'].values, 5))
+    S_xd = np.unique(np.round(iop_insitu['Snap [1/nm]'].values, 5))
+    offset_xd = 0.01231 # Bi & Hieronymi uses offset!
+    if len(anap_spec440)==1:
+        print('set NAP specific absorption')
+        a_md_spec_res = absorption.a_xd_spec(wavelengths, anap_spec440, S_xd, C_xd=offset_xd, lambda_0=440.)
 else:
-    outFname = iopFnames
-# paramDF.to_csv(iop_path + 'forward_vortsjarv_input.csv', header=True, index=False, sep='\t')
+    paramDF['anap_spec(440) [m2 g-1]'] = iop_insitu['anap_spec(440) [m2 g-1]'].values
+    paramDF['Snap [1/nm]'] = iop_insitu['Snap [1/nm]'].values
 
+# paramDF.to_csv(iop_path + 'forward_vortsjarv_input.csv', header=True, index=False, sep='\t')
 
 @ray.remote
 def simulate_chunk(
@@ -515,19 +496,7 @@ def simulate_chunk(
                    a_i_spec_res,
                    b_bw_res,
                    b_i_spec_res,
-                   h_C_res,
-                   h_C_phycocyanin_res,
-                   h_C_phycoerythrin_res,
-                   da_W_div_dT_res,
-                   E_0_res,
-                   a_oz_res,
-                   a_ox_res,
-                   a_wv_res,
-                   E_dd_res,
-                   E_dsa_res,
-                   E_dsr_res,
-                   E_d_res,
-                   n2_res):
+                  da_W_div_dT_res):
 
     params = set_default_parameters(AlgaeGroupType)
 
@@ -545,7 +514,7 @@ def simulate_chunk(
 
         if i == 0:
             # print(params)
-            R_rs_sim = hereon.forward(parameters=params,
+            a_res, c_d_res, b_d_res, b_phy_res, omega_d_lambda_0_res, c_d_lambda_0_res = hereon.forward_IOPs(parameters=params,
                                       wavelengths=wavelengths,
                                       a_md_spec_res=a_md_spec_res,
                                       a_bd_spec_res=a_bd_spec_res,
@@ -553,22 +522,9 @@ def simulate_chunk(
                                       a_i_spec_res=a_i_spec_res,
                                       b_bw_res=b_bw_res,
                                       b_i_spec_res=b_i_spec_res,
-                                      h_C_res=h_C_res,
-                                      h_C_phycocyanin_res=h_C_phycocyanin_res,
-                                      h_C_phycoerythrin_res=h_C_phycoerythrin_res,
-                                      da_W_div_dT_res=da_W_div_dT_res,
-                                      E_0_res=E_0_res,
-                                      a_oz_res=a_oz_res,
-                                      a_ox_res=a_ox_res,
-                                      a_wv_res=a_wv_res,
-                                      E_dd_res=E_dd_res,
-                                      E_dsa_res=E_dsa_res,
-                                      E_dsr_res=E_dsr_res,
-                                      E_d_res=E_d_res,
-                                      n2_res=n2_res,
-                                      Ls_Ed=[])
+                                      da_W_div_dT_res=da_W_div_dT_res)
         else:
-            R_rs_sim = np.vstack((R_rs_sim, hereon.forward(parameters=params,
+            a_res_, c_d_res_, b_d_res_, b_phy_res_, omega_d_lambda_0_res_, c_d_lambda_0_res_ = hereon.forward_IOPs(parameters=params,
                                                            wavelengths=wavelengths,
                                                            a_md_spec_res=a_md_spec_res,
                                                            a_bd_spec_res=a_bd_spec_res,
@@ -576,24 +532,16 @@ def simulate_chunk(
                                                            a_i_spec_res=a_i_spec_res,
                                                            b_bw_res=b_bw_res,
                                                            b_i_spec_res=b_i_spec_res,
-                                                           h_C_res=h_C_res,
-                                                           h_C_phycocyanin_res=h_C_phycocyanin_res,
-                                                           h_C_phycoerythrin_res=h_C_phycoerythrin_res,
-                                                           da_W_div_dT_res=da_W_div_dT_res,
-                                                           E_0_res=E_0_res,
-                                                           a_oz_res=a_oz_res,
-                                                           a_ox_res=a_ox_res,
-                                                           a_wv_res=a_wv_res,
-                                                           E_dd_res=E_dd_res,
-                                                           E_dsa_res=E_dsa_res,
-                                                           E_dsr_res=E_dsr_res,
-                                                           E_d_res=E_d_res,
-                                                           n2_res=n2_res,
-                                                           Ls_Ed=[])
-                                  ))
+                                                           da_W_div_dT_res=da_W_div_dT_res)
+            a_res = np.vstack((a_res, a_res_))
+            c_d_res = np.vstack((c_d_res, c_d_res_))
+            b_d_res = np.vstack((b_d_res, b_d_res_))
+            b_phy_res = np.vstack((b_phy_res, b_phy_res_))
+            omega_d_lambda_0_res = np.vstack((omega_d_lambda_0_res, omega_d_lambda_0_res_))
+            c_d_lambda_0_res = np.vstack((c_d_lambda_0_res, c_d_lambda_0_res_))
 
     # print(R_rs_sim.shape)
-    return R_rs_sim
+    return a_res, c_d_res, b_d_res, b_phy_res, omega_d_lambda_0_res, c_d_lambda_0_res
 
 
 if paramDF.shape[0] < 300:
@@ -628,33 +576,40 @@ result_refs = [simulate_chunk.remote(chunk_ref,
                                    a_i_spec_res=a_i_spec_res,
                                    b_bw_res=b_bw_res,
                                    b_i_spec_res=b_i_spec_res,
-                                   h_C_res=h_C_res,
-                                   h_C_phycocyanin_res=h_C_phycocyanin_res,
-                                   h_C_phycoerythrin_res=h_C_phycoerythrin_res,
-                                   da_W_div_dT_res=da_W_div_dT_res,
-                                   E_0_res=E_0_res,
-                                   a_oz_res=a_oz_res,
-                                   a_ox_res=a_ox_res,
-                                   a_wv_res=a_wv_res,
-                                   E_dd_res=E_dd_res,
-                                   E_dsa_res=E_dsa_res,
-                                   E_dsr_res=E_dsr_res,
-                                   E_d_res=E_d_res,
-                                   n2_res=n2_res) for chunk_ref in chunk_refs]  # Process the chunks in parallel
+                                   da_W_div_dT_res=da_W_div_dT_res) for chunk_ref in chunk_refs]  # Process the chunks in parallel
 
 results = ray.get(result_refs)
 
 # Concatenate the results from the processed chunks
-processed_data = np.concatenate(results)
+processed_data_Dict = {}
+varList = ['a_res', 'c_d_res', 'b_d_res', 'b_phy_res', 'omega_d_lambda_0_res', 'c_d_lambda_0_res']
+print(len(results))
+for i, v in enumerate(varList):
+    for j in range(len(results)):
+        print(v, results[j][i].shape)
+        if j == 0:
+            processed_data = results[j][i]
+        else:
+            processed_data = np.concatenate( (processed_data, results[j][i]))
 
+    processed_data_Dict[v] = processed_data
+# processed_data = np.concatenate(results)
+#
 stop = timeit.default_timer()
 print('Time: ', stop - start)
+#
 
+for key in processed_data_Dict.keys():
+    if not 'lambda_0' in key:
+        outDF = pd.DataFrame(processed_data_Dict[key], columns=wavelengths.astype(str))
+    else:
+        outDF = pd.DataFrame(processed_data_Dict[key])
+    outDF.to_csv(outpath + "SimIOPs_"+ key +"_InsituForward_" + AlgaeGroupType + '_'+regionName+'_CHIMEbands.txt', header=True, sep='\t', index=False)
 
-R_rs_sim = pd.DataFrame(processed_data, columns=wavelengths.astype(str))
-# R_rs_sim.to_csv(outpath + "SimRrs_InsituForward_HEREONorig_" + AlgaeGroupType + iopFnames[0].split('.')[0]+'_'+versionInv+'.txt', header=True, sep='\t', index=False)
-if angleDependency:
-    outfname = "SimRrs_InsituForward_" + AlgaeGroupType + '_'+ outFname.split('.')[0] +'_'+versionInv+'_AngleDepSZA_CHIMEbands.txt'
-else:
-    outfname = "SimRrs_InsituForward_" + AlgaeGroupType + '_' + outFname.split('.')[0] + '_' + versionInv + '_CHIMEbands.txt'
-R_rs_sim.to_csv(outpath + outfname, header=True, sep='\t', index=False)
+# R_rs_sim = pd.DataFrame(processed_data, columns=wavelengths.astype(str))
+# # R_rs_sim.to_csv(outpath + "SimRrs_InsituForward_HEREONorig_" + AlgaeGroupType + iopFnames[0].split('.')[0]+'_'+versionInv+'.txt', header=True, sep='\t', index=False)
+# if angleDependency:
+#     outfname = "SimRrs_InsituForward_" + AlgaeGroupType + '_'+ iop_insitu_fname.split('.')[0] +'_'+versionInv+'_AngleDepSZA.txt'
+# else:
+#     outfname = "SimRrs_InsituForward_" + AlgaeGroupType + '_' + iop_insitu_fname.split('.')[0] + '_' + versionInv + '.txt'
+# R_rs_sim.to_csv(outpath + outfname, header=True, sep='\t', index=False)

@@ -66,7 +66,7 @@ def mannino(R_rs, wavelengths, lambda0=443, lambda1=490, lambda2=551):
 
     Original coefficients for lambda0 = 355 from [1] are: a, b, c = 0.4934, 2.731, 3.512
     Original coefficients for lambda0 = 443 from [1] are: a, b, c = 0.4363, 2.221, 13.126
-    Updated lambda0 = 355 and 443 coefficients based on Hawaii CM field data. 
+    Updated lambda0 = 355 and 443 coefficients based on Hawaii CM field data.
 
     Args:
         R_rs: remote sensing reflectance [sr-1] spectrum
