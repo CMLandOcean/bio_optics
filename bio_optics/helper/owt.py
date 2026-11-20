@@ -209,7 +209,8 @@ def forel_ule(Rrs, wavelengths, kind='slinear'):
     y = xyz[1] / xyz.sum(axis=0)
 
     alpha = np.degrees(np.arctan2(y-(1/3),x-(1/3)))
-    alpha = np.where(alpha<0, 180-alpha, alpha)
+    # map arctan2 output from (-180, 180] to [0, 360) to match alpha_Novoa
+    alpha = np.where(alpha<0, alpha+360, alpha)
 
     alpha_lut = fu_scale["alpha_Novoa"].values[:21]
     alpha_lut = np.where(np.isnan(alpha_lut), 0, alpha_lut)

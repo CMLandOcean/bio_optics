@@ -23,6 +23,8 @@ Here we list the major changes of every release. Please take a look at the commi
 - JAX-native forward models for all reflectance models: `albert_mobley_jax`, `bi_jax`, `hope_jax` (Lee 1998/1999 shallow water), `sbop_jax` (Li 2017 shallow water), plus coupled surface models `albert_mobley_3C_jax`, `bi_3C_jax`, `hope_3C_jax`, `sbop_3C_jax`; all share the same two-layer `precompute` / `make_forward_vec` API and are `jax.jit` / `jax.jacobian` / `jax.vmap` compatible
 - JAX atmosphere layer: `transmittance_jax`, `downwelling_irradiance_jax` (dual-mode: pre-baked Ed for fixed scenes, or on-the-fly for atmosphere/geometry retrieval), `sky_radiance_jax`, `scattering_jax`
 - Package-wide cleanup: replaced all mutable default `*_res=[]` arguments with `*_res=None` across 21 files
+- CIE 1931 true colour: `helper.plotting.spectra_to_srgb` / `spectra_to_srgb_hex` / `spectra_to_xyz` — common normalisation `k = 1/∑S·ȳ` (white point preserved), equal-energy or solar (`E0_sun`) illuminant with Bradford adaptation to D65, one brightness scale per call (brightest Y → `exposure`, optional fixed `Y_ref`) so relative brightness is kept, integration over the overlap with the CIE table with a coverage warning; 1D/2D/3D inputs (bands on first axis)
+- Fix `helper.owt.forel_ule`: negative hue angles were wrapped as `180 - alpha` instead of `alpha + 360`, forcing FU 2–4 (blue / blue-green) into FU 1; all 21 `x_Novoa`/`y_Novoa` chromaticities now round-trip to their own class
 - See `docs/OE_PIPELINE.md` for the step-by-step inversion workflow
 
 </details>
